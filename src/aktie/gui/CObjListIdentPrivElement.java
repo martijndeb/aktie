@@ -7,17 +7,18 @@ import aktie.data.CObj;
 import aktie.index.CObjList;
 import aktie.index.Index;
 
-public class CObjListIdentPrivElement {
-	
+public class CObjListIdentPrivElement
+{
+
     private int idx;
     private CObjList list;
     private SoftReference<CObj> softCObj;
     private Index index;
     private String idKey;
 
-    public CObjListIdentPrivElement (Index i, CObjList l, String ik, int ix )
+    public CObjListIdentPrivElement ( Index i, CObjList l, String ik, int ix )
     {
-    	idx = ix;
+        idx = ix;
         list = l;
         index = i;
         idKey = ik;
@@ -37,13 +38,19 @@ public class CObjListIdentPrivElement {
             try
             {
                 CObj rr = list.get ( idx );
-                if (rr != null) {
-                	String pk = rr.getPrivate(idKey);
-                	if (pk != null) {
-                		r = index.getIdentity(pk);
+
+                if ( rr != null )
+                {
+                    String pk = rr.getPrivate ( idKey );
+
+                    if ( pk != null )
+                    {
+                        r = index.getIdentity ( pk );
                         softCObj = new SoftReference<CObj> ( r );
-                	}
+                    }
+
                 }
+
             }
 
             catch ( IOException e )

@@ -15,7 +15,7 @@ public class CObjListPrivateColumnLabelProvider extends ColumnLabelProvider
     @Override
     public String getText ( Object element )
     {
-    	CObjListGetter o = ( CObjListGetter ) element;
+        CObjListGetter o = ( CObjListGetter ) element;
         return o.getCObj().getPrivate ( key );
     }
 

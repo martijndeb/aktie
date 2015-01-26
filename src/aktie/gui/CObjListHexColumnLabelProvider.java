@@ -19,7 +19,7 @@ public class CObjListHexColumnLabelProvider extends ColumnLabelProvider
     @Override
     public String getText ( Object element )
     {
-    	CObjListGetter o = ( CObjListGetter ) element;
+        CObjListGetter o = ( CObjListGetter ) element;
         String bs = o.getCObj().getString ( key );
 
         if ( bs != null )

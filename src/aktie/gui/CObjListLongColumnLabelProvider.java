@@ -15,7 +15,7 @@ public class CObjListLongColumnLabelProvider extends ColumnLabelProvider
     @Override
     public String getText ( Object element )
     {
-    	CObjListGetter o = ( CObjListGetter ) element;
+        CObjListGetter o = ( CObjListGetter ) element;
         return Long.toString ( o.getCObj().getNumber ( key ) );
     }
 

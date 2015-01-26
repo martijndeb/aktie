@@ -6,18 +6,20 @@ import org.eclipse.jface.viewers.Viewer;
 import aktie.index.CObjList;
 import aktie.index.Index;
 
-public class CObjListIdentPrivContentProvider implements IStructuredContentProvider {
+public class CObjListIdentPrivContentProvider implements IStructuredContentProvider
+{
 
     private CObjList list;
     private String idKey;
     private Index index;
-    
-    public CObjListIdentPrivContentProvider(Index i, String idk) {
-    	idKey = idk;
-    	index = i;
+
+    public CObjListIdentPrivContentProvider ( Index i, String idk )
+    {
+        idKey = idk;
+        index = i;
     }
-    
-    
+
+
 
     @Override
     public void dispose()
@@ -44,7 +46,7 @@ public class CObjListIdentPrivContentProvider implements IStructuredContentProvi
 
             for ( int c = 0; c < r.length; c++ )
             {
-                r[c] = new CObjListIdentPrivElement (index, list, idKey, c );
+                r[c] = new CObjListIdentPrivElement ( index, list, idKey, c );
             }
 
             return r;
