@@ -17,7 +17,7 @@ public class CObjListDateColumnLabelProvider extends ColumnLabelProvider
     @Override
     public String getText ( Object element )
     {
-        CObjListArrayElement o = ( CObjListArrayElement ) element;
+    	CObjListGetter o = ( CObjListGetter ) element;
         return ( new Date ( o.getCObj().getNumber ( key ) ) ).toString();
     }
 

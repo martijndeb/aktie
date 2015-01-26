@@ -113,7 +113,7 @@ public class NewMemberDialog extends Dialog
 
                 if ( comname != null )
                 {
-                    lblGrantMembershipFor.setText ( "Grant membership for group: " + comname );
+                    lblGrantMembershipFor.setText ( "Grant membership for community: " + comname );
                 }
 
                 if ( identname != null )
@@ -186,7 +186,7 @@ public class NewMemberDialog extends Dialog
 
         lblGrantMembershipFor = new Label ( container, SWT.NONE );
         lblGrantMembershipFor.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
-        lblGrantMembershipFor.setText ( "Grant membership for group: " );
+        lblGrantMembershipFor.setText ( "Grant membership for community: " );
         new Label ( container, SWT.NONE );
 
         lblGrantedByYour = new Label ( container, SWT.NONE );
