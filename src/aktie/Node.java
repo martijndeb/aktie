@@ -45,6 +45,7 @@ public class Node
     private ConnectionListener conCallback;
     private ConnectionManager conMan;
     private RequestFileHandler requestHandler;
+    private Settings settings;
 
 
     public Node ( String nodedir, Net net, GuiCallback uc,
@@ -54,6 +55,7 @@ public class Node
         netCallback = nc;
         conCallback = cc;
         network = net;
+        settings = new Settings(nodedir);
         File idxdir = new File ( nodedir + File.separator + "index" );
         index = new Index();
         index.setIndexdir ( idxdir );
@@ -62,7 +64,7 @@ public class Node
         session.init ( nodedir + File.separator + "h2" );
         identManager = new IdentityManager ( session, index );
         requestHandler = new RequestFileHandler ( session, nodedir + File.separator + "downloads" );
-        conMan = new ConnectionManager ( session, index, requestHandler, identManager );
+        conMan = new ConnectionManager ( session, index, requestHandler, identManager, usrCallback );
         userQueue = new ProcessQueue();
         userQueue.addProcessor ( new NewCommunityProcessor ( session, index, usrCallback ) );
         userQueue.addProcessor ( new NewFileProcessor ( session, index, usrCallback ) );
@@ -139,5 +141,9 @@ public class Node
     {
         conMan.closeAllConnections();
     }
+
+	public Settings getSettings() {
+		return settings;
+	}
 
 }

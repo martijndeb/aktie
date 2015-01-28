@@ -15,6 +15,7 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.layout.GridData;
 
 import aktie.data.CObj;
+import aktie.index.CObjList;
 
 public class ShowMembersDialog extends Dialog
 {
@@ -27,7 +28,7 @@ public class ShowMembersDialog extends Dialog
         Create the dialog.
         @param parentShell
     */
-    public ShowMembersDialog ( SWTApp a, Shell parentShell )
+    public ShowMembersDialog ( Shell parentShell, SWTApp a )
     {
         super ( parentShell );
         app = a;
@@ -44,6 +45,7 @@ public class ShowMembersDialog extends Dialog
         container.setLayout ( new GridLayout ( 1, false ) );
 
         lblMembersOfCommunity = new Label ( container, SWT.NONE );
+        lblMembersOfCommunity.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
         lblMembersOfCommunity.setText ( "Members of Community: " );
 
         memberTableViewer = new TableViewer ( container, SWT.BORDER |
@@ -57,7 +59,7 @@ public class ShowMembersDialog extends Dialog
 
         TableViewerColumn col0 = new TableViewerColumn ( memberTableViewer, SWT.NONE );
         col0.getColumn().setText ( "Identity" );
-        col0.getColumn().setWidth ( 100 );
+        col0.getColumn().setWidth ( 300 );
         col0.setLabelProvider ( new CObjListDisplayNameColumnLabelProvider() );
 
         lblSubscribers = new Label ( container, SWT.NONE );
@@ -65,17 +67,21 @@ public class ShowMembersDialog extends Dialog
 
         subTableViewer = new TableViewer ( container, SWT.BORDER | SWT.FULL_SELECTION |
                                            SWT.H_SCROLL | SWT.V_SCROLL );
-        subTableViewer.setContentProvider ( new CObjListIdentPrivContentProvider (
+
+        subTableViewer.setContentProvider ( new CObjListIdentPubContentProvider (
                                                 app.getNode().getIndex(), CObj.CREATOR ) );
+
         subTable = subTableViewer.getTable();
         subTable.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, true, 1, 1 ) );
         subTable.setHeaderVisible ( true );
         subTable.setLinesVisible ( true );
 
-        TableViewerColumn scol0 = new TableViewerColumn ( memberTableViewer, SWT.NONE );
+        TableViewerColumn scol0 = new TableViewerColumn ( subTableViewer, SWT.NONE );
         scol0.getColumn().setText ( "Identity" );
-        scol0.getColumn().setWidth ( 100 );
+        scol0.getColumn().setWidth ( 300 );
         scol0.setLabelProvider ( new CObjListDisplayNameColumnLabelProvider() );
+
+        setCommunity ( selectedCommunity );
 
         return container;
     }
@@ -98,15 +104,55 @@ public class ShowMembersDialog extends Dialog
     private TableViewer subTableViewer;
     private Label lblSubscribers;
 
+    public void open ( CObj comid )
+    {
+        setCommunity ( comid );
+        super.open();
+    }
+
     public void setCommunity ( CObj com )
     {
         selectedCommunity = com;
 
-        if ( selectedCommunity != null )
+        if ( selectedCommunity != null && !memberTable.isDisposed() &&
+                !subTable.isDisposed() && !lblMembersOfCommunity.isDisposed() )
         {
             String name = selectedCommunity.getPrivate ( CObj.NAME );
-            lblMembersOfCommunity.setText ( "Members of Community: " + name );
-            //TODO here
+            String lablestr = "Members of Community: " + name;
+
+            CObjList ol = ( CObjList ) memberTableViewer.getInput();
+
+            if ( CObj.SCOPE_PUBLIC.equals ( selectedCommunity.getString ( CObj.SCOPE ) ) )
+            {
+                lablestr = lablestr + " (PUBLIC)";
+                CObjList tl = new CObjList();
+                memberTableViewer.setInput ( tl );
+            }
+
+            else
+            {
+                CObjList memlst =
+                    app.getNode().getIndex().getMemberships ( selectedCommunity.getDig() );
+                memberTableViewer.setInput ( memlst );
+            }
+
+            lblMembersOfCommunity.setText ( lablestr );
+
+            if ( ol != null )
+            {
+                ol.close();
+            }
+
+            ol = ( CObjList ) subTableViewer.getInput();
+            CObjList sublst =
+                app.getNode().getIndex().getSubscriptions ( selectedCommunity.getDig() );
+            subTableViewer.setInput ( sublst );
+
+            if ( ol != null )
+            {
+                ol.close();
+            }
+
         }
 
     }

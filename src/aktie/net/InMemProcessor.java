@@ -155,6 +155,35 @@ public class InMemProcessor extends GenericProcessor
                                 s.merge ( id );
                             }
 
+                            else
+                            {
+                                /*
+                                    if there is a permanent gap in a sequence number
+                                    count how many times we see the next number, so
+                                    if we see it too many times we just use it for last
+                                    number instead
+                                */
+                                if ( seqnum > id.getLastMembershipNumber() )
+                                {
+                                    if ( id.getNextClosestMembershipNumber() > seqnum ||
+                                            id.getNextClosestMembershipNumber() <= id.getLastMembershipNumber() )
+                                    {
+                                        id.setNextClosestMembershipNumber ( seqnum );
+                                        id.setNumClosestMembershipNumber ( 1 );
+                                        s.merge ( id );
+                                    }
+
+                                    else if ( id.getNextClosestMembershipNumber() == seqnum )
+                                    {
+                                        id.setNumClosestMembershipNumber (
+                                            id.getNumClosestMembershipNumber() + 1 );
+                                        s.merge ( id );
+                                    }
+
+                                }
+
+                            }
+
                         }
 
                         String comid = b.getPrivate ( CObj.COMMUNITYID );

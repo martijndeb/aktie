@@ -24,6 +24,14 @@ public class IdentityData
     private long lastTemplateNumber;
     private long lastMembershipNumber;
 
+    private long nextClosestCommunityNumber;
+    private long nextClosestTempalteNumber;
+    private long nextClosestMembershipNumber;
+
+    private int numClosestCommunityNumber;
+    private int numClosestTemplateNumber;
+    private int numClosestMembershipNumber;
+
     private long lastConnectionAttempt;
     private long lastSuccessfulConnection;
 
@@ -243,6 +251,66 @@ public class IdentityData
     public void setMine ( boolean mine )
     {
         this.mine = mine;
+    }
+
+    public long getNextClosestCommunityNumber()
+    {
+        return nextClosestCommunityNumber;
+    }
+
+    public void setNextClosestCommunityNumber ( long nextClosestCommunityNumber )
+    {
+        this.nextClosestCommunityNumber = nextClosestCommunityNumber;
+    }
+
+    public long getNextClosestTempalteNumber()
+    {
+        return nextClosestTempalteNumber;
+    }
+
+    public void setNextClosestTempalteNumber ( long nextClosestTempalteNumber )
+    {
+        this.nextClosestTempalteNumber = nextClosestTempalteNumber;
+    }
+
+    public long getNextClosestMembershipNumber()
+    {
+        return nextClosestMembershipNumber;
+    }
+
+    public void setNextClosestMembershipNumber ( long nextClosestMembershipNumber )
+    {
+        this.nextClosestMembershipNumber = nextClosestMembershipNumber;
+    }
+
+    public int getNumClosestCommunityNumber()
+    {
+        return numClosestCommunityNumber;
+    }
+
+    public void setNumClosestCommunityNumber ( int numClosestCommunityNumber )
+    {
+        this.numClosestCommunityNumber = numClosestCommunityNumber;
+    }
+
+    public int getNumClosestTemplateNumber()
+    {
+        return numClosestTemplateNumber;
+    }
+
+    public void setNumClosestTemplateNumber ( int numClosestTemplateNumber )
+    {
+        this.numClosestTemplateNumber = numClosestTemplateNumber;
+    }
+
+    public int getNumClosestMembershipNumber()
+    {
+        return numClosestMembershipNumber;
+    }
+
+    public void setNumClosestMembershipNumber ( int numClosestMembershipNumber )
+    {
+        this.numClosestMembershipNumber = numClosestMembershipNumber;
     }
 
 }

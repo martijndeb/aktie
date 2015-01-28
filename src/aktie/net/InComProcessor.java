@@ -71,6 +71,35 @@ public class InComProcessor extends GenericProcessor
                                 s.merge ( id );
                             }
 
+                            else
+                            {
+                                /*
+                                    if there is a permanent gap in a sequence number
+                                    count how many times we see the next number, so
+                                    if we see it too many times we just use it for last
+                                    number instead
+                                */
+                                if ( seqnum > id.getLastCommunityNumber() )
+                                {
+                                    if ( id.getNextClosestCommunityNumber() > seqnum ||
+                                            id.getNextClosestCommunityNumber() <= id.getLastCommunityNumber() )
+                                    {
+                                        id.setNextClosestCommunityNumber ( seqnum );
+                                        id.setNumClosestCommunityNumber ( 1 );
+                                        s.merge ( id );
+                                    }
+
+                                    else if ( id.getNextClosestCommunityNumber() == seqnum )
+                                    {
+                                        id.setNumClosestCommunityNumber (
+                                            id.getNumClosestCommunityNumber() + 1 );
+                                        s.merge ( id );
+                                    }
+
+                                }
+
+                            }
+
                         }
 
                         s.getTransaction().commit();

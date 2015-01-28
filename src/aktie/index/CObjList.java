@@ -28,6 +28,11 @@ public class CObjList
     private Sort sort;
     private List<CObj> extras;
 
+    public CObjList()
+    {
+        extras = new LinkedList<CObj>();
+    }
+
     public CObjList ( DirectoryReader r, IndexSearcher s, Analyzer a, String q ) throws ParseException
     {
         this ( r, s, a, q, null );
@@ -95,7 +100,16 @@ public class CObjList
 
     public int size()
     {
-        return documents.scoreDocs.length + extras.size();
+        if ( documents != null )
+        {
+            return documents.scoreDocs.length + extras.size();
+        }
+
+        else
+        {
+            return extras.size();
+        }
+
     }
 
     public void add ( CObj o )
@@ -105,7 +119,7 @@ public class CObjList
 
     public CObj get ( int idx ) throws IOException
     {
-        if ( idx <  documents.scoreDocs.length )
+        if ( documents != null && idx <  documents.scoreDocs.length )
         {
             int id = documents.scoreDocs[idx].doc;
             Document d = searcher.doc ( id );
@@ -116,7 +130,11 @@ public class CObjList
 
         else
         {
-            idx -= documents.scoreDocs.length;
+            if ( documents != null )
+            {
+                idx -= documents.scoreDocs.length;
+            }
+
             return extras.get ( idx );
         }
 
@@ -124,14 +142,18 @@ public class CObjList
 
     public void close()
     {
-        try
+        if ( reader != null )
         {
-            reader.close();
-        }
+            try
+            {
+                reader.close();
+            }
 
-        catch ( IOException e )
-        {
-            e.printStackTrace();
+            catch ( IOException e )
+            {
+                e.printStackTrace();
+            }
+
         }
 
     }

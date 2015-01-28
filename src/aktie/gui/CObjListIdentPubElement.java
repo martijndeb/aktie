@@ -1,5 +1,6 @@
 package aktie.gui;
 
+
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 
@@ -7,7 +8,7 @@ import aktie.data.CObj;
 import aktie.index.CObjList;
 import aktie.index.Index;
 
-public class CObjListIdentPrivElement implements CObjListGetter
+public class CObjListIdentPubElement implements CObjListGetter
 {
 
     private int idx;
@@ -16,7 +17,7 @@ public class CObjListIdentPrivElement implements CObjListGetter
     private Index index;
     private String idKey;
 
-    public CObjListIdentPrivElement ( Index i, CObjList l, String ik, int ix )
+    public CObjListIdentPubElement ( Index i, CObjList l, String ik, int ix )
     {
         idx = ix;
         list = l;
@@ -41,7 +42,7 @@ public class CObjListIdentPrivElement implements CObjListGetter
 
                 if ( rr != null )
                 {
-                    String pk = rr.getPrivate ( idKey );
+                    String pk = rr.getString ( idKey );
 
                     if ( pk != null )
                     {

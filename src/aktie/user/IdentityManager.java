@@ -21,6 +21,8 @@ import aktie.index.Index;
 public class IdentityManager
 {
 
+    public static int MAX_LAST_NUMBER = 20;
+
     private HH2Session session;
     private Index index;
 
@@ -1039,8 +1041,21 @@ public class IdentityManager
             {
                 s.getTransaction().begin();
                 IdentityData idat = ( IdentityData ) s.get ( IdentityData.class, i );
-                idat.setCommunityStatus ( IdentityData.UPDATE );
-                s.merge ( idat );
+
+                if ( idat != null )
+                {
+                    if ( idat.getNextClosestCommunityNumber() >
+                            idat.getLastCommunityNumber() &&
+                            idat.getNumClosestCommunityNumber() > MAX_LAST_NUMBER )
+                    {
+                        idat.setLastCommunityNumber ( idat.getNextClosestCommunityNumber() );
+                        idat.setNumClosestCommunityNumber ( 0 );
+                    }
+
+                    idat.setCommunityStatus ( IdentityData.UPDATE );
+                    s.merge ( idat );
+                }
+
                 s.getTransaction().commit();
             }
 
@@ -1109,8 +1124,21 @@ public class IdentityManager
             {
                 s.getTransaction().begin();
                 IdentityData idat = ( IdentityData ) s.get ( IdentityData.class, i );
-                idat.setMemberStatus ( IdentityData.UPDATE );
-                s.merge ( idat );
+
+                if ( idat != null )
+                {
+                    if ( idat.getNextClosestMembershipNumber() >
+                            idat.getLastMembershipNumber() &&
+                            idat.getNumClosestMembershipNumber() > MAX_LAST_NUMBER )
+                    {
+                        idat.setLastMembershipNumber ( idat.getNextClosestMembershipNumber() );
+                        idat.setNumClosestMembershipNumber ( 0 );
+                    }
+
+                    idat.setMemberStatus ( IdentityData.UPDATE );
+                    s.merge ( idat );
+                }
+
                 s.getTransaction().commit();
             }
 
@@ -1261,6 +1289,14 @@ public class IdentityManager
 
                     if ( cm != null )
                     {
+                        if ( cm.getNextClosestFileNumber() >
+                                cm.getLastFileNumber() &&
+                                cm.getNumClosestFileNumber() > MAX_LAST_NUMBER )
+                        {
+                            cm.setLastFileNumber ( cm.getNextClosestFileNumber() );
+                            cm.setNumClosestFileNumber ( 0 );
+                        }
+
                         cm.setFileStatus ( CommunityMember.UPDATE );
                         cm.setFileUpdatePriority ( priority );
                         s.merge ( cm );
@@ -1359,6 +1395,14 @@ public class IdentityManager
 
                     if ( cm != null )
                     {
+                        if ( cm.getNextClosestPostNumber() >
+                                cm.getLastPostNumber() &&
+                                cm.getNumClosestPostNumber() > MAX_LAST_NUMBER )
+                        {
+                            cm.setLastPostNumber ( cm.getNextClosestPostNumber() );
+                            cm.setNumClosestPostNumber ( 0 );
+                        }
+
                         cm.setPostStatus ( CommunityMember.UPDATE );
                         cm.setPostUpdatePriority ( priority );
                         s.merge ( cm );

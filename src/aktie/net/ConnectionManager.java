@@ -7,6 +7,7 @@ import aktie.data.CommunityMyMember;
 import aktie.data.HH2Session;
 import aktie.data.IdentityData;
 import aktie.data.RequestFile;
+import aktie.gui.GuiCallback;
 import aktie.index.CObjList;
 import aktie.index.Index;
 import aktie.user.IdentityManager;
@@ -41,13 +42,16 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     private MembershipValidator memvalid;
     private boolean stop;
     private HasFileCreator hfc;
+    private GuiCallback callback;
 
     public static int MAX_CONNECTIONS = 10;
     public static long MIN_TIME_BETWEEN_CONNECTIONS = 5L * 60L * 1000L;
     public static long MAX_TIME_WITH_NO_REQUESTS = 30L * 60L * 1000L;
 
-    public ConnectionManager ( HH2Session s, Index i, RequestFileHandler r, IdentityManager id )
+    public ConnectionManager ( HH2Session s, Index i, RequestFileHandler r, IdentityManager id,
+                               GuiCallback cb )
     {
+        callback = cb;
         identManager = id;
         index = i;
         destinations = new HashMap<String, DestinationThread>();
@@ -1114,6 +1118,12 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                 }
 
                                 index.index ( m );
+
+                                if ( callback != null )
+                                {
+                                    callback.update ( m );
+                                }
+
                             }
 
                         }

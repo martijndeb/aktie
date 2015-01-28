@@ -6,7 +6,7 @@ import java.lang.ref.SoftReference;
 import aktie.index.CObjList;
 import aktie.data.CObj;
 
-public class CObjListArrayElement
+public class CObjListArrayElement implements CObjListGetter
 {
 
     private int index;

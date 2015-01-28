@@ -84,6 +84,35 @@ public class InHasFileProcessor extends GenericProcessor
                                 s.merge ( m );
                             }
 
+                            else
+                            {
+                                /*
+                                    if there is a permanent gap in a sequence number
+                                    count how many times we see the next number, so
+                                    if we see it too many times we just use it for last
+                                    number instead
+                                */
+                                if ( seqnum > m.getLastFileNumber() )
+                                {
+                                    if ( m.getNextClosestFileNumber() > seqnum ||
+                                            m.getNextClosestFileNumber() <= m.getLastFileNumber() )
+                                    {
+                                        m.setNextClosestFileNumber ( seqnum );
+                                        m.setNumClosestFileNumber ( 1 );
+                                        s.merge ( m );
+                                    }
+
+                                    else if ( m.getNextClosestFileNumber() == seqnum )
+                                    {
+                                        m.setNumClosestFileNumber (
+                                            m.getNumClosestFileNumber() + 1 );
+                                        s.merge ( m );
+                                    }
+
+                                }
+
+                            }
+
                             s.getTransaction().commit();
                             s.close();
                             index.index ( b );

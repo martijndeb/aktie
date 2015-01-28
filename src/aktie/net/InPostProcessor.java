@@ -80,6 +80,35 @@ public class InPostProcessor extends GenericProcessor
                                 s.merge ( m );
                             }
 
+                            else
+                            {
+                                /*
+                                    if there is a permanent gap in a sequence number
+                                    count how many times we see the next number, so
+                                    if we see it too many times we just use it for last
+                                    number instead
+                                */
+                                if ( seqnum > m.getLastPostNumber() )
+                                {
+                                    if ( m.getNextClosestPostNumber() > seqnum ||
+                                            m.getNextClosestPostNumber() <= m.getLastPostNumber() )
+                                    {
+                                        m.setNextClosestPostNumber ( seqnum );
+                                        m.setNumClosestPostNumber ( 1 );
+                                        s.merge ( m );
+                                    }
+
+                                    else if ( m.getNextClosestPostNumber() == seqnum )
+                                    {
+                                        m.setNumClosestPostNumber (
+                                            m.getNumClosestPostNumber() + 1 );
+                                        s.merge ( m );
+                                    }
+
+                                }
+
+                            }
+
                             s.getTransaction().commit();
                             s.close();
                             index.index ( b );

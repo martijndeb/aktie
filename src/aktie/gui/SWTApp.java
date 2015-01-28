@@ -491,6 +491,24 @@ public class SWTApp
                                 }
 
                             } );
+                            String creator = co.getString(CObj.CREATOR);
+                            if (developerIdentity != null && creator != null &&
+                            		creator.equals(developerIdentity.getId())) {
+                            	final String subj = co.getString(CObj.SUBJECT);
+                            	if (subj != null) {
+                                    Display.getDefault().asyncExec ( new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            if (bannerText != null && !bannerText.isDisposed()) {
+                                            	bannerText.setText(subj);
+                                            }
+                                        }
+
+                                    } );
+                            	}
+                            }
 
                         }
 
@@ -806,6 +824,7 @@ public class SWTApp
     private NewMemberDialog newMemberDialog;
     private NewPostDialog newPostDialog;
     private DownloadPriorityDialog downloadPriorityDialog;
+    private ShowMembersDialog membersDialog;
     private IdentitySubTreeModel identSubTreeModel;
 
     private Node node;
@@ -827,6 +846,7 @@ public class SWTApp
     private Table downloadTable;
     private TableViewer downloadTableViewer;
     private String exportCommunitiesFile;
+    private CObj developerIdentity;
 
     public Node getNode()
     {
@@ -914,6 +934,12 @@ public class SWTApp
                 if ( defcomfile.exists() )
                 {
                     loadDefCommunitySubs ( defcomfile );
+                }
+                
+                File devid = new File( nodeDir + File.separator + "developerid.dat");
+                
+                if (devid.exists()) {
+                	loadDeveloperIdentity(devid);
                 }
 
             }
@@ -1070,6 +1096,7 @@ public class SWTApp
     private boolean sortFileReverse;
     private SortField.Type sortFileType1;
     private SortField.Type sortFileType2;
+    private Text bannerText;
 
     private void filesSearch ( String srch )
     {
@@ -1206,6 +1233,44 @@ public class SWTApp
         }
 
     }
+    
+    private void loadDeveloperIdentity( File f) {
+        BufferedReader br = null;
+        try
+        {
+            br = new BufferedReader ( new FileReader ( f ) );
+            JSONTokener p = new JSONTokener ( br );
+            JSONObject o = new JSONObject ( p );
+
+            if ( o != null )
+            {
+                CObj co = new CObj();
+                co.loadJSON ( o );
+                developerIdentity = co;
+
+            }
+
+            br.close();
+        }
+
+        catch ( Exception e )
+        {
+            if ( br != null )
+            {
+                try
+                {
+                    br.close();
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+            }
+
+        }
+   	
+    }
 
     private void loadDefCommunitySubs ( File f )
     {
@@ -1274,6 +1339,8 @@ public class SWTApp
         downloadPriorityDialog = new DownloadPriorityDialog ( shell, this );
         downloadPriorityDialog.create();
         downloadTableViewer.setInput ( getNode().getFileHandler() );
+        membersDialog = new ShowMembersDialog ( shell, this );
+        membersDialog.create();
         FileListContentProvider fc = ( FileListContentProvider ) fileTableViewer.getContentProvider();
         fc.setHH2Session ( getNode().getSession() );
     }
@@ -1323,7 +1390,7 @@ public class SWTApp
         shell = new Shell();
         shell.setSize ( 650, 450 );
         shell.setText ( "aktie" );
-        shell.setLayout ( new FillLayout ( SWT.HORIZONTAL ) );
+        shell.setLayout(new GridLayout(1, false));
 
         Menu menu = new Menu ( shell, SWT.BAR );
         shell.setMenuBar ( menu );
@@ -1347,6 +1414,7 @@ public class SWTApp
         mntmStartManualUpdate.addSelectionListener ( new ManualUpdate() );
 
         TabFolder tabFolder = new TabFolder ( shell, SWT.NONE );
+        tabFolder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
         TabItem tbtmCommunity = new TabItem ( tabFolder, SWT.NONE );
         tbtmCommunity.setText ( "Communities" );
@@ -1470,6 +1538,39 @@ public class SWTApp
                         unsub.pushString ( CObj.CREATOR, identid );
                         unsub.pushString ( CObj.SUBSCRIBED, "flase" );
                         getNode().enqueue ( unsub );
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        MenuItem mntmShowmem = new MenuItem ( menu_2, SWT.NONE );
+        mntmShowmem.setText ( "Show Members" );
+        mntmShowmem.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                IStructuredSelection sel = ( IStructuredSelection ) identTreeViewer.getSelection();
+                String selid = null;
+                @SuppressWarnings ( "rawtypes" )
+                Iterator i = sel.iterator();
+
+                if ( i.hasNext() && selid == null )
+                {
+                    Object selo = i.next();
+
+                    if ( selo instanceof TreeSubscription )
+                    {
+                        TreeSubscription ts = ( TreeSubscription ) selo;
+                        membersDialog.open ( ts.community );
                     }
 
                 }
@@ -1637,7 +1738,7 @@ public class SWTApp
 
         searchText = new Text ( composite_7, SWT.BORDER );
         searchText.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
-
+ 
         Button btnSearch = new Button ( composite_7, SWT.NONE );
         btnSearch.setLayoutData ( new GridData ( SWT.RIGHT, SWT.CENTER, false, false, 1, 1 ) );
         btnSearch.setText ( "Search" );
@@ -2288,6 +2389,7 @@ public class SWTApp
         concol2.getColumn().setText ( "Download" );
         concol2.getColumn().setWidth ( 200 );
         concol2.setLabelProvider ( new ConnectionColumnDownload() );
+        
         concol2.getColumn().addSelectionListener ( new SelectionListener()
         {
             @Override
@@ -2304,6 +2406,11 @@ public class SWTApp
             }
 
         } );
+
+        bannerText = new Text(shell, SWT.BORDER);
+        bannerText.setEditable(false);
+        bannerText.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false, 1, 1));
+        bannerText.setText("Developer news..");
 
     }
 
@@ -2357,4 +2464,7 @@ public class SWTApp
         return downloadTableViewer;
     }
 
+	public Text getBannerText() {
+		return bannerText;
+	}
 }

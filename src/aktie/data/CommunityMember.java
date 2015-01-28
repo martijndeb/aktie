@@ -15,9 +15,18 @@ public class CommunityMember
     private String id;
     private String communityId;
     private String memberId;
+
     private long lastSubscriptionNumber;
     private long lastPostNumber;
     private long lastFileNumber;
+
+    private long nextClosestSubscriptionNumber;
+    private long nextClosestPostNumber;
+    private long nextClosestFileNumber;
+
+    private int numClosestSubscriptionNumber;
+    private int numClosestPostNumber;
+    private int numClosestFileNumber;
 
     private long lastSubscriptionUpdate;
     private int subscriptionStatus;
@@ -183,6 +192,66 @@ public class CommunityMember
     public void setFileUpdatePriority ( int fileUpdatePriority )
     {
         this.fileUpdatePriority = fileUpdatePriority;
+    }
+
+    public long getNextClosestSubscriptionNumber()
+    {
+        return nextClosestSubscriptionNumber;
+    }
+
+    public void setNextClosestSubscriptionNumber ( long nextClosestSubscriptionNumber )
+    {
+        this.nextClosestSubscriptionNumber = nextClosestSubscriptionNumber;
+    }
+
+    public long getNextClosestPostNumber()
+    {
+        return nextClosestPostNumber;
+    }
+
+    public void setNextClosestPostNumber ( long nextClosestPostNumber )
+    {
+        this.nextClosestPostNumber = nextClosestPostNumber;
+    }
+
+    public long getNextClosestFileNumber()
+    {
+        return nextClosestFileNumber;
+    }
+
+    public void setNextClosestFileNumber ( long nextClosestFileNumber )
+    {
+        this.nextClosestFileNumber = nextClosestFileNumber;
+    }
+
+    public int getNumClosestSubscriptionNumber()
+    {
+        return numClosestSubscriptionNumber;
+    }
+
+    public void setNumClosestSubscriptionNumber ( int numClosestSubscriptionNumber )
+    {
+        this.numClosestSubscriptionNumber = numClosestSubscriptionNumber;
+    }
+
+    public int getNumClosestPostNumber()
+    {
+        return numClosestPostNumber;
+    }
+
+    public void setNumClosestPostNumber ( int numClosestPostNumber )
+    {
+        this.numClosestPostNumber = numClosestPostNumber;
+    }
+
+    public int getNumClosestFileNumber()
+    {
+        return numClosestFileNumber;
+    }
+
+    public void setNumClosestFileNumber ( int numClosestFileNumber )
+    {
+        this.numClosestFileNumber = numClosestFileNumber;
     }
 
 }
