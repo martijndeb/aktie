@@ -103,6 +103,7 @@ public class CObj
     public static String SUBJECT = "subject";
     public static String BODY = "body";
     public static String FILENAME = "fname";
+    public static String UPGRADEFLAG = "upgrade";
 
     public static String PARAM_ID = "id";
     public static String PARAM_TYPE = "type";

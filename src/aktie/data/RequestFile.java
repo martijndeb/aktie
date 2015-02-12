@@ -33,6 +33,7 @@ public class RequestFile
     private long fragsTotal;
     private long fragSize;
     private long fileSize;
+    private boolean isUpgrade;
 
     public long getId()
     {
@@ -162,6 +163,16 @@ public class RequestFile
     public void setRequestId ( String requestId )
     {
         this.requestId = requestId;
+    }
+
+    public boolean isUpgrade()
+    {
+        return isUpgrade;
+    }
+
+    public void setUpgrade ( boolean isUpgrade )
+    {
+        this.isUpgrade = isUpgrade;
     }
 
 }

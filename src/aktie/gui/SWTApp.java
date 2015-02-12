@@ -43,6 +43,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -71,6 +72,8 @@ import org.eclipse.jface.viewers.TableViewer;
 
 public class SWTApp
 {
+
+    public static String VERSION = "version 0.0.0";
 
     private ConnectionCallback concallback = new ConnectionCallback();
 
@@ -474,12 +477,13 @@ public class SWTApp
             {
                 if ( o instanceof CObj )
                 {
-                    final CObj co = ( CObj ) o;
+                    final CObj co = ( ( CObj ) o ).clone();
                     String type = co.getType();
                     String comid = co.getString ( CObj.COMMUNITYID );
 
                     if ( comid != null && comid.equalsIgnoreCase ( selectedCommunity.getDig() ) )
                     {
+
                         if ( CObj.POST.equals ( type ) )
                         {
                             Display.getDefault().asyncExec ( new Runnable()
@@ -491,23 +495,34 @@ public class SWTApp
                                 }
 
                             } );
-                            String creator = co.getString(CObj.CREATOR);
-                            if (developerIdentity != null && creator != null &&
-                            		creator.equals(developerIdentity.getId())) {
-                            	final String subj = co.getString(CObj.SUBJECT);
-                            	if (subj != null) {
+
+                            String creator = co.getString ( CObj.CREATOR );
+
+                            if ( developerIdentity != null && creator != null &&
+                                    creator.equals ( developerIdentity.getId() ) )
+                            {
+
+                                //Update subject line
+                                final String subj = co.getString ( CObj.SUBJECT );
+
+                                if ( subj != null )
+                                {
                                     Display.getDefault().asyncExec ( new Runnable()
                                     {
                                         @Override
                                         public void run()
                                         {
-                                            if (bannerText != null && !bannerText.isDisposed()) {
-                                            	bannerText.setText(subj);
+                                            if ( bannerText != null && !bannerText.isDisposed() )
+                                            {
+                                                bannerText.setText ( subj );
                                             }
+
                                         }
 
                                     } );
-                            	}
+
+                                }
+
                             }
 
                         }
@@ -523,6 +538,63 @@ public class SWTApp
                                 }
 
                             } );
+
+                            String upf = co.getPrivate ( CObj.UPGRADEFLAG );
+
+                            if ( "true".equals ( upf ) )
+                            {
+                                Display.getDefault().asyncExec ( new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        lblVersion.setText ( VERSION + "   Update downloaded.  Please restart." );
+                                    }
+
+                                } );
+
+                            }
+
+                            String creator = co.getString ( CObj.CREATOR );
+
+                            if ( developerIdentity != null && creator != null &&
+                                    creator.equals ( developerIdentity.getId() ) )
+                            {
+
+                                String update = co.getString ( CObj.UPGRADEFLAG );
+                                String fname = co.getString ( CObj.NAME );
+
+                                if ( "true".equals ( update ) )
+                                {
+                                    if ( doUpgrade )
+                                    {
+                                        File nodedir = new File ( nodeDir );
+                                        String upfile = nodedir.getParentFile() +
+                                                        File.separator + "upgrade" +
+                                                        File.separator + fname;
+                                        co.pushPrivate ( CObj.LOCALFILE, upfile );
+                                        co.pushPrivate ( CObj.UPGRADEFLAG, "true" ); //confirm upgrade
+                                        //the user to restart his node.
+                                        co.setType ( CObj.USR_DOWNLOAD_FILE );
+                                        co.pushString ( CObj.CREATOR, selectedIdentity.getId() );
+                                        node.enqueue ( co );
+
+                                        Display.getDefault().asyncExec ( new Runnable()
+                                        {
+                                            @Override
+                                            public void run()
+                                            {
+                                                lblVersion.setText ( VERSION + "  Update downloading.." );
+                                            }
+
+                                        } );
+
+                                    }
+
+                                }
+
+                            }
+
 
                         }
 
@@ -644,6 +716,22 @@ public class SWTApp
 
                     else if ( CObj.HASFILE.equals ( co.getType() ) )
                     {
+                        String upf = co.getPrivate ( CObj.UPGRADEFLAG );
+
+                        if ( "true".equals ( upf ) )
+                        {
+                            Display.getDefault().asyncExec ( new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    lblVersion.setText ( VERSION + "   Update downloaded.  Please restart." );
+                                }
+
+                            } );
+
+                        }
+
                         Display.getDefault().asyncExec ( new Runnable()
                         {
                             @Override
@@ -758,11 +846,29 @@ public class SWTApp
                     {
                         if ( f.isFile() )
                         {
+
+                            boolean isupgrade = false;
+
+                            if ( developerIdentity != null )
+                            {
+                                if ( developerIdentity.getId().equals ( selectedIdentity.getId() ) )
+                                {
+                                    isupgrade = MessageDialog.openConfirm ( shell, "Update", "Are you sure you want this to be an update file?" );
+                                }
+
+                            }
+
                             CObj nf = new CObj();
                             nf.setType ( CObj.HASFILE );
                             nf.pushString ( CObj.COMMUNITYID, selectedCommunity.getDig() );
                             nf.pushString ( CObj.CREATOR, selectedIdentity.getId() );
                             nf.pushPrivate ( CObj.LOCALFILE, f.getPath() );
+
+                            if ( isupgrade )
+                            {
+                                nf.pushString ( CObj.UPGRADEFLAG, "true" );
+                            }
+
                             node.enqueue ( nf );
                         }
 
@@ -814,6 +920,7 @@ public class SWTApp
     }
 
 
+    private boolean doUpgrade = true;
     protected Shell shell;
     private Text searchText;
     private Tree identTree;
@@ -935,12 +1042,7 @@ public class SWTApp
                 {
                     loadDefCommunitySubs ( defcomfile );
                 }
-                
-                File devid = new File( nodeDir + File.separator + "developerid.dat");
-                
-                if (devid.exists()) {
-                	loadDeveloperIdentity(devid);
-                }
+
 
             }
 
@@ -954,6 +1056,15 @@ public class SWTApp
             }
 
             mlst.close();
+
+            File devid = new File ( nodeDir + File.separator + "developerid.dat" );
+
+            if ( devid.exists() )
+            {
+                loadDeveloperIdentity ( devid );
+            }
+
+
             mlst = node.getIndex().getMySubscriptions();
 
             for ( int c = 0; c < mlst.size(); c++ )
@@ -1097,6 +1208,7 @@ public class SWTApp
     private SortField.Type sortFileType1;
     private SortField.Type sortFileType2;
     private Text bannerText;
+    private Label lblVersion;
 
     private void filesSearch ( String srch )
     {
@@ -1233,9 +1345,11 @@ public class SWTApp
         }
 
     }
-    
-    private void loadDeveloperIdentity( File f) {
+
+    private void loadDeveloperIdentity ( File f )
+    {
         BufferedReader br = null;
+
         try
         {
             br = new BufferedReader ( new FileReader ( f ) );
@@ -1269,7 +1383,7 @@ public class SWTApp
             }
 
         }
-   	
+
     }
 
     private void loadDefCommunitySubs ( File f )
@@ -1390,7 +1504,7 @@ public class SWTApp
         shell = new Shell();
         shell.setSize ( 650, 450 );
         shell.setText ( "aktie" );
-        shell.setLayout(new GridLayout(1, false));
+        shell.setLayout ( new GridLayout ( 1, false ) );
 
         Menu menu = new Menu ( shell, SWT.BAR );
         shell.setMenuBar ( menu );
@@ -1413,8 +1527,12 @@ public class SWTApp
         mntmStartManualUpdate.setText ( "Start Update" );
         mntmStartManualUpdate.addSelectionListener ( new ManualUpdate() );
 
+        lblVersion = new Label ( shell, SWT.NONE );
+        lblVersion.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
+        lblVersion.setText ( VERSION );
+
         TabFolder tabFolder = new TabFolder ( shell, SWT.NONE );
-        tabFolder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+        tabFolder.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, true, 1, 1 ) );
 
         TabItem tbtmCommunity = new TabItem ( tabFolder, SWT.NONE );
         tbtmCommunity.setText ( "Communities" );
@@ -1738,7 +1856,7 @@ public class SWTApp
 
         searchText = new Text ( composite_7, SWT.BORDER );
         searchText.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
- 
+
         Button btnSearch = new Button ( composite_7, SWT.NONE );
         btnSearch.setLayoutData ( new GridData ( SWT.RIGHT, SWT.CENTER, false, false, 1, 1 ) );
         btnSearch.setText ( "Search" );
@@ -2113,7 +2231,6 @@ public class SWTApp
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
-                System.out.println ( "AAAAAAAAAAAAA LOCALFILE" );
                 String ns = CObj.docString ( CObj.LOCALFILE );
 
                 if ( ns.equals ( sortFileField1 ) )
@@ -2158,7 +2275,6 @@ public class SWTApp
                 if ( selectedIdentity != null )
                 {
                     IStructuredSelection sel = ( IStructuredSelection ) fileTableViewer.getSelection();
-                    System.out.println ( "SELECTED: " + sel.size() );
                     @SuppressWarnings ( "rawtypes" )
                     Iterator i = sel.iterator();
 
@@ -2389,7 +2505,7 @@ public class SWTApp
         concol2.getColumn().setText ( "Download" );
         concol2.getColumn().setWidth ( 200 );
         concol2.setLabelProvider ( new ConnectionColumnDownload() );
-        
+
         concol2.getColumn().addSelectionListener ( new SelectionListener()
         {
             @Override
@@ -2407,10 +2523,10 @@ public class SWTApp
 
         } );
 
-        bannerText = new Text(shell, SWT.BORDER);
-        bannerText.setEditable(false);
-        bannerText.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false, 1, 1));
-        bannerText.setText("Developer news..");
+        bannerText = new Text ( shell, SWT.BORDER );
+        bannerText.setEditable ( false );
+        bannerText.setLayoutData ( new GridData ( SWT.FILL, SWT.BOTTOM, true, false, 1, 1 ) );
+        bannerText.setText ( "Developer news.." );
 
     }
 
@@ -2464,7 +2580,14 @@ public class SWTApp
         return downloadTableViewer;
     }
 
-	public Text getBannerText() {
-		return bannerText;
-	}
+    public Text getBannerText()
+    {
+        return bannerText;
+    }
+
+    public Label getLblVersion()
+    {
+        return lblVersion;
+    }
+
 }

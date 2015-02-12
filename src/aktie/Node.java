@@ -55,7 +55,7 @@ public class Node
         netCallback = nc;
         conCallback = cc;
         network = net;
-        settings = new Settings(nodedir);
+        settings = new Settings ( nodedir );
         File idxdir = new File ( nodedir + File.separator + "index" );
         index = new Index();
         index.setIndexdir ( idxdir );
@@ -142,8 +142,9 @@ public class Node
         conMan.closeAllConnections();
     }
 
-	public Settings getSettings() {
-		return settings;
-	}
+    public Settings getSettings()
+    {
+        return settings;
+    }
 
 }

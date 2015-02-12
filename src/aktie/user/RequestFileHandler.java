@@ -411,7 +411,16 @@ public class RequestFileHandler
                     priority = ( int ) prl;
                 }
 
+                boolean upgrade = false;
+                String upstr = hasfile.getPrivate ( CObj.UPGRADEFLAG );
+
+                if ( "true".equals ( upstr ) )
+                {
+                    upgrade = true;
+                }
+
                 RequestFile rf = new RequestFile();
+                rf.setUpgrade ( upgrade );
                 rf.setCommunityId ( hasfile.getString ( CObj.COMMUNITYID ) );
                 rf.setFileSize ( hasfile.getNumber ( CObj.FILESIZE ) );
                 rf.setFragmentDigest ( hasfile.getString ( CObj.FRAGDIGEST ) );

@@ -457,6 +457,12 @@ public class TestBasic
         while ( df0 == null || df0.getFragsComplete() < df0.getFragsTotal() )
         {
             o0 = pollForData ( Tn1 );
+
+            while ( ! ( o0 instanceof RequestFile ) )
+            {
+                o0 = pollForData ( Tn1 );
+            }
+
             assertNotNull ( o0 );
             assertTrue ( o0 instanceof RequestFile );
             df0 = ( RequestFile ) o0;

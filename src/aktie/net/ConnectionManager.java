@@ -735,8 +735,10 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                     hf.pushString ( CObj.FILEDIGEST, rf.getWholeDigest() );
                                     hf.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
                                     hf.pushPrivate ( CObj.LOCALFILE, rf.getLocalFile() );
+                                    hf.pushPrivate ( CObj.UPGRADEFLAG, rf.isUpgrade() ? "true" : "false" );
                                     hfc.createHasFile ( hf );
                                     hfc.updateFileInfo ( hf );
+                                    callback.update ( hf );
                                 }
 
                             }
