@@ -27,19 +27,19 @@ public class Wrapper
         System.out.println ( "SYS: " + systype );
         //Test if rundir exists.
         File f = new File ( RUNDIR );
-        
+
         boolean setstartonfirst = false;
         boolean usesemi = false;
 
-        if ( systype.startsWith ( "Windows" ) ) 
+        if ( systype.startsWith ( "Windows" ) )
         {
-        	usesemi = true;
-        }        
-        
+            usesemi = true;
+        }
+
         if ( !f.exists() )
         {
             unZipIt();
-            
+
             List<String> cmd = new LinkedList<String>();
             cmd.add ( "java" );
             cmd.add ( "-version" );
@@ -48,59 +48,79 @@ public class Wrapper
             pb.command ( cmd );
 
             boolean is64bit = false;
-            
+
             try
             {
-                
-            	Matcher m = Pattern.compile ( "64-Bit" ).matcher ( "" );
-            	Process pc = pb.start();
+
+                Matcher m = Pattern.compile ( "64-Bit" ).matcher ( "" );
+                Process pc = pb.start();
                 BufferedReader br = new BufferedReader ( new InputStreamReader ( pc.getInputStream () ) );
                 String ln = br.readLine ();
+
                 while ( ln != null )
                 {
-                	m.reset ( ln );
-                	if ( m.find() ) 
-                	{
-                		is64bit = true;
-                	}
-                	
-                	ln = br.readLine ();
-                	
+                    m.reset ( ln );
+
+                    if ( m.find() )
+                    {
+                        is64bit = true;
+                    }
+
+                    ln = br.readLine ();
+
                 }
-                
+
             }
-            
-            catch ( Exception e ) 
+
+            catch ( Exception e )
             {
-            	e.printStackTrace();
+                e.printStackTrace();
+            }
+
+            if ( systype.startsWith ( "Linux" ) )
+            {
+                if ( is64bit )
+                {
+                    File sfile = new File ( RUNDIR + File.separator + "swt" + File.separator + "swt_linux_64.jar" );
+                    File destfile = new File ( RUNDIR + File.separator + "lib" + File.separator + "swt_linux_64.jar" );
+                    sfile.renameTo ( destfile );
+                }
+
+                else
+                {
+                    File sfile = new File ( RUNDIR + File.separator + "swt" + File.separator + "swt_linux.jar" );
+                    File destfile = new File ( RUNDIR + File.separator + "lib" + File.separator + "swt_linux.jar" );
+                    sfile.renameTo ( destfile );
+                }
+
             }
 
             if ( "Mac OS X".equals ( systype ) )
             {
-            	setstartonfirst = true;
+                setstartonfirst = true;
                 File sfile = new File ( RUNDIR + File.separator + "swt" + File.separator + "swt_osx.jar" );
                 File destfile = new File ( RUNDIR + File.separator + "lib" + File.separator + "swt_osx.jar" );
                 sfile.renameTo ( destfile );
             }
-            
-            if ( systype.startsWith ( "Windows" ) ) 
+
+            if ( systype.startsWith ( "Windows" ) )
             {
-            	if ( is64bit ) 
-            	{
+                if ( is64bit )
+                {
                     File sfile = new File ( RUNDIR + File.separator + "swt" + File.separator + "swt_win_64.jar" );
                     File destfile = new File ( RUNDIR + File.separator + "lib" + File.separator + "swt_win_64.jar" );
                     sfile.renameTo ( destfile );
-            	}
-            	
-            	else
-            	{
+                }
+
+                else
+                {
                     File sfile = new File ( RUNDIR + File.separator + "swt" + File.separator + "swt_win.jar" );
                     File destfile = new File ( RUNDIR + File.separator + "lib" + File.separator + "swt_win.jar" );
                     sfile.renameTo ( destfile );
-            	}
+                }
 
             }
-            
+
         }
 
         if ( !f.isDirectory() )
@@ -155,32 +175,33 @@ public class Wrapper
         //java -XstartOnFirstThread -cp aktie.jar:aktie/lib/*:org.eclipse.swt/swt.jar aktie.gui.SWTApp aktie_node
         List<String> cmd = new LinkedList<String>();
         cmd.add ( "java" );
+
         if ( setstartonfirst )
         {
-        	cmd.add ( "-XstartOnFirstThread" );
+            cmd.add ( "-XstartOnFirstThread" );
         }
-        
+
         cmd.add ( "-cp" );
         StringBuilder sb = new StringBuilder();
         File ll[] = libd.listFiles();
 
         if ( ll.length > 0 )
         {
-        	
+
             sb.append ( ll[0] );
 
             for ( int c = 1; c < ll.length; c++ )
             {
-            	if ( usesemi )
-            	{
+                if ( usesemi )
+                {
                     sb.append ( ";" );
-            	}
-            	
-            	else 
-            	{
-            		sb.append ( ":" );
-            	}
-            	
+                }
+
+                else
+                {
+                    sb.append ( ":" );
+                }
+
                 sb.append ( ll[c] );
             }
 

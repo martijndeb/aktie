@@ -1008,28 +1008,28 @@ public class SWTApp
         }
 
     }
-    
-    
+
+
     private I2PNet i2pnet;
 
     private void startNode()
     {
-    	
-    	
+
+
         Logger log = Logger.getLogger ( "aktie" );
         log.setLevel ( Level.WARNING );
 
         try
         {
-        	splash.setProgress("Starting I2P", 20);
-        	
-        	// new RawNet ( new File ( nodeDir ) )
-        	i2pnet = new I2PNet(nodeDir);
-        	i2pnet.waitUntilReady();
-        	
-        	splash.setProgress("Loading node data.", 40);
-        	
-        	node = new Node ( nodeDir, i2pnet, usrcallback,
+            splash.setProgress ( "Starting I2P", 20 );
+
+            // new RawNet ( new File ( nodeDir ) )
+            i2pnet = new I2PNet ( nodeDir );
+            i2pnet.waitUntilReady();
+
+            splash.setProgress ( "Loading node data.", 40 );
+
+            node = new Node ( nodeDir, i2pnet, usrcallback,
                               netcallback, concallback );
             identSubTreeModel = new IdentitySubTreeModel ( node.getIndex() );
             identTreeViewer.setContentProvider ( new IdentitySubTreeProvider() );
@@ -1100,9 +1100,12 @@ public class SWTApp
     public void closeNode()
     {
         node.close();
-        if (i2pnet != null) {
-        	i2pnet.exit();
+
+        if ( i2pnet != null )
+        {
+            i2pnet.exit();
         }
+
     }
 
     /**
@@ -1110,21 +1113,21 @@ public class SWTApp
     */
     public void open()
     {
-    	splash = new AktieSplash ( nodeDir );
-    	splash.showScreen ();
-    	
+        splash = new AktieSplash ( nodeDir );
+        splash.showScreen ();
+
         Display.setAppName ( "aktie" );
         Display display = Display.getDefault();
         createContents();
         shell.open();
         shell.layout();
         startNode();
-        splash.setProgress("Loading screen", 80);
+        splash.setProgress ( "Loading screen", 80 );
         createDialogs();
         exportCommunities();
 
         splash.close();
-        
+
         while ( !shell.isDisposed() )
         {
             if ( !display.readAndDispatch() )

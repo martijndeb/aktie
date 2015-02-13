@@ -443,7 +443,11 @@ public class CocoaUIEnhancer extends CocoaUtil implements IStartup
                 NSMenuItem quitMenuItem = ( NSMenuItem ) invokeMethod ( NSMenu.class, appMenu,
                                           "itemAtIndex", new Object[] { wrapPointer ( kQuitMenuItem ) } );
 
-                quitMenuItem.setTitle ( NSString.stringWith ( fQuitActionName ) );
+                if ( quitMenuItem != null )
+                {
+                    quitMenuItem.setTitle ( NSString.stringWith ( fQuitActionName ) );
+                }
+
             }
 
             // enable pref menu
@@ -468,7 +472,8 @@ public class CocoaUIEnhancer extends CocoaUtil implements IStartup
             // theoretically, one of
             // SecurityException,Illegal*Exception,InvocationTargetException,NoSuch*Exception
             // not expected to happen at all.
-            log ( e );
+            //log ( e );
+            e.printStackTrace();
         }
 
     }
