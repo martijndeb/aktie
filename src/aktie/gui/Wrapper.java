@@ -1,12 +1,16 @@
 package aktie.gui;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -23,18 +27,80 @@ public class Wrapper
         System.out.println ( "SYS: " + systype );
         //Test if rundir exists.
         File f = new File ( RUNDIR );
+        
+        boolean setstartonfirst = false;
+        boolean usesemi = false;
 
+        if ( systype.startsWith ( "Windows" ) ) 
+        {
+        	usesemi = true;
+        }        
+        
         if ( !f.exists() )
         {
             unZipIt();
+            
+            List<String> cmd = new LinkedList<String>();
+            cmd.add ( "java" );
+            cmd.add ( "-version" );
+            ProcessBuilder pb = new ProcessBuilder();
+            pb.redirectErrorStream ( true );
+            pb.command ( cmd );
+
+            boolean is64bit = false;
+            
+            try
+            {
+                
+            	Matcher m = Pattern.compile ( "64-Bit" ).matcher ( "" );
+            	Process pc = pb.start();
+                BufferedReader br = new BufferedReader ( new InputStreamReader ( pc.getInputStream () ) );
+                String ln = br.readLine ();
+                while ( ln != null )
+                {
+                	m.reset ( ln );
+                	if ( m.find() ) 
+                	{
+                		is64bit = true;
+                	}
+                	
+                	ln = br.readLine ();
+                	
+                }
+                
+            }
+            
+            catch ( Exception e ) 
+            {
+            	e.printStackTrace();
+            }
 
             if ( "Mac OS X".equals ( systype ) )
             {
+            	setstartonfirst = true;
                 File sfile = new File ( RUNDIR + File.separator + "swt" + File.separator + "swt_osx.jar" );
                 File destfile = new File ( RUNDIR + File.separator + "lib" + File.separator + "swt_osx.jar" );
                 sfile.renameTo ( destfile );
             }
+            
+            if ( systype.startsWith ( "Windows" ) ) 
+            {
+            	if ( is64bit ) 
+            	{
+                    File sfile = new File ( RUNDIR + File.separator + "swt" + File.separator + "swt_win_64.jar" );
+                    File destfile = new File ( RUNDIR + File.separator + "lib" + File.separator + "swt_win_64.jar" );
+                    sfile.renameTo ( destfile );
+            	}
+            	
+            	else
+            	{
+                    File sfile = new File ( RUNDIR + File.separator + "swt" + File.separator + "swt_win.jar" );
+                    File destfile = new File ( RUNDIR + File.separator + "lib" + File.separator + "swt_win.jar" );
+                    sfile.renameTo ( destfile );
+            	}
 
+            }
+            
         }
 
         if ( !f.isDirectory() )
@@ -89,18 +155,32 @@ public class Wrapper
         //java -XstartOnFirstThread -cp aktie.jar:aktie/lib/*:org.eclipse.swt/swt.jar aktie.gui.SWTApp aktie_node
         List<String> cmd = new LinkedList<String>();
         cmd.add ( "java" );
-        cmd.add ( "-XstartOnFirstThread" );
+        if ( setstartonfirst )
+        {
+        	cmd.add ( "-XstartOnFirstThread" );
+        }
+        
         cmd.add ( "-cp" );
         StringBuilder sb = new StringBuilder();
         File ll[] = libd.listFiles();
 
         if ( ll.length > 0 )
         {
+        	
             sb.append ( ll[0] );
 
             for ( int c = 1; c < ll.length; c++ )
             {
-                sb.append ( ":" );
+            	if ( usesemi )
+            	{
+                    sb.append ( ";" );
+            	}
+            	
+            	else 
+            	{
+            		sb.append ( ":" );
+            	}
+            	
                 sb.append ( ll[c] );
             }
 

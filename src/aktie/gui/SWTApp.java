@@ -22,10 +22,11 @@ import aktie.data.CObj;
 import aktie.data.RequestFile;
 import aktie.gui.IdentitySubTreeProvider.TreeIdentity;
 import aktie.gui.IdentitySubTreeProvider.TreeSubscription;
+import aktie.i2p.I2PNet;
 import aktie.index.CObjList;
 import aktie.net.ConnectionListener;
 import aktie.net.ConnectionThread;
-import aktie.net.RawNet;
+//import aktie.net.RawNet;
 import aktie.user.RequestFileHandler;
 
 import org.apache.lucene.search.Sort;
@@ -76,6 +77,7 @@ public class SWTApp
     public static String VERSION = "version 0.0.0";
 
     private ConnectionCallback concallback = new ConnectionCallback();
+    private AktieSplash splash;
 
     class ConnectionColumnId extends ColumnLabelProvider
     {
@@ -1006,15 +1008,28 @@ public class SWTApp
         }
 
     }
+    
+    
+    private I2PNet i2pnet;
 
     private void startNode()
     {
+    	
+    	
         Logger log = Logger.getLogger ( "aktie" );
         log.setLevel ( Level.WARNING );
 
         try
         {
-            node = new Node ( nodeDir, new RawNet ( new File ( nodeDir ) ), usrcallback,
+        	splash.setProgress("Starting I2P", 20);
+        	
+        	// new RawNet ( new File ( nodeDir ) )
+        	i2pnet = new I2PNet(nodeDir);
+        	i2pnet.waitUntilReady();
+        	
+        	splash.setProgress("Loading node data.", 40);
+        	
+        	node = new Node ( nodeDir, i2pnet, usrcallback,
                               netcallback, concallback );
             identSubTreeModel = new IdentitySubTreeModel ( node.getIndex() );
             identTreeViewer.setContentProvider ( new IdentitySubTreeProvider() );
@@ -1085,6 +1100,9 @@ public class SWTApp
     public void closeNode()
     {
         node.close();
+        if (i2pnet != null) {
+        	i2pnet.exit();
+        }
     }
 
     /**
@@ -1092,15 +1110,21 @@ public class SWTApp
     */
     public void open()
     {
+    	splash = new AktieSplash ( nodeDir );
+    	splash.showScreen ();
+    	
         Display.setAppName ( "aktie" );
         Display display = Display.getDefault();
         createContents();
         shell.open();
         shell.layout();
         startNode();
+        splash.setProgress("Loading screen", 80);
         createDialogs();
         exportCommunities();
 
+        splash.close();
+        
         while ( !shell.isDisposed() )
         {
             if ( !display.readAndDispatch() )
