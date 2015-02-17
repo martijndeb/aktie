@@ -411,7 +411,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             synchronized ( destinations )
             {
-                dt = destinations.get ( rf.getRequestId() );
+                dt = destinations.get ( mymap.get ( rf.getRequestId() ).getString ( CObj.DEST ) );
             }
 
             if ( dt != null )

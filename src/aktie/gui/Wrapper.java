@@ -36,6 +36,11 @@ public class Wrapper
             usesemi = true;
         }
 
+        if ( "Mac OS X".equals ( systype ) )
+        {
+            setstartonfirst = true;
+        }
+
         if ( !f.exists() )
         {
             unZipIt();
@@ -97,7 +102,6 @@ public class Wrapper
 
             if ( "Mac OS X".equals ( systype ) )
             {
-                setstartonfirst = true;
                 File sfile = new File ( RUNDIR + File.separator + "swt" + File.separator + "swt_osx.jar" );
                 File destfile = new File ( RUNDIR + File.separator + "lib" + File.separator + "swt_osx.jar" );
                 sfile.renameTo ( destfile );

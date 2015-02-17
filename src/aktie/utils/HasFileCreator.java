@@ -232,6 +232,7 @@ public class HasFileCreator
             long num = m.getLastFileNumber();
             num++;
             o.pushNumber ( CObj.SEQNUM, num );
+            o.pushPrivate ( CObj.MINE, "true" );
             m.setLastFileNumber ( num );
             s.merge ( m );
             s.getTransaction().commit();

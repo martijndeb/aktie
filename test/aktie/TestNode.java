@@ -985,7 +985,7 @@ public class TestNode
 
             try
             {
-                Thread.sleep ( 120000 );
+                Thread.sleep ( 180000 );
             }
 
             catch ( InterruptedException e )
@@ -1005,7 +1005,23 @@ public class TestNode
 
             try
             {
-                Thread.sleep ( 10000 );
+                Thread.sleep ( 20000 );
+            }
+
+            catch ( InterruptedException e )
+            {
+                e.printStackTrace();
+            }
+
+
+            n0.enqueue ( hfupdate );
+            n1.enqueue ( hfupdate );
+            n2.enqueue ( hfupdate );
+            n3.enqueue ( hfupdate );
+
+            try
+            {
+                Thread.sleep ( 20000 );
             }
 
             catch ( InterruptedException e )

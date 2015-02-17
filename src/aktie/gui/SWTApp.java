@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,13 +37,18 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.custom.PaintObjectEvent;
+import org.eclipse.swt.custom.PaintObjectListener;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -64,6 +71,11 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.graphics.GlyphMetrics;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Label;
@@ -74,7 +86,7 @@ import org.eclipse.jface.viewers.TableViewer;
 public class SWTApp
 {
 
-    public static String VERSION = "version 0.0.0";
+    public static String VERSION = "version 0.0.2";
 
     private ConnectionCallback concallback = new ConnectionCallback();
     private AktieSplash splash;
@@ -574,6 +586,11 @@ public class SWTApp
                                         String upfile = nodedir.getParentFile() +
                                                         File.separator + "upgrade" +
                                                         File.separator + fname;
+
+                                        File f = new File ( upfile );
+
+                                        if ( f.exists() ) { f.delete(); }
+
                                         co.pushPrivate ( CObj.LOCALFILE, upfile );
                                         co.pushPrivate ( CObj.UPGRADEFLAG, "true" ); //confirm upgrade
                                         //the user to restart his node.
@@ -889,29 +906,34 @@ public class SWTApp
 
     }
 
+    private void updateAll()
+    {
+        CObj u = new CObj();
+        u.setType ( CObj.USR_IDENTITY_UPDATE );
+        getNode().enqueue ( u );
+        u = new CObj();
+        u.setType ( CObj.USR_COMMUNITY_UPDATE );
+        getNode().enqueue ( u );
+        u = new CObj();
+        u.setType ( CObj.USR_MEMBER_UPDATE );
+        getNode().enqueue ( u );
+        u = new CObj();
+        u.setType ( CObj.USR_SUB_UPDATE );
+        getNode().enqueue ( u );
+        u = new CObj();
+        u.setType ( CObj.USR_HASFILE_UPDATE );
+        getNode().enqueue ( u );
+        u = new CObj();
+        u.setType ( CObj.USR_POST_UPDATE );
+        getNode().enqueue ( u );
+    }
+
     class ManualUpdate implements SelectionListener
     {
         @Override
         public void widgetSelected ( SelectionEvent e )
         {
-            CObj u = new CObj();
-            u.setType ( CObj.USR_IDENTITY_UPDATE );
-            getNode().enqueue ( u );
-            u = new CObj();
-            u.setType ( CObj.USR_COMMUNITY_UPDATE );
-            getNode().enqueue ( u );
-            u = new CObj();
-            u.setType ( CObj.USR_MEMBER_UPDATE );
-            getNode().enqueue ( u );
-            u = new CObj();
-            u.setType ( CObj.USR_SUB_UPDATE );
-            getNode().enqueue ( u );
-            u = new CObj();
-            u.setType ( CObj.USR_HASFILE_UPDATE );
-            getNode().enqueue ( u );
-            u = new CObj();
-            u.setType ( CObj.USR_POST_UPDATE );
-            getNode().enqueue ( u );
+            updateAll();
         }
 
         @Override
@@ -1097,6 +1119,30 @@ public class SWTApp
 
     }
 
+    private void startUpdateTimer()
+    {
+        Timer t = new Timer ( "Update timer", true );
+        t.schedule ( new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    updateAll();
+                }
+
+                catch ( Exception e )
+                {
+                    e.printStackTrace();
+                }
+
+            }
+
+        }, 0, 20L * 60L * 1000L );
+
+    }
+
     public void closeNode()
     {
         node.close();
@@ -1127,6 +1173,8 @@ public class SWTApp
         exportCommunities();
 
         splash.close();
+
+        startUpdateTimer();
 
         while ( !shell.isDisposed() )
         {
@@ -1484,6 +1532,7 @@ public class SWTApp
         membersDialog.create();
         FileListContentProvider fc = ( FileListContentProvider ) fileTableViewer.getContentProvider();
         fc.setHH2Session ( getNode().getSession() );
+        localFileColumnProvider.setIndex ( node.getIndex() );
     }
 
     private void exportCommunities()
@@ -1517,6 +1566,32 @@ public class SWTApp
         }
 
     }
+
+    public static int MAXIMGWIDTH = 400;
+
+    private void addImage ( Image image, int offset )
+    {
+        StyleRange style = new StyleRange ();
+        style.start = offset;
+        style.length = 1;
+        style.data = image;
+        Rectangle rect = image.getBounds();
+        int w = rect.width;
+        int h = rect.height;
+
+        if ( w > MAXIMGWIDTH )
+        {
+            h = h * MAXIMGWIDTH / w;
+            w = MAXIMGWIDTH;
+        }
+
+        style.metrics = new GlyphMetrics ( h, 0, w );
+        postText.setStyleRange ( style );
+    }
+
+
+    private Composite composite_6;
+    private LocalFileColumnLabelProvider localFileColumnProvider;
 
     /**
         Create contents of the window.
@@ -1864,7 +1939,7 @@ public class SWTApp
             {
                 if ( selectedIdentity != null && selectedCommunity != null )
                 {
-                    newPostDialog.open ( selectedIdentity, selectedCommunity );
+                    newPostDialog.open ( selectedIdentity, selectedCommunity, null );
                 }
 
             }
@@ -2022,13 +2097,50 @@ public class SWTApp
         TableViewerColumn col3 = new TableViewerColumn ( postTableViewer, SWT.NONE );
         col3.getColumn().setText ( "File" );
         col3.getColumn().setWidth ( 100 );
-        col3.setLabelProvider ( new CObjListStringColumnLabelProvider ( CObj.FILENAME ) );
+        col3.setLabelProvider ( new CObjListStringColumnLabelProvider ( CObj.NAME ) );
         col3.getColumn().addSelectionListener ( new SelectionListener()
         {
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
-                String ns = CObj.docString ( CObj.FILENAME );
+                String ns = CObj.docString ( CObj.NAME );
+
+                if ( ns.equals ( sortPostField1 ) )
+                {
+                    sortPostReverse = !sortPostReverse;
+                }
+
+                else
+                {
+                    sortPostField1 = ns;
+                    sortPostReverse = false;
+                    sortPostType1 = SortField.Type.STRING;
+                    sortPostField2 = null;
+                    sortPostType2 = null;
+                }
+
+                postSearch();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        localFileColumnProvider = new LocalFileColumnLabelProvider();
+
+        TableViewerColumn col4 = new TableViewerColumn ( postTableViewer, SWT.NONE );
+        col4.getColumn().setText ( "Local File" );
+        col4.getColumn().setWidth ( 100 );
+        col4.setLabelProvider ( localFileColumnProvider );
+        col4.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                String ns = CObj.docPrivate ( CObj.LOCALFILE );
 
                 if ( ns.equals ( sortPostField1 ) )
                 {
@@ -2074,7 +2186,77 @@ public class SWTApp
                             CObjListArrayElement selm = ( CObjListArrayElement ) selo;
                             displayedPost = selm.getCObj();
                             String msgdisp = getPostString ( displayedPost );
-                            postText.setText ( msgdisp );
+                            String lines = "\n==========================\n=";
+                            String msg = msgdisp + lines;
+                            postText.setText ( msg );
+
+                            //p.pushNumber(CObj.FILESIZE, fileRef.getNumber ( CObj.FILESIZE ) );
+                            //p.pushString(CObj.FRAGDIGEST, fileRef.getString ( CObj.FRAGDIGEST ) );
+                            //p.pushNumber(CObj.FRAGSIZE, fileRef.getNumber ( CObj.FRAGSIZE ) );
+                            //p.pushNumber(CObj.FRAGNUMBER, fileRef.getNumber(CObj.FRAGNUMBER ) );
+                            //p.pushString(CObj.FILEDIGEST, fileRef.getString(CObj.FILEDIGEST ) );
+
+                            //String comid, String wdig, String pdig
+                            String comid = displayedPost.getString ( CObj.COMMUNITYID );
+                            String wdig = displayedPost.getString ( CObj.FILEDIGEST );
+                            String pdig = displayedPost.getString ( CObj.FRAGDIGEST );
+                            Long fsize = displayedPost.getNumber ( CObj.FILESIZE );
+
+                            System.out.println ( "FSIZE: " + fsize );
+
+                            if ( comid != null && wdig != null && pdig != null && fsize != null )
+                            {
+                                CObjList clst = node.getIndex().getMyHasFiles ( comid, wdig, pdig );
+
+                                if ( clst != null )
+                                {
+                                    if ( clst.size() > 0 )
+                                    {
+                                        try
+                                        {
+                                            CObj mine = clst.get ( 0 );
+                                            String lf = mine.getPrivate ( CObj.LOCALFILE );
+                                            System.out.println ( "LF: " + lf );
+
+                                            String imgtypes[] = new String[] {".jpg",
+                                                                              ".jpeg", ".gif", ".png", ".bmp", ".tiff",
+                                                                              ".JPG",
+                                                                              ".JPEG", ".GIF", ".PNG", ".BMP", ".TIFF"
+                                                                             };
+
+                                            if ( lf != null && fsize < 5L * 1024L * 1024L )
+                                            {
+                                                boolean showit = false;
+
+                                                for ( int c = 0; c < imgtypes.length && !showit; c++ )
+                                                {
+                                                    showit = lf.endsWith ( imgtypes[c] );
+                                                }
+
+                                                if ( showit )
+                                                {
+                                                    Display defdesp = Display.getDefault();
+                                                    Image image = new Image ( defdesp, lf );
+
+                                                    addImage ( image, msg.length() - 1 );
+                                                }
+
+                                            }
+
+                                        }
+
+                                        catch ( Exception e2 )
+                                        {
+                                            e2.printStackTrace();
+                                        }
+
+                                    }
+
+                                }
+
+                                clst.close();
+                            }
+
                         }
 
                     }
@@ -2085,10 +2267,135 @@ public class SWTApp
 
         } );
 
-        Composite composite_6 = new Composite ( sashForm_1, SWT.NONE );
-        composite_6.setLayout ( new FillLayout ( SWT.HORIZONTAL ) );
+        Menu menu_5 = new Menu ( postTable );
+        postTable.setMenu ( menu_5 );
 
-        postText = new StyledText ( composite_6, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | SWT.READ_ONLY );
+        MenuItem mntmDownloadFile2 = new MenuItem ( menu_5, SWT.NONE );
+        mntmDownloadFile2.setText ( "Download File" );
+        mntmDownloadFile2.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                if ( selectedIdentity != null )
+                {
+                    IStructuredSelection sel = ( IStructuredSelection ) postTableViewer.getSelection();
+                    @SuppressWarnings ( "rawtypes" )
+                    Iterator i = sel.iterator();
+
+                    if ( i.hasNext() )
+                    {
+                        Object selo = i.next();
+
+                        if ( selo instanceof CObjListArrayElement )
+                        {
+                            CObjListArrayElement ae = ( CObjListArrayElement ) selo;
+                            CObj fr = ae.getCObj();
+                            fr.setType ( CObj.USR_DOWNLOAD_FILE );
+                            fr.pushString ( CObj.CREATOR, selectedIdentity.getId() );
+                            getNode().enqueue ( fr );
+                        }
+
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        composite_6 = new Composite ( sashForm_1, SWT.NONE );
+        composite_6.setLayout ( new GridLayout() );
+
+        postText = new StyledText ( composite_6, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL );
+        postText.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, true ) );
+
+        // use a verify listener to dispose the images
+        postText.addVerifyListener ( new VerifyListener()
+        {
+            public void verifyText ( VerifyEvent event )
+            {
+                if ( event.start == event.end ) { return; }
+
+                String text = postText.getText(); //getText(event.start, event.end - 1);
+                int index = text.length() - 1;
+                StyleRange style = postText.getStyleRangeAtOffset ( index );
+
+                if ( style != null )
+                {
+                    Image image = ( Image ) style.data;
+
+                    if ( image != null ) { image.dispose(); }
+
+                }
+
+            }
+
+        } );
+
+        // draw images on paint event
+        postText.addPaintObjectListener ( new PaintObjectListener()
+        {
+            @Override
+            public void paintObject ( PaintObjectEvent event )
+            {
+                StyleRange style = event.style;
+                Image image = ( Image ) style.data;
+
+                if ( !image.isDisposed() )
+                {
+                    int x = event.x;
+                    int y = event.y + event.ascent - style.metrics.ascent;
+                    int w = image.getBounds().width;
+                    int h = image.getBounds().height;
+                    int sw = w;
+                    int sh = h;
+
+                    if ( sw > MAXIMGWIDTH )
+                    {
+                        sh = sh * MAXIMGWIDTH / sw;
+                        sw = MAXIMGWIDTH;
+                    }
+
+                    event.gc.drawImage ( image, 0, 0,
+                                         image.getBounds().width, image.getBounds().height,
+                                         x, y, sw, sh );
+                }
+
+            }
+
+        } );
+
+        postText.addListener ( SWT.Dispose, new Listener()
+        {
+            public void handleEvent ( Event event )
+            {
+                StyleRange[] styles = postText.getStyleRanges();
+
+                for ( int i = 0; i < styles.length; i++ )
+                {
+                    StyleRange style = styles[i];
+
+                    if ( style.data != null )
+                    {
+                        Image image = ( Image ) style.data;
+
+                        if ( image != null ) { image.dispose(); }
+
+                    }
+
+                }
+
+            }
+
+        } );
+
+
         sashForm_1.setWeights ( new int[] {1, 1} );
 
         TabItem tbtmFiles = new TabItem ( tabFolder_1, SWT.NONE );
@@ -2316,6 +2623,44 @@ public class SWTApp
                             fr.setType ( CObj.USR_DOWNLOAD_FILE );
                             fr.pushString ( CObj.CREATOR, selectedIdentity.getId() );
                             getNode().enqueue ( fr );
+                        }
+
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        MenuItem mntmCreatePost = new MenuItem ( menu_3, SWT.NONE );
+        mntmCreatePost.setText ( "Attach to Post" );
+        mntmCreatePost.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                if ( selectedIdentity != null && selectedCommunity != null )
+                {
+                    IStructuredSelection sel = ( IStructuredSelection ) fileTableViewer.getSelection();
+                    @SuppressWarnings ( "rawtypes" )
+                    Iterator i = sel.iterator();
+
+                    if ( i.hasNext() )
+                    {
+                        Object selo = i.next();
+
+                        if ( selo instanceof CObjListArrayElement )
+                        {
+                            CObjListArrayElement ae = ( CObjListArrayElement ) selo;
+                            CObj fr = ae.getCObj();
+                            newPostDialog.open ( selectedIdentity, selectedCommunity, fr );
+
                         }
 
                     }

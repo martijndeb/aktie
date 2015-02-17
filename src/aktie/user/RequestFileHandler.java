@@ -130,7 +130,8 @@ public class RequestFileHandler
             s.getTransaction().begin();
             RequestFile r = ( RequestFile ) s.get ( RequestFile.class, rf.getId() );
 
-            if ( RequestFile.REQUEST_FRAG_LIST == r.getState() )
+            if ( RequestFile.REQUEST_FRAG_LIST == r.getState() ||
+                    RequestFile.REQUEST_FRAG_LIST_SNT == r.getState() )
             {
                 r.setState ( RequestFile.REQUEST_FRAG_LIST_SNT );
                 r.setLastRequest ( System.currentTimeMillis() );
@@ -187,7 +188,7 @@ public class RequestFileHandler
         {
             s = session.getSession();
             s.getTransaction().begin();
-            Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.requestId = :rid AND"
+            Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.requestId = :rid AND "
                                       + "(x.state = :st OR "
                                       + "   (x.state = :sts AND x.lastRequest < :rt) "
                                       + ") ORDER BY "
@@ -395,10 +396,15 @@ public class RequestFileHandler
                     String filename = hasfile.getString ( CObj.NAME );
                     lf = new File ( downloadDir.getPath() + File.separator + filename );
 
-                    if ( !lf.exists() )
+                    int idx = 0;
+
+                    while ( lf.exists() )
                     {
-                        lf.createNewFile();
+                        lf = new File ( downloadDir.getPath() + File.separator + filename + "." + idx );
+                        idx++;
                     }
+
+                    lf.createNewFile();
 
                 }
 

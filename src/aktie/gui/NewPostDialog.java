@@ -27,6 +27,7 @@ public class NewPostDialog extends Dialog
     private CObj community;
     private SWTApp app;
     private StyledText postBody;
+    private CObj fileRef;
 
     /**
         Create the dialog.
@@ -58,9 +59,10 @@ public class NewPostDialog extends Dialog
 
     }
 
-    public void open ( CObj id, CObj comid )
+    public void open ( CObj id, CObj comid, CObj fileref )
     {
         selectIdentity ( id, comid );
+        fileRef = fileref;
         super.open();
     }
 
@@ -137,6 +139,17 @@ public class NewPostDialog extends Dialog
             p.pushString ( CObj.SUBJECT, subject.getText() );
             p.pushNumber ( CObj.CREATEDON, ( new Date() ).getTime() );
             p.pushText ( CObj.BODY, postBody.getText() );
+
+            if ( fileRef != null )
+            {
+                p.pushString ( CObj.NAME, fileRef.getString ( CObj.NAME ) );
+                p.pushNumber ( CObj.FILESIZE, fileRef.getNumber ( CObj.FILESIZE ) );
+                p.pushString ( CObj.FRAGDIGEST, fileRef.getString ( CObj.FRAGDIGEST ) );
+                p.pushNumber ( CObj.FRAGSIZE, fileRef.getNumber ( CObj.FRAGSIZE ) );
+                p.pushNumber ( CObj.FRAGNUMBER, fileRef.getNumber ( CObj.FRAGNUMBER ) );
+                p.pushString ( CObj.FILEDIGEST, fileRef.getString ( CObj.FILEDIGEST ) );
+            }
+
             app.getNode().enqueue ( p );
         }
 

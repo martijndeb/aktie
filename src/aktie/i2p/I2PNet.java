@@ -26,7 +26,17 @@ public class I2PNet  implements Net
             i2pdir.mkdirs();
         }
 
-        startI2P ();
+        if ( !testClient() )
+        {
+            System.out.println ( "No i2p found.  Starting router." );
+            startI2P ();
+        }
+
+        else
+        {
+            System.out.println ( "Router seems to be running already." );
+        }
+
     }
 
     private void startI2P ()

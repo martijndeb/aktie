@@ -742,6 +742,30 @@ public class Index
         return search ( bq, Integer.MAX_VALUE );
     }
 
+    public CObjList getMyHasFiles ( String comid, String wdig, String pdig )
+    {
+        BooleanQuery bq = new BooleanQuery();
+        Term typterm = new Term ( CObj.PARAM_TYPE, CObj.HASFILE );
+        bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
+
+        Term comterm = new Term ( CObj.docString ( CObj.COMMUNITYID ), comid );
+        bq.add ( new TermQuery ( comterm ), BooleanClause.Occur.MUST );
+
+        Term wdigterm = new Term ( CObj.docString ( CObj.FILEDIGEST ), wdig );
+        bq.add ( new TermQuery ( wdigterm ), BooleanClause.Occur.MUST );
+
+        Term pdigterm = new Term ( CObj.docString ( CObj.FRAGDIGEST ), pdig );
+        bq.add ( new TermQuery ( pdigterm ), BooleanClause.Occur.MUST );
+
+        Term shterm = new Term ( CObj.docString ( CObj.STILLHASFILE ), "true" );
+        bq.add ( new TermQuery ( shterm ), BooleanClause.Occur.MUST );
+
+        Term myterm = new Term ( CObj.docPrivate ( CObj.MINE ), "true" );
+        bq.add ( new TermQuery ( myterm ), BooleanClause.Occur.MUST );
+
+        return search ( bq, Integer.MAX_VALUE );
+    }
+
     public CObj getIdentHasFile ( String comid, String uid, String wdig, String pdig )
     {
         BooleanQuery bq = new BooleanQuery();
