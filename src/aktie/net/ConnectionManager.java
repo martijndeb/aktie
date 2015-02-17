@@ -197,7 +197,9 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                     if ( mydest != null )
                     {
                         DestinationThread dt = destinations.get ( mydest );
-                        dlst.add ( dt );
+                        if (dt != null) {
+                        	dlst.add ( dt );
+                        }
                     }
 
                 }

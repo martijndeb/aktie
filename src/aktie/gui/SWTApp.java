@@ -86,7 +86,9 @@ import org.eclipse.jface.viewers.TableViewer;
 public class SWTApp
 {
 
-    public static String VERSION = "version 0.0.2";
+    public static String VERSION = "version 0.0.3";
+    
+    public static String SUBSTR = "a";
 
     private ConnectionCallback concallback = new ConnectionCallback();
     private AktieSplash splash;
@@ -2202,8 +2204,6 @@ public class SWTApp
                             String pdig = displayedPost.getString ( CObj.FRAGDIGEST );
                             Long fsize = displayedPost.getNumber ( CObj.FILESIZE );
 
-                            System.out.println ( "FSIZE: " + fsize );
-
                             if ( comid != null && wdig != null && pdig != null && fsize != null )
                             {
                                 CObjList clst = node.getIndex().getMyHasFiles ( comid, wdig, pdig );
@@ -2216,7 +2216,6 @@ public class SWTApp
                                         {
                                             CObj mine = clst.get ( 0 );
                                             String lf = mine.getPrivate ( CObj.LOCALFILE );
-                                            System.out.println ( "LF: " + lf );
 
                                             String imgtypes[] = new String[] {".jpg",
                                                                               ".jpeg", ".gif", ".png", ".bmp", ".tiff",
