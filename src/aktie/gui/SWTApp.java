@@ -87,7 +87,7 @@ public class SWTApp
 {
 
     public static String VERSION = "version 0.0.3";
-    
+
     public static String SUBSTR = "a";
 
     private ConnectionCallback concallback = new ConnectionCallback();
