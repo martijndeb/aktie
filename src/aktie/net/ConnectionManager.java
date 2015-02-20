@@ -46,7 +46,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
     public static int MAX_CONNECTIONS = 10;
     public static long MIN_TIME_BETWEEN_CONNECTIONS = 5L * 60L * 1000L;
-    public static long MAX_TIME_WITH_NO_REQUESTS = 30L * 60L * 1000L;
+    public static long MAX_TIME_WITH_NO_REQUESTS = 120L * 60L * 1000L;
 
     public ConnectionManager ( HH2Session s, Index i, RequestFileHandler r, IdentityManager id,
                                GuiCallback cb )
@@ -571,6 +571,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             if ( ct.getLastMyRequest() < cuttime )
             {
+                log.info ( "Closing connection due to inactivity." );
                 ct.stop();
             }
 

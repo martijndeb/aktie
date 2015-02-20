@@ -4,6 +4,7 @@ import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.swt.graphics.Image;
 
+import aktie.data.CObj;
 import aktie.gui.IdentitySubTreeProvider.TreeIdentity;
 import aktie.gui.IdentitySubTreeProvider.TreeSubscription;
 
@@ -49,7 +50,15 @@ public class IdentitySubTreeLabelProvider implements ILabelProvider
         else if ( a instanceof TreeSubscription )
         {
             TreeSubscription ts = ( TreeSubscription ) a;
-            return ts.community.getPrivateDisplayName();
+            String scope = ts.community.getString ( CObj.SCOPE );
+            String name = ts.community.getPrivateDisplayName();
+
+            if ( CObj.SCOPE_PRIVATE.equals ( scope ) )
+            {
+                name = "* " + name;
+            }
+
+            return name;
         }
 
         return null;

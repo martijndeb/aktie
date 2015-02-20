@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.bouncycastle.crypto.digests.RIPEMD256Digest;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.jboss.logging.Logger;
 import org.json.JSONObject;
 
 import aktie.BatchProcessor;
@@ -33,6 +34,7 @@ import aktie.utils.HasFileCreator;
 
 public class ConnectionThread implements Runnable
 {
+    Logger log = Logger.getLogger ( "aktie" );
 
     public static int MAXQUEUESIZE = 100; //Long lists should be in CObjList each one could have open indexreader!
 
@@ -342,6 +344,15 @@ public class ConnectionThread implements Runnable
             outstream.flush();
         }
 
+        private void sendCObjNoFlush ( CObj c ) throws IOException
+        {
+            JSONObject ot = c.getJSON();
+            String os = ot.toString();
+            byte ob[] = os.getBytes ( "UTF-8" );
+            outBytes += ob.length;
+            outstream.write ( ob );
+        }
+
         @Override
         public void run()
         {
@@ -415,8 +426,10 @@ public class ConnectionThread implements Runnable
 
                             for ( int c = 0; c < len; c++ )
                             {
-                                sendCObj ( cl.get ( c ) );
+                                sendCObjNoFlush ( cl.get ( c ) );
                             }
+
+                            outstream.flush();
 
                             cl.close();
                         }
@@ -679,6 +692,8 @@ public class ConnectionThread implements Runnable
 
     public static long LONGESTLIST = 100000000;
 
+    private long listStartTime;
+
     @Override
     public void run()
     {
@@ -703,6 +718,9 @@ public class ConnectionThread implements Runnable
 
                         if ( lc > LONGESTLIST ) { stop(); }
 
+                        listStartTime = System.currentTimeMillis();
+                        log.info ( "STARTING LIST: List count: " + lc + "  time: " + listStartTime );
+
                         listCount = ( int ) lc;
                     }
 
@@ -726,6 +744,10 @@ public class ConnectionThread implements Runnable
 
                             currentList.add ( r );
                             listCount--;
+
+                            long ct = System.currentTimeMillis();
+                            long diff = ( ct - listStartTime ) / 1000L;
+                            log.info ( "LIST COUNT DOWN: " + listCount + " time: " + diff + " seconds." );
                         }
 
                         else

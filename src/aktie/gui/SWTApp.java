@@ -1005,6 +1005,7 @@ public class SWTApp
     {
         try
         {
+
             SWTApp window = new SWTApp();
 
             if ( args.length > 0 )
@@ -1041,7 +1042,7 @@ public class SWTApp
 
 
         Logger log = Logger.getLogger ( "aktie" );
-        log.setLevel ( Level.WARNING );
+        log.setLevel ( Level.INFO );
 
         try
         {
@@ -2676,7 +2677,7 @@ public class SWTApp
         } );
 
         TabItem tbtmDownloadds = new TabItem ( tabFolder, SWT.NONE );
-        tbtmDownloadds.setText ( "Downloadds" );
+        tbtmDownloadds.setText ( "Downloads" );
 
         Composite composite_10 = new Composite ( tabFolder, SWT.NONE );
         tbtmDownloadds.setControl ( composite_10 );
@@ -2807,6 +2808,34 @@ public class SWTApp
             {
                 IStructuredSelection sel = ( IStructuredSelection ) downloadTableViewer.getSelection();
                 downloadPriorityDialog.open ( sel );
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        MenuItem canceldl = new MenuItem ( menu_4, SWT.NONE );
+        canceldl.setText ( "Cancel download" );
+        canceldl.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                IStructuredSelection sel = ( IStructuredSelection ) downloadTableViewer.getSelection();
+
+                @SuppressWarnings ( "rawtypes" )
+                Iterator i = sel.iterator();
+
+                while ( i.hasNext() )
+                {
+                    RequestFile rf = ( RequestFile ) i.next();
+                    getNode().getFileHandler().cancelDownload ( rf );
+                    getUserCallback().update ( rf );
+                }
+
             }
 
             @Override

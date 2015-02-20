@@ -431,6 +431,10 @@ public class Index
             sb.append ( CObj.docText ( CObj.BODY ) );
             sb.append ( ":\"" );
             sb.append ( qstr );
+            sb.append ( "\" OR " );
+            sb.append ( CObj.docStringText ( CObj.NAME ) );
+            sb.append ( ":\"" );
+            sb.append ( qstr );
             sb.append ( "\"" );
             return search ( query, sb.toString(), Integer.MAX_VALUE, srt );
         }

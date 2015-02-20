@@ -29,6 +29,56 @@ public class RequestFileHandler
 
     }
 
+    public void cancelDownload ( RequestFile f )
+    {
+        Session s = null;
+
+        try
+        {
+            s = session.getSession();
+            s.getTransaction().begin();
+
+            RequestFile rf = ( RequestFile ) s.get ( RequestFile.class, f.getId() );
+            s.delete ( rf );
+
+            s.getTransaction().commit();
+            s.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+
+            if ( s != null )
+            {
+                try
+                {
+                    if ( s.getTransaction().isActive() )
+                    {
+                        s.getTransaction().rollback();
+                    }
+
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+                try
+                {
+                    s.close();
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+            }
+
+        }
+
+    }
+
     public void setPriority ( RequestFile f, int pri )
     {
         Session s = null;
