@@ -85,10 +85,9 @@ import org.eclipse.jface.viewers.TableViewer;
 
 public class SWTApp
 {
+    Logger log = Logger.getLogger ( "aktie" );
 
-    public static String VERSION = "version 0.0.3";
-
-    public static String SUBSTR = "a";
+    public static String VERSION = "version 0.0.7";
 
     private ConnectionCallback concallback = new ConnectionCallback();
     private AktieSplash splash;
@@ -466,6 +465,78 @@ public class SWTApp
 
     private NetCallback netcallback = new NetCallback();
 
+    private void checkDownloadUpgrade ( CObj co )
+    {
+        String creator = co.getString ( CObj.CREATOR );
+
+        if ( developerIdentity != null && creator != null &&
+                creator.equals ( developerIdentity.getId() ) )
+        {
+
+            String update = co.getString ( CObj.UPGRADEFLAG );
+            String fname = co.getString ( CObj.NAME );
+
+            if ( "true".equals ( update ) )
+            {
+                if ( doUpgrade )
+                {
+                    File nodedir = new File ( nodeDir );
+                    String upfile = nodedir.getParentFile() +
+                                    File.separator + "upgrade" +
+                                    File.separator + fname;
+
+                    File f = new File ( upfile );
+
+                    if ( f.exists() ) { f.delete(); }
+
+                    co.pushPrivate ( CObj.LOCALFILE, upfile );
+                    co.pushPrivate ( CObj.UPGRADEFLAG, "true" ); //confirm upgrade
+                    //the user to restart his node.
+                    co.setType ( CObj.USR_DOWNLOAD_FILE );
+                    co.pushString ( CObj.CREATOR, selectedIdentity.getId() );
+                    node.enqueue ( co );
+
+                    Display.getDefault().asyncExec ( new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            lblVersion.setText ( VERSION + "  Update downloading.." );
+                        }
+
+                    } );
+
+                }
+
+            }
+
+        }
+
+    }
+
+    private void checkUpgradeDownloadComplete ( CObj co )
+    {
+        // *Private* UPGRADEFLAG is set for our own HASFILE once
+        //we complete the download.
+        String upf = co.getPrivate ( CObj.UPGRADEFLAG );
+
+        if ( "true".equals ( upf ) )
+        {
+            log.info ( "Upgrade download completed. 1" );
+            Display.getDefault().asyncExec ( new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    lblVersion.setText ( VERSION + "   Update downloaded.  Please restart." );
+                }
+
+            } );
+
+        }
+
+    }
+
     class NetCallback implements GuiCallback
     {
         @Override
@@ -555,67 +626,8 @@ public class SWTApp
 
                             } );
 
-                            String upf = co.getPrivate ( CObj.UPGRADEFLAG );
-
-                            if ( "true".equals ( upf ) )
-                            {
-                                Display.getDefault().asyncExec ( new Runnable()
-                                {
-                                    @Override
-                                    public void run()
-                                    {
-                                        lblVersion.setText ( VERSION + "   Update downloaded.  Please restart." );
-                                    }
-
-                                } );
-
-                            }
-
-                            String creator = co.getString ( CObj.CREATOR );
-
-                            if ( developerIdentity != null && creator != null &&
-                                    creator.equals ( developerIdentity.getId() ) )
-                            {
-
-                                String update = co.getString ( CObj.UPGRADEFLAG );
-                                String fname = co.getString ( CObj.NAME );
-
-                                if ( "true".equals ( update ) )
-                                {
-                                    if ( doUpgrade )
-                                    {
-                                        File nodedir = new File ( nodeDir );
-                                        String upfile = nodedir.getParentFile() +
-                                                        File.separator + "upgrade" +
-                                                        File.separator + fname;
-
-                                        File f = new File ( upfile );
-
-                                        if ( f.exists() ) { f.delete(); }
-
-                                        co.pushPrivate ( CObj.LOCALFILE, upfile );
-                                        co.pushPrivate ( CObj.UPGRADEFLAG, "true" ); //confirm upgrade
-                                        //the user to restart his node.
-                                        co.setType ( CObj.USR_DOWNLOAD_FILE );
-                                        co.pushString ( CObj.CREATOR, selectedIdentity.getId() );
-                                        node.enqueue ( co );
-
-                                        Display.getDefault().asyncExec ( new Runnable()
-                                        {
-                                            @Override
-                                            public void run()
-                                            {
-                                                lblVersion.setText ( VERSION + "  Update downloading.." );
-                                            }
-
-                                        } );
-
-                                    }
-
-                                }
-
-                            }
-
+                            checkUpgradeDownloadComplete ( co );
+                            checkDownloadUpgrade ( co );
 
                         }
 
@@ -737,21 +749,8 @@ public class SWTApp
 
                     else if ( CObj.HASFILE.equals ( co.getType() ) )
                     {
-                        String upf = co.getPrivate ( CObj.UPGRADEFLAG );
 
-                        if ( "true".equals ( upf ) )
-                        {
-                            Display.getDefault().asyncExec ( new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    lblVersion.setText ( VERSION + "   Update downloaded.  Please restart." );
-                                }
-
-                            } );
-
-                        }
+                        checkUpgradeDownloadComplete ( co );
 
                         Display.getDefault().asyncExec ( new Runnable()
                         {
@@ -888,6 +887,8 @@ public class SWTApp
                             if ( isupgrade )
                             {
                                 nf.pushString ( CObj.UPGRADEFLAG, "true" );
+                                //Set private value too so that we say we have it for ourself.
+                                nf.pushPrivate ( CObj.UPGRADEFLAG, "true" );
                             }
 
                             node.enqueue ( nf );
@@ -1041,8 +1042,7 @@ public class SWTApp
     {
 
 
-        Logger log = Logger.getLogger ( "aktie" );
-        log.setLevel ( Level.INFO );
+        log.setLevel ( Level.SEVERE );
 
         try
         {
@@ -2362,6 +2362,7 @@ public class SWTApp
                         sw = MAXIMGWIDTH;
                     }
 
+                    event.gc.setAntialias ( SWT.ON );
                     event.gc.drawImage ( image, 0, 0,
                                          image.getBounds().width, image.getBounds().height,
                                          x, y, sw, sh );

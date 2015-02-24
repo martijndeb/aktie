@@ -6,6 +6,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+
+import org.bouncycastle.crypto.digests.SHA256Digest;
 
 public class FUtils
 {
@@ -25,6 +28,74 @@ public class FUtils
 
         fos.close();
         return f;
+    }
+
+    public static String digWholeFile ( String str )
+    {
+        String dig = null;
+
+        try
+        {
+            File f = new File ( str );
+            SHA256Digest fulldig = new SHA256Digest();
+            byte buf[] = new byte[1024];
+            FileInputStream fis = new FileInputStream ( f );
+            long idx = 0;
+
+            while ( idx < f.length() )
+            {
+                int rlen = fis.read ( buf, 0, buf.length );
+
+                if ( rlen > 0 )
+                {
+                    fulldig.update ( buf, 0, rlen );
+                    idx += rlen;
+                }
+
+            }
+
+            fis.close();
+
+            byte fulldigb[] = new byte[fulldig.getDigestSize()];
+            fulldig.doFinal ( fulldigb, 0 );
+
+            dig = Utils.toString ( fulldigb );
+
+        }
+
+        catch ( Exception e )
+        {
+        }
+
+        return dig;
+    }
+
+    @SuppressWarnings ( "resource" )
+    public static void copy ( File s, File t ) throws IOException
+    {
+        if ( !s.equals ( t ) )
+        {
+            FileInputStream fis = new FileInputStream ( s );
+            FileOutputStream fos = new FileOutputStream ( t );
+            FileChannel foc = fos.getChannel();
+            FileChannel fic = fis.getChannel();
+            long tc = fic.transferTo ( 0, fic.size(), foc );
+
+            while ( tc < fic.size() )
+            {
+                long mb = fic.transferTo ( tc, fic.size() - tc, foc );
+
+                if ( mb > 0 )
+                {
+                    tc += mb;
+                }
+
+            }
+
+            fic.close();
+            foc.close();
+        }
+
     }
 
     public static boolean diff ( File f0, File f1 ) throws IOException

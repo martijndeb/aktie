@@ -185,6 +185,7 @@ public class Wrapper
             cmd.add ( "-XstartOnFirstThread" );
         }
 
+        cmd.add ( "-Xmx128m" );
         cmd.add ( "-cp" );
         StringBuilder sb = new StringBuilder();
         File ll[] = libd.listFiles();

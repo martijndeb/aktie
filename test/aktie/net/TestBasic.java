@@ -398,6 +398,7 @@ public class TestBasic
 
         System.out.println ( " ========================== REQUEST FRAGMENT LIST ==============================" );
         hf0.setType ( CObj.USR_DOWNLOAD_FILE );
+        hf0.getPrivatedata().clear();
         assertNotNull ( Tn1.getRequestFile().createRequestFile ( hf0 ) );
         List<RequestFile> rflst = Tn1.getRequestFile().listRequestFiles ( RequestFile.REQUEST_FRAG_LIST, 10 );
         assertEquals ( 1, rflst.size() );

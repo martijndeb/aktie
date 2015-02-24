@@ -1,24 +1,37 @@
 package aktie.user;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.jboss.logging.Logger;
 
 import aktie.data.CObj;
 import aktie.data.HH2Session;
 import aktie.data.RequestFile;
+import aktie.index.CObjList;
+import aktie.index.Index;
+import aktie.utils.FUtils;
 
 public class RequestFileHandler
 {
+    Logger log = Logger.getLogger ( "aktie" );
 
     private HH2Session session;
+    private Index index;
     private File downloadDir;
+    private NewFileProcessor nfp;
 
-    public RequestFileHandler ( HH2Session s, String downdir )
+
+    public RequestFileHandler ( HH2Session s, String downdir, NewFileProcessor n, Index i )
     {
+        index = i;
+        nfp = n;
         session = s;
         downloadDir = new File ( downdir );
 
@@ -425,110 +438,293 @@ public class RequestFileHandler
         return climaed;
     }
 
-    public RequestFile createRequestFile ( CObj hasfile )
+    private RequestFile createRF ( CObj hasfile, File lf, int state, int comp )
     {
-        if ( CObj.USR_DOWNLOAD_FILE.equals ( hasfile.getType() ) )
+        Session s = null;
+
+        try
         {
-            Session s = null;
+            Long pri = hasfile.getNumber ( CObj.PRIORITY );
+            int priority = 5;
 
-            try
+            if ( pri != null )
             {
-                File lf = null;
-                String lfs = hasfile.getPrivate ( CObj.LOCALFILE );
-
-                if ( lfs != null )
-                {
-                    lf = new File ( lfs );
-                }
-
-                if ( lf == null )
-                {
-                    String filename = hasfile.getString ( CObj.NAME );
-                    lf = new File ( downloadDir.getPath() + File.separator + filename );
-
-                    int idx = 0;
-
-                    while ( lf.exists() )
-                    {
-                        lf = new File ( downloadDir.getPath() + File.separator + filename + "." + idx );
-                        idx++;
-                    }
-
-                    lf.createNewFile();
-
-                }
-
-                Long pri = hasfile.getNumber ( CObj.PRIORITY );
-                int priority = 5;
-
-                if ( pri != null )
-                {
-                    long prl = pri;
-                    priority = ( int ) prl;
-                }
-
-                boolean upgrade = false;
-                String upstr = hasfile.getPrivate ( CObj.UPGRADEFLAG );
-
-                if ( "true".equals ( upstr ) )
-                {
-                    upgrade = true;
-                }
-
-                RequestFile rf = new RequestFile();
-                rf.setUpgrade ( upgrade );
-                rf.setCommunityId ( hasfile.getString ( CObj.COMMUNITYID ) );
-                rf.setFileSize ( hasfile.getNumber ( CObj.FILESIZE ) );
-                rf.setFragmentDigest ( hasfile.getString ( CObj.FRAGDIGEST ) );
-                rf.setFragSize ( hasfile.getNumber ( CObj.FRAGSIZE ) );
-                rf.setFragsTotal ( hasfile.getNumber ( CObj.FRAGNUMBER ) );
-                rf.setWholeDigest ( hasfile.getString ( CObj.FILEDIGEST ) );
-                rf.setRequestId ( hasfile.getString ( CObj.CREATOR ) );
-                rf.setPriority ( priority );
-                rf.setLocalFile ( lf.getPath() );
-                rf.setState ( RequestFile.REQUEST_FRAG_LIST );
-                s = session.getSession();
-                s.getTransaction().begin();
-                s.merge ( rf );
-                s.getTransaction().commit();
-                s.close();
-                return rf;
+                long prl = pri;
+                priority = ( int ) prl;
             }
 
-            catch ( Exception e )
+            boolean upgrade = false;
+            String upstr = hasfile.getPrivate ( CObj.UPGRADEFLAG );
+            log.info ( "Download requested.  upgrade flag: " + upstr );
+
+            if ( "true".equals ( upstr ) )
             {
-                e.printStackTrace();
+                upgrade = true;
+            }
 
-                if ( s != null )
+            RequestFile rf = new RequestFile();
+            rf.setUpgrade ( upgrade );
+            rf.setCommunityId ( hasfile.getString ( CObj.COMMUNITYID ) );
+            rf.setFileSize ( hasfile.getNumber ( CObj.FILESIZE ) );
+            rf.setFragmentDigest ( hasfile.getString ( CObj.FRAGDIGEST ) );
+            rf.setFragSize ( hasfile.getNumber ( CObj.FRAGSIZE ) );
+            rf.setFragsTotal ( hasfile.getNumber ( CObj.FRAGNUMBER ) );
+            rf.setWholeDigest ( hasfile.getString ( CObj.FILEDIGEST ) );
+            rf.setRequestId ( hasfile.getString ( CObj.CREATOR ) );
+            rf.setPriority ( priority );
+            rf.setLocalFile ( lf.getPath() );
+            rf.setState ( state );
+            rf.setFragsComplete ( comp );
+            s = session.getSession();
+            s.getTransaction().begin();
+            s.merge ( rf );
+            s.getTransaction().commit();
+            s.close();
+            System.out.println ( "---------- BLAH 0000000001 --------" );
+            return rf;
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+
+            if ( s != null )
+            {
+                try
                 {
-                    try
+                    if ( s.getTransaction().isActive() )
                     {
-                        if ( s.getTransaction().isActive() )
-                        {
-                            s.getTransaction().rollback();
-                        }
-
+                        s.getTransaction().rollback();
                     }
 
-                    catch ( Exception e2 )
-                    {
-                    }
+                }
 
-                    try
-                    {
-                        s.close();
-                    }
+                catch ( Exception e2 )
+                {
+                }
 
-                    catch ( Exception e2 )
-                    {
-                    }
+                try
+                {
+                    s.close();
+                }
 
+                catch ( Exception e2 )
+                {
                 }
 
             }
 
         }
 
+        System.out.println ( "---------- BLAH 0000000003 --------" );
+        return null;
+    }
+
+    public RequestFile createRequestFile ( CObj hasfile )
+    {
+        if ( CObj.USR_DOWNLOAD_FILE.equals ( hasfile.getType() ) )
+        {
+
+            String comid = hasfile.getString ( CObj.COMMUNITYID ) ;
+            String pdig = hasfile.getString ( CObj.FRAGDIGEST ) ;
+            String wdig = hasfile.getString ( CObj.FILEDIGEST ) ;
+            String creator = hasfile.getString ( CObj.CREATOR ) ;
+
+            boolean okcreate = true;
+            String localpath = null;
+
+            try
+            {
+                //Check if we already have it
+                CObjList myhlst = index.getMyHasFiles ( wdig, pdig );
+                log.info ( "Number of matching files: " + myhlst.size() );
+
+                for ( int i = 0; i < myhlst.size(); i++ )
+                {
+                    CObj hf = myhlst.get ( i );
+
+                    if ( hf != null )
+                    {
+                        String tcr = hf.getString ( CObj.CREATOR );
+                        String tcm = hf.getString ( CObj.COMMUNITYID );
+                        String lp = hf.getPrivate ( CObj.LOCALFILE );
+                        String cdig = FUtils.digWholeFile ( lp );
+                        log.info ( "Checking if matches: " + cdig );
+
+                        if ( cdig != null && cdig.equals ( wdig ) )
+                        {
+                            localpath = lp;
+                            log.info ( "Digest matches: " + localpath );
+
+                            if ( creator.equals ( tcr ) && comid.equals ( tcm ) )
+                            {
+                                log.info ( "We already have it!" );
+                                okcreate = false;
+                            }
+
+                        }
+
+                    }
+
+                }
+
+                myhlst.close();
+
+            }
+
+            catch ( Exception e )
+            {
+            }
+
+
+            System.out.println ( "------------- BLAH: okcreate: " + okcreate );
+
+            if ( okcreate )
+            {
+                //check if for some reason the existing localfile is actually
+                //the correct file, if not and it exists anyway rename the current
+                //file to backup.
+                String lfs = hasfile.getPrivate ( CObj.LOCALFILE );
+                log.info ( "Existing localfile: " + lfs );
+
+                if ( lfs != null )
+                {
+                    String dig = FUtils.digWholeFile ( lfs );
+
+                    if ( wdig.equals ( dig ) )
+                    {
+                        //We already have the file defined in the localfile.  set localpath to
+                        //the locafile value.  It won't copy over itself bellow.
+                        localpath = lfs;
+                    }
+
+                    else
+                    {
+                        //Make a back-up file of the existing
+                        File back = new File ( lfs + ".backup" );
+                        File lf = new File ( lfs );
+
+                        if ( lf.exists() )
+                        {
+                            lf.renameTo ( back );
+                        }
+
+                        try
+                        {
+                            lf.createNewFile();
+                        }
+
+                        catch ( IOException e )
+                        {
+                            e.printStackTrace();
+                        }
+
+                    }
+
+                }
+
+                if ( localpath != null )
+                {
+                    log.info ( "Localpath exists: " + localpath );
+
+                    if ( nfp != null )
+                    {
+                        //If localfile is set then we should copy the existing file. :(
+                        //when localfile is set it means the user wants it saved to this
+                        //specific file
+                        if ( lfs != null )
+                        {
+                            File t = new File ( lfs );
+                            File s = new File ( localpath );
+
+                            try
+                            {
+                                FUtils.copy ( s, t );
+                                localpath = t.getPath();
+                            }
+
+                            catch ( IOException e )
+                            {
+                                e.printStackTrace();
+                            }
+
+                        }
+
+                        //We have it in another group.  Create a new hasfile for this
+                        CObj nhf = new CObj();
+                        nhf.setType ( CObj.HASFILE );
+                        nhf.pushString ( CObj.COMMUNITYID, comid );
+                        nhf.pushString ( CObj.CREATOR, creator );
+                        nhf.pushPrivate ( CObj.LOCALFILE, localpath );
+                        nfp.process ( nhf );
+
+                        File lf = new File ( localpath );
+                        long fn = hasfile.getNumber ( CObj.FRAGNUMBER );
+                        log.info ( "SAVE requestfile: " + fn );
+                        return createRF ( hasfile, lf, RequestFile.COMPLETE, ( int ) fn );
+                    }
+
+                }
+
+                else
+                {
+
+                    File lf = null;
+
+                    //The localfile value is set.
+                    if ( lfs != null )
+                    {
+                        lf = new File ( lfs );
+                    }
+
+                    log.info ( "LF: " + lf );
+
+                    if ( lf == null )
+                    {
+                        String filename = hasfile.getString ( CObj.NAME );
+                        lf = new File ( downloadDir.getPath() + File.separator + filename );
+
+                        int idx = 0;
+                        String fname = filename;
+                        String ext = "";
+                        Matcher m = Pattern.compile ( "(\\S+)\\.(\\w+)$" ).matcher ( filename );
+
+                        if ( m.find() )
+                        {
+                            fname = m.group ( 1 );
+                            ext = m.group ( 2 );
+                        }
+
+                        log.info ( "File name: " + fname + " ext: " + ext );
+
+                        while ( lf.exists() )
+                        {
+                            lf = new File ( downloadDir.getPath() + File.separator + fname + "." + idx +
+                                            "." + ext );
+                            log.info ( "Check file: " + lf );
+                            idx++;
+                        }
+
+                        try
+                        {
+                            lf.createNewFile();
+                        }
+
+                        catch ( IOException e )
+                        {
+                            e.printStackTrace();
+                        }
+
+                    }
+
+                    return createRF ( hasfile, lf, RequestFile.REQUEST_FRAG_LIST, 0 );
+                }
+
+            }
+
+        }
+
+        System.out.println ( "---------- BLAH 0000000000 --------" );
         return null;
     }
 

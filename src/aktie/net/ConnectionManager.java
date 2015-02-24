@@ -248,7 +248,12 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                             if ( mydest != null )
                             {
                                 DestinationThread dt = destinations.get ( mydest );
-                                dlst.add ( dt );
+
+                                if ( dt != null )
+                                {
+                                    dlst.add ( dt );
+                                }
+
                             }
 
                         }
@@ -268,7 +273,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                             {
                                 DestinationThread dt = destinations.get ( mydest );
 
-                                if ( !dlst.contains ( dt ) )
+                                if ( dt != null && !dlst.contains ( dt ) )
                                 {
                                     dlst.add ( dt );
                                 }
@@ -742,6 +747,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                     hf.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
                                     hf.pushPrivate ( CObj.LOCALFILE, rf.getLocalFile() );
                                     hf.pushPrivate ( CObj.UPGRADEFLAG, rf.isUpgrade() ? "true" : "false" );
+                                    log.info ( "File download completed. 1  Upgrade flag: " + rf.isUpgrade() );
                                     hfc.createHasFile ( hf );
                                     hfc.updateFileInfo ( hf );
                                     callback.update ( hf );

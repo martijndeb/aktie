@@ -63,11 +63,12 @@ public class Node
         session = new HH2Session();
         session.init ( nodedir + File.separator + "h2" );
         identManager = new IdentityManager ( session, index );
-        requestHandler = new RequestFileHandler ( session, nodedir + File.separator + "downloads" );
+        NewFileProcessor nfp = new NewFileProcessor ( session, index, usrCallback ) ;
+        requestHandler = new RequestFileHandler ( session, nodedir + File.separator + "downloads", nfp, index );
         conMan = new ConnectionManager ( session, index, requestHandler, identManager, usrCallback );
         userQueue = new ProcessQueue();
         userQueue.addProcessor ( new NewCommunityProcessor ( session, index, usrCallback ) );
-        userQueue.addProcessor ( new NewFileProcessor ( session, index, usrCallback ) );
+        userQueue.addProcessor ( nfp );
         userQueue.addProcessor ( new NewIdentityProcessor ( network, conMan, session,
                                  index, usrCallback, netCallback, conCallback, conMan, requestHandler ) );
         userQueue.addProcessor ( new NewMembershipProcessor ( session, index, usrCallback ) );

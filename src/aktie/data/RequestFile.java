@@ -35,6 +35,10 @@ public class RequestFile
     private long fileSize;
     private boolean isUpgrade;
 
+    public RequestFile()
+    {
+    }
+
     public long getId()
     {
         return id;

@@ -45,7 +45,7 @@ public class UserTest implements GuiCallback, GetSendData, ConnectionListener, D
         FUtils.deleteDir ( id );
         Index i = new Index();
         i.setIndexdir ( id );
-        RequestFileHandler fileHandler = new RequestFileHandler ( sf, "usertestdl" );
+        RequestFileHandler fileHandler = new RequestFileHandler ( sf, "usertestdl", null, null );
 
         try
         {

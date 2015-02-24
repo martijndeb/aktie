@@ -44,18 +44,19 @@ public class TestNode implements GuiCallback, ConnectionListener, DestinationLis
             session = new HH2Session();
             session.init ( wkdir );
 
-            requestFile = new RequestFileHandler ( session, wkdir + File.separator + "dl" );
-
             File id = new File ( wkdir + "lucene" );
             FUtils.deleteDir ( id );
             index = new Index();
             index.setIndexdir ( id );
             index.init();
 
-            RequestFileHandler fileHandler = new RequestFileHandler ( session, "tndl" );
+            NewFileProcessor nfp = new NewFileProcessor ( session, index, this );
+            requestFile = new RequestFileHandler ( session, wkdir + File.separator + "dl", nfp, index );
+
+            RequestFileHandler fileHandler = new RequestFileHandler ( session, "tndl", null, null );
 
             userQueue.addProcessor ( new NewCommunityProcessor ( session, index, this ) );
-            userQueue.addProcessor ( new NewFileProcessor ( session, index, this ) );
+            userQueue.addProcessor ( nfp );
             userQueue.addProcessor ( new NewIdentityProcessor ( net, req, session, index, this, this, this, this, fileHandler ) );
             userQueue.addProcessor ( new NewMembershipProcessor ( session, index, this ) );
             userQueue.addProcessor ( new NewPostProcessor ( session, index, this ) );

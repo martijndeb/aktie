@@ -44,10 +44,11 @@ public class NewFileProcessor extends GenericProcessor
         if ( CObj.HASFILE.equals ( type ) )
         {
             String comid = o.getString ( CObj.COMMUNITYID );
+            String creator = o.getString ( CObj.CREATOR );
 
-            if ( comid == null )
+            if ( comid == null || creator == null )
             {
-                o.pushString ( CObj.ERROR, "No community specified" );
+                o.pushString ( CObj.ERROR, "No community or creator specified" );
                 guicallback.update ( o );
                 return true;
             }
@@ -154,6 +155,17 @@ public class NewFileProcessor extends GenericProcessor
                 o.pushString ( CObj.FILEDIGEST, fulldigs );
                 o.pushString ( CObj.FRAGDIGEST, digdigs );
                 o.pushNumber ( CObj.FRAGNUMBER, fragdiglst.size() );
+
+                //Check if we already have it
+                CObj existhf = index.getIdentHasFile ( comid, creator, digdigs, fulldigs );
+
+                if ( existhf != null && "true".equals ( existhf.getString ( CObj.STILLHASFILE ) ) )
+                {
+                    o.pushString ( CObj.ERROR, "Already added file " + fsize );
+                    guicallback.update ( o );
+                    return true;
+                }
+
                 //Create the actual fragment objects
                 idx = 0;
 

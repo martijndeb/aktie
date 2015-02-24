@@ -611,6 +611,7 @@ public class ConnectionThread implements Runnable
                                     hf.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
                                     hf.pushPrivate ( CObj.LOCALFILE, rf.getLocalFile() );
                                     hf.pushPrivate ( CObj.UPGRADEFLAG, rf.isUpgrade() ? "true" : "false" );
+                                    log.info ( "File download completed. 2  Upgrade flag: " + rf.isUpgrade() );
                                     hfc.createHasFile ( hf );
                                     hfc.updateFileInfo ( hf );
                                     guicallback.update ( hf );
