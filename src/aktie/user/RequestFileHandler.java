@@ -480,7 +480,6 @@ public class RequestFileHandler
             s.merge ( rf );
             s.getTransaction().commit();
             s.close();
-            System.out.println ( "---------- BLAH 0000000001 --------" );
             return rf;
         }
 
@@ -516,7 +515,6 @@ public class RequestFileHandler
 
         }
 
-        System.out.println ( "---------- BLAH 0000000003 --------" );
         return null;
     }
 
@@ -576,8 +574,6 @@ public class RequestFileHandler
             {
             }
 
-
-            System.out.println ( "------------- BLAH: okcreate: " + okcreate );
 
             if ( okcreate )
             {
@@ -724,7 +720,6 @@ public class RequestFileHandler
 
         }
 
-        System.out.println ( "---------- BLAH 0000000000 --------" );
         return null;
     }
 

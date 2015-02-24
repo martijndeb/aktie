@@ -122,6 +122,8 @@ public class InHasFileProcessor extends GenericProcessor
 
                         catch ( IOException e )
                         {
+                            e.printStackTrace();
+
                             if ( s != null )
                             {
                                 try

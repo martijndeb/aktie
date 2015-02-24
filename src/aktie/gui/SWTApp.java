@@ -2,6 +2,7 @@ package aktie.gui;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -30,6 +32,7 @@ import aktie.net.ConnectionListener;
 import aktie.net.ConnectionThread;
 //import aktie.net.RawNet;
 import aktie.user.RequestFileHandler;
+import aktie.utils.FUtils;
 
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
@@ -87,7 +90,7 @@ public class SWTApp
 {
     Logger log = Logger.getLogger ( "aktie" );
 
-    public static String VERSION = "version 0.0.7";
+    public static String VERSION = "version 0.0.8";
 
     private ConnectionCallback concallback = new ConnectionCallback();
     private AktieSplash splash;
@@ -465,6 +468,75 @@ public class SWTApp
 
     private NetCallback netcallback = new NetCallback();
 
+    private String getLastDevMessage()
+    {
+        String msg = "Developer messages.";
+        Properties p = new Properties();
+        File propfile = new File ( nodeDir + File.separator + "aktie.pros" );
+
+        if ( propfile.exists() )
+        {
+            try
+            {
+                FileInputStream fis = new FileInputStream ( propfile );
+                p.load ( fis );
+                fis.close();
+                String m = p.getProperty ( "aktie.developerMessage" );
+
+                if ( m != null )
+                {
+                    msg = m;
+                }
+
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        return msg;
+    }
+
+    private void saveLastDevMessage ( String msg )
+    {
+        Properties p = new Properties();
+        File propfile = new File ( nodeDir + File.separator + "aktie.pros" );
+
+        if ( propfile.exists() )
+        {
+            try
+            {
+                FileInputStream fis = new FileInputStream ( propfile );
+                p.load ( fis );
+                fis.close();
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        p.setProperty ( "aktie.developerMessage", msg );
+
+        try
+        {
+            FileOutputStream fos = new FileOutputStream ( propfile );
+            p.store ( fos, "Aktie properties" );
+            fos.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+        }
+
+    }
+
     private void checkDownloadUpgrade ( CObj co )
     {
         String creator = co.getString ( CObj.CREATOR );
@@ -523,15 +595,63 @@ public class SWTApp
         if ( "true".equals ( upf ) )
         {
             log.info ( "Upgrade download completed. 1" );
-            Display.getDefault().asyncExec ( new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    lblVersion.setText ( VERSION + "   Update downloaded.  Please restart." );
-                }
+            File df = new File ( co.getPrivate ( CObj.LOCALFILE ) );
+            File cf = new File ( df.getPath() + ".COMPLETE" );
 
-            } );
+            try
+            {
+                FUtils.copy ( df, cf );
+                Display.getDefault().asyncExec ( new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        lblVersion.setText ( VERSION + "   Update downloaded.  Please restart." );
+                    }
+
+                } );
+
+            }
+
+            catch ( IOException e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+    }
+
+    private void updateBanner ( CObj co )
+    {
+        String creator = co.getString ( CObj.CREATOR );
+
+        if ( developerIdentity != null && creator != null &&
+                creator.equals ( developerIdentity.getId() ) )
+        {
+
+            //Update subject line
+            final String subj = co.getString ( CObj.SUBJECT );
+
+            if ( subj != null )
+            {
+                saveLastDevMessage ( subj );
+
+                Display.getDefault().asyncExec ( new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        if ( bannerText != null && !bannerText.isDisposed() )
+                        {
+                            bannerText.setText ( subj );
+                        }
+
+                    }
+
+                } );
+
+            }
 
         }
 
@@ -560,19 +680,22 @@ public class SWTApp
 
             }
 
-            if ( o != null && selectedCommunity != null )
+            if ( o instanceof CObj )
             {
-                if ( o instanceof CObj )
+                if ( o != null )
                 {
                     final CObj co = ( ( CObj ) o ).clone();
                     String type = co.getType();
                     String comid = co.getString ( CObj.COMMUNITYID );
 
-                    if ( comid != null && comid.equalsIgnoreCase ( selectedCommunity.getDig() ) )
+                    if ( CObj.POST.equals ( type ) )
                     {
 
-                        if ( CObj.POST.equals ( type ) )
+                        updateBanner ( co );
+
+                        if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
                         {
+
                             Display.getDefault().asyncExec ( new Runnable()
                             {
                                 @Override
@@ -583,38 +706,13 @@ public class SWTApp
 
                             } );
 
-                            String creator = co.getString ( CObj.CREATOR );
-
-                            if ( developerIdentity != null && creator != null &&
-                                    creator.equals ( developerIdentity.getId() ) )
-                            {
-
-                                //Update subject line
-                                final String subj = co.getString ( CObj.SUBJECT );
-
-                                if ( subj != null )
-                                {
-                                    Display.getDefault().asyncExec ( new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            if ( bannerText != null && !bannerText.isDisposed() )
-                                            {
-                                                bannerText.setText ( subj );
-                                            }
-
-                                        }
-
-                                    } );
-
-                                }
-
-                            }
-
                         }
 
-                        if ( CObj.HASFILE.equals ( type ) )
+                    }
+
+                    if ( CObj.HASFILE.equals ( type ) )
+                    {
+                        if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
                         {
                             Display.getDefault().asyncExec ( new Runnable()
                             {
@@ -626,10 +724,10 @@ public class SWTApp
 
                             } );
 
-                            checkUpgradeDownloadComplete ( co );
-                            checkDownloadUpgrade ( co );
-
                         }
+
+                        checkUpgradeDownloadComplete ( co );
+                        checkDownloadUpgrade ( co );
 
                     }
 
@@ -682,6 +780,8 @@ public class SWTApp
 
                 else
                 {
+                    String comid = co.getString ( CObj.COMMUNITYID );
+
                     if ( CObj.IDENTITY.equals ( co.getType() ) )
                     {
                         final String name = co.getDisplayName();
@@ -715,7 +815,6 @@ public class SWTApp
                     else if ( CObj.SUBSCRIPTION.equals ( co.getType() ) )
                     {
                         final String creatorid = co.getString ( CObj.CREATOR );
-                        final String comid = co.getString ( CObj.COMMUNITYID );
 
                         if ( creatorid != null && comid != null )
                         {
@@ -735,32 +834,44 @@ public class SWTApp
 
                     else if ( CObj.POST.equals ( co.getType() ) )
                     {
-                        Display.getDefault().asyncExec ( new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                postSearch();
-                            }
 
-                        } );
+                        updateBanner ( co );
+
+                        if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
+                        {
+                            Display.getDefault().asyncExec ( new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    postSearch();
+                                }
+
+                            } );
+
+                        }
 
                     }
 
                     else if ( CObj.HASFILE.equals ( co.getType() ) )
                     {
 
+                        checkDownloadUpgrade ( co );
                         checkUpgradeDownloadComplete ( co );
 
-                        Display.getDefault().asyncExec ( new Runnable()
+                        if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
                         {
-                            @Override
-                            public void run()
+                            Display.getDefault().asyncExec ( new Runnable()
                             {
-                                filesSearch();
-                            }
+                                @Override
+                                public void run()
+                                {
+                                    filesSearch();
+                                }
 
-                        } );
+                            } );
+
+                        }
 
                     }
 
@@ -2927,7 +3038,7 @@ public class SWTApp
         bannerText = new Text ( shell, SWT.BORDER );
         bannerText.setEditable ( false );
         bannerText.setLayoutData ( new GridData ( SWT.FILL, SWT.BOTTOM, true, false, 1, 1 ) );
-        bannerText.setText ( "Developer news.." );
+        bannerText.setText ( getLastDevMessage() );
 
     }
 

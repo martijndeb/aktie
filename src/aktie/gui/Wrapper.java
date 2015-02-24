@@ -152,27 +152,38 @@ public class Wrapper
         File libd = new File ( RUNDIR + File.separator + "lib" );
         File uplst[] = updir.listFiles();
 
+        Matcher comp = Pattern.compile ( "(\\S+)\\.COMPLETE$" ).matcher ( "" );
+
         for ( int c = 0; c < uplst.length; c++ )
         {
             File uf = uplst[c];
-            File bakfile = new File ( bd.getPath() + File.separator + uf.getName() + ".bak" );
 
-            //delete if bak file already there.
-            if ( bakfile.exists() )
+            comp.reset ( uf.getPath() );
+
+            if ( comp.find() )
             {
-                bakfile.delete();
+                String ufn = comp.group ( 1 );
+
+                File bakfile = new File ( bd.getPath() + File.separator + ufn + ".bak" );
+
+                //delete if bak file already there.
+                if ( bakfile.exists() )
+                {
+                    bakfile.delete();
+                }
+
+                File ef = new File ( libd.getPath() + File.separator + ufn );
+
+                if ( ef.exists() )
+                {
+                    ef.renameTo ( bakfile );
+                }
+
+                //Now change upgrade file
+                System.out.println ( "UPGRADING: " + ef.getPath() );
+                uf.renameTo ( ef );
             }
 
-            File ef = new File ( libd.getPath() + File.separator + uf.getName() );
-
-            if ( ef.exists() )
-            {
-                ef.renameTo ( bakfile );
-            }
-
-            //Now change upgrade file
-            System.out.println ( "UPGRADING: " + ef.getPath() );
-            uf.renameTo ( ef );
         }
 
         //Just run it!
