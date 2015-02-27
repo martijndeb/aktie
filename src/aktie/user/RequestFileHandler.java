@@ -142,6 +142,65 @@ public class RequestFileHandler
     }
 
     @SuppressWarnings ( "unchecked" )
+    public void deleteOldRequests ( long oldest )
+    {
+        Session s = null;
+
+        try
+        {
+            s = session.getSession();
+            s.getTransaction().begin();
+            Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.requestedOn < :old AND "
+                                      + " ( x.state = :st OR  x.state = :sts ) " );
+            q.setParameter ( "old", System.currentTimeMillis() - oldest );
+            q.setParameter ( "st", RequestFile.REQUEST_FRAG_LIST );
+            q.setParameter ( "sts", RequestFile.REQUEST_FRAG_LIST_SNT );
+            List<RequestFile> l = q.list();
+
+            for ( RequestFile rf : l )
+            {
+                s.delete ( rf );
+            }
+
+            s.getTransaction().commit();
+            s.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+
+            if ( s != null )
+            {
+                try
+                {
+                    if ( s.getTransaction().isActive() )
+                    {
+                        s.getTransaction().rollback();
+                    }
+
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+                try
+                {
+                    s.close();
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+            }
+
+        }
+
+    }
+
+    @SuppressWarnings ( "unchecked" )
     public List<RequestFile> findFileToGetFrags ( String myid )
     {
         Session s = null;
@@ -243,6 +302,66 @@ public class RequestFileHandler
     }
 
     @SuppressWarnings ( "unchecked" )
+    public void setRequestedOn()
+    {
+        Session s = null;
+
+        long today = System.currentTimeMillis();
+
+        try
+        {
+            s = session.getSession();
+            s.getTransaction().begin();
+            Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.requestedOn is null OR "
+                                      + "x.requestedOn = 0" );
+            q.setMaxResults ( 500 );
+            List<RequestFile> l = q.list();
+
+            for ( RequestFile rf : l )
+            {
+                rf.setRequestedOn ( today );
+                s.merge ( rf );
+            }
+
+            s.getTransaction().commit();
+            s.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+
+            if ( s != null )
+            {
+                try
+                {
+                    if ( s.getTransaction().isActive() )
+                    {
+                        s.getTransaction().rollback();
+                    }
+
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+                try
+                {
+                    s.close();
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+            }
+
+        }
+
+    }
+
+    @SuppressWarnings ( "unchecked" )
     public List<RequestFile> findFileListFrags ( String rid, long backtime )
     {
         Session s = null;
@@ -250,7 +369,6 @@ public class RequestFileHandler
         try
         {
             s = session.getSession();
-            s.getTransaction().begin();
             Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.requestId = :rid AND "
                                       + "(x.state = :st OR "
                                       + "   (x.state = :sts AND x.lastRequest < :rt) "
@@ -260,7 +378,7 @@ public class RequestFileHandler
             q.setParameter ( "st", RequestFile.REQUEST_FRAG_LIST );
             q.setParameter ( "sts", RequestFile.REQUEST_FRAG_LIST_SNT );
             q.setParameter ( "rt", System.currentTimeMillis() - backtime );
-            q.setMaxResults ( 100 );
+            q.setMaxResults ( 500 );
             List<RequestFile> l = q.list();
             s.close();
             return l;
@@ -463,6 +581,7 @@ public class RequestFileHandler
             }
 
             RequestFile rf = new RequestFile();
+            rf.setRequestedOn ( System.currentTimeMillis() );
             rf.setUpgrade ( upgrade );
             rf.setCommunityId ( hasfile.getString ( CObj.COMMUNITYID ) );
             rf.setFileSize ( hasfile.getNumber ( CObj.FILESIZE ) );
@@ -683,7 +802,7 @@ public class RequestFileHandler
                         int idx = 0;
                         String fname = filename;
                         String ext = "";
-                        Matcher m = Pattern.compile ( "(\\S+)\\.(\\w+)$" ).matcher ( filename );
+                        Matcher m = Pattern.compile ( "(.+)\\.(\\w+)$" ).matcher ( filename );
 
                         if ( m.find() )
                         {

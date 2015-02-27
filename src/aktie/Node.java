@@ -104,6 +104,12 @@ public class Node
         }
 
         myids.close();
+        doUpdate();
+    }
+
+    private void doUpdate()
+    {
+        requestHandler.setRequestedOn();
     }
 
     public void close()

@@ -87,7 +87,7 @@ public class InFragProcessor implements CObjProcessor
                         for ( CObj co : l )
                         {
                             co.pushPrivate ( CObj.COMPLETE, "false" );
-                            index.index ( co, true );
+                            index.index ( co );
                         }
 
                         s = session.getSession();

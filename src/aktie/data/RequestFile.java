@@ -1,5 +1,6 @@
 package aktie.data;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -33,6 +34,8 @@ public class RequestFile
     private long fragsTotal;
     private long fragSize;
     private long fileSize;
+    @Column ( columnDefinition = "BIGINT(19) default 0" )
+    private long requestedOn;
     private boolean isUpgrade;
 
     public RequestFile()
@@ -177,6 +180,16 @@ public class RequestFile
     public void setUpgrade ( boolean isUpgrade )
     {
         this.isUpgrade = isUpgrade;
+    }
+
+    public long getRequestedOn()
+    {
+        return requestedOn;
+    }
+
+    public void setRequestedOn ( long requestedOn )
+    {
+        this.requestedOn = requestedOn;
     }
 
 }

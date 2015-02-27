@@ -54,7 +54,6 @@ public class HH2Session
             applySettings ( configuration.getProperties() );
             concreteSessionFactory = configuration.buildSessionFactory ( builder.build() );
 
-
         }
 
         catch ( Throwable ex )

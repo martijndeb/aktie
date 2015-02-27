@@ -90,7 +90,7 @@ public class SWTApp
 {
     Logger log = Logger.getLogger ( "aktie" );
 
-    public static String VERSION = "version 0.0.8";
+    public static String VERSION = "version 0.0.10";
 
     private ConnectionCallback concallback = new ConnectionCallback();
     private AktieSplash splash;

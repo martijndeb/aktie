@@ -152,13 +152,13 @@ public class Wrapper
         File libd = new File ( RUNDIR + File.separator + "lib" );
         File uplst[] = updir.listFiles();
 
-        Matcher comp = Pattern.compile ( "(\\S+)\\.COMPLETE$" ).matcher ( "" );
+        Matcher comp = Pattern.compile ( "(.+)\\.COMPLETE$" ).matcher ( "" );
 
         for ( int c = 0; c < uplst.length; c++ )
         {
             File uf = uplst[c];
 
-            comp.reset ( uf.getPath() );
+            comp.reset ( uf.getName() );
 
             if ( comp.find() )
             {

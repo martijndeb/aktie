@@ -641,13 +641,13 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         clst.close();
         comlist = ncomlst;
-        log.info ( "common subscriptions for next request: " + comlist.size() );
         //Check if we want a file
         int doit = Utils.Random.nextInt ( 100 );
 
         if ( doit < 50 ) //50% chance
         {
             List<RequestFile> rflst = fileHandler.findFileListFrags ( localdest, 10L * 60L * 1000L );
+            log.info ( "Requests for fragment list: " + rflst.size() );
             Iterator<RequestFile> it = rflst.iterator();
 
             while ( it.hasNext() && r == null )
@@ -1038,6 +1038,12 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         return r;
     }
 
+    private void deleteOldRequests()
+    {
+        //hardcode 10 days?
+        fileHandler.deleteOldRequests ( 10L * 24L * 60L * 60L * 1000L );
+    }
+
     private void decodeMemberships()
     {
         //Find my memberships
@@ -1202,6 +1208,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 checkConnections();
                 decodeMemberships();
                 closeUselessConnections();
+                deleteOldRequests();
             }
 
         }
