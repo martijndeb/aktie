@@ -592,7 +592,7 @@ public class SWTApp
 
                     if ( selid != null )
                     {
-                        co.pushString ( CObj.CREATOR, selectedIdentity.getId() );
+                        co.pushString ( CObj.CREATOR, selid );
                         node.enqueue ( co );
 
                         Display.getDefault().asyncExec ( new Runnable()

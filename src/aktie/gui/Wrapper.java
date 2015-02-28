@@ -18,7 +18,7 @@ import java.util.zip.ZipInputStream;
 public class Wrapper
 {
 
-    public static String VERSION = "version 0.0.11";
+    public static String VERSION = "version 0.0.12";
     public static String VERSION_FILE = "version.txt";
 
     public static String RUNDIR = "aktie_run_dir";
