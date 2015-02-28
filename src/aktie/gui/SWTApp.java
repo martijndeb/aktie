@@ -90,8 +90,6 @@ public class SWTApp
 {
     Logger log = Logger.getLogger ( "aktie" );
 
-    public static String VERSION = "version 0.0.10";
-
     private ConnectionCallback concallback = new ConnectionCallback();
     private AktieSplash splash;
 
@@ -537,6 +535,11 @@ public class SWTApp
 
     }
 
+    /*
+        ========================================================================
+        this dumb  why would you do this here
+        ========================================================================
+    */
     private void checkDownloadUpgrade ( CObj co )
     {
         String creator = co.getString ( CObj.CREATOR );
@@ -547,6 +550,7 @@ public class SWTApp
 
             String update = co.getString ( CObj.UPGRADEFLAG );
             String fname = co.getString ( CObj.NAME );
+            String comid = co.getString ( CObj.COMMUNITYID );
 
             if ( "true".equals ( update ) )
             {
@@ -563,20 +567,50 @@ public class SWTApp
 
                     co.pushPrivate ( CObj.LOCALFILE, upfile );
                     co.pushPrivate ( CObj.UPGRADEFLAG, "true" ); //confirm upgrade
-                    //the user to restart his node.
                     co.setType ( CObj.USR_DOWNLOAD_FILE );
-                    co.pushString ( CObj.CREATOR, selectedIdentity.getId() );
-                    node.enqueue ( co );
+                    //the user to restart his node.
+                    //find a member of this group
+                    CObjList mysubs = getNode().getIndex().getMySubscriptions ( comid );
+                    String selid = null;
 
-                    Display.getDefault().asyncExec ( new Runnable()
+                    for ( int c = 0; c < mysubs.size() && selid == null; c++ )
                     {
-                        @Override
-                        public void run()
+                        try
                         {
-                            lblVersion.setText ( VERSION + "  Update downloading.." );
+                            CObj ss = mysubs.get ( c );
+                            selid = ss.getString ( CObj.CREATOR );
                         }
 
-                    } );
+                        catch ( Exception e )
+                        {
+                            e.printStackTrace();
+                        }
+
+                    }
+
+                    mysubs.close();
+
+                    if ( selid != null )
+                    {
+                        co.pushString ( CObj.CREATOR, selectedIdentity.getId() );
+                        node.enqueue ( co );
+
+                        Display.getDefault().asyncExec ( new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                lblVersion.setText ( Wrapper.VERSION + "  Update downloading.." );
+                            }
+
+                        } );
+
+                    }
+
+                    else
+                    {
+                        log.warning ( "No subscription matching community of update" );
+                    }
 
                 }
 
@@ -594,7 +628,7 @@ public class SWTApp
 
         if ( "true".equals ( upf ) )
         {
-            log.info ( "Upgrade download completed. 1" );
+            log.info ( "Upgrade download completed." );
             File df = new File ( co.getPrivate ( CObj.LOCALFILE ) );
             File cf = new File ( df.getPath() + ".COMPLETE" );
 
@@ -606,7 +640,7 @@ public class SWTApp
                     @Override
                     public void run()
                     {
-                        lblVersion.setText ( VERSION + "   Update downloaded.  Please restart." );
+                        lblVersion.setText ( Wrapper.VERSION + "   Update downloaded.  Please restart." );
                     }
 
                 } );
@@ -1268,6 +1302,24 @@ public class SWTApp
 
     }
 
+    private void saveVersionFile()
+    {
+        try
+        {
+            File vf = new File ( nodeDir + File.separator + Wrapper.VERSION_FILE );
+            FileOutputStream fos = new FileOutputStream ( vf );
+            PrintWriter pw = new PrintWriter ( fos );
+            pw.println ( Wrapper.VERSION );
+            pw.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+        }
+
+    }
+
     /**
         Open the window.
     */
@@ -1289,6 +1341,7 @@ public class SWTApp
         splash.close();
 
         startUpdateTimer();
+        saveVersionFile();
 
         while ( !shell.isDisposed() )
         {
@@ -1745,7 +1798,7 @@ public class SWTApp
 
         lblVersion = new Label ( shell, SWT.NONE );
         lblVersion.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
-        lblVersion.setText ( VERSION );
+        lblVersion.setText ( Wrapper.VERSION );
 
         TabFolder tabFolder = new TabFolder ( shell, SWT.NONE );
         tabFolder.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, true, 1, 1 ) );

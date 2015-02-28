@@ -727,6 +727,8 @@ public class ConnectionThread implements Runnable
 
                     else
                     {
+                        //This means they sent a new list while one was still
+                        //going, this is a bad thing on them.
                         stop();
                     }
 
@@ -759,16 +761,40 @@ public class ConnectionThread implements Runnable
 
                     }
 
+                    //If we're populating a list, then don't process until
+                    //we have the whole list, at which time listCount will be zero
+                    //if we're not collecting a list listCount is always zero
                     if ( listCount == 0 )
                     {
                         if ( currentList == null )
                         {
-                            preprocProcessor.processCObj ( r );
+                            //Not a list, just process it.
+                            try
+                            {
+                                preprocProcessor.processCObj ( r );
+                            }
+
+                            catch ( Exception e )
+                            {
+                                //Make sure we can debug processing bugs
+                                e.printStackTrace();
+                            }
+
                         }
 
                         else
                         {
-                            preprocProcessor.processObj ( currentList );
+                            try
+                            {
+                                preprocProcessor.processObj ( currentList );
+                            }
+
+                            catch ( Exception e )
+                            {
+                                //Make sure we can debug processing bugs
+                                e.printStackTrace();
+                            }
+
                             currentList = null;
                         }
 

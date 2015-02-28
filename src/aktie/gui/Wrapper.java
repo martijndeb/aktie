@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,6 +17,9 @@ import java.util.zip.ZipInputStream;
 
 public class Wrapper
 {
+
+    public static String VERSION = "version 0.0.11";
+    public static String VERSION_FILE = "version.txt";
 
     public static String RUNDIR = "aktie_run_dir";
     public static String JARFILE = "aktie.jar";
@@ -41,7 +45,7 @@ public class Wrapper
             setstartonfirst = true;
         }
 
-        if ( !f.exists() )
+        if ( !f.exists() || isNewer() )
         {
             unZipIt();
 
@@ -259,7 +263,63 @@ public class Wrapper
 
     }
 
+    public static int[] convertVersionString ( String v )
+    {
+        Matcher m = Pattern.compile ( "(\\d+)\\.(\\d+)\\.(\\d+)" ).matcher ( v );
 
+        if ( m.find() )
+        {
+            int va[] = new int[3];
+            va[0] = Integer.valueOf ( m.group ( 1 ) );
+            va[1] = Integer.valueOf ( m.group ( 2 ) );
+            va[2] = Integer.valueOf ( m.group ( 3 ) );
+            return va;
+        }
+
+        return new int[] {0, 0, 0};
+
+    }
+
+    /*
+        Check if this jar is a newer version of the current files in the
+        library
+    */
+    public static boolean isNewer()
+    {
+        File vf = new File ( RUNDIR + File.separator + "aktie_node" + File.separator + VERSION_FILE );
+
+        if ( vf.exists() )
+        {
+            try
+            {
+                FileReader fr = new FileReader ( vf );
+                BufferedReader br = new BufferedReader ( fr );
+                String oldstr = br.readLine();
+                br.close();
+                int oldv[] = convertVersionString ( oldstr );
+                int newv[] = convertVersionString ( VERSION );
+
+                for ( int c = 0; c < oldv.length; c++ )
+                {
+                    if ( newv[c] > oldv[c] )
+                    {
+                        return true;
+                    }
+
+                }
+
+                return false;
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        return true;
+    }
 
     public static void unZipIt()
     {
