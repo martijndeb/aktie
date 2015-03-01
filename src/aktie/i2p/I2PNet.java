@@ -50,7 +50,11 @@ public class I2PNet  implements Net
 
     public void exit()
     {
-        router.shutdown ( Router.EXIT_HARD );
+        if ( router != null )
+        {
+            router.shutdown ( Router.EXIT_HARD );
+        }
+
     }
 
     @Override

@@ -18,13 +18,26 @@ import java.util.zip.ZipInputStream;
 public class Wrapper
 {
 
-    public static String VERSION = "version 0.0.12";
+    public static String VERSION = "version 0.0.15";
     public static String VERSION_FILE = "version.txt";
 
     public static String RUNDIR = "aktie_run_dir";
     public static String JARFILE = "aktie.jar";
 
+
     public static void main ( String args[] )
+    {
+        int rc = 10;
+
+        while ( rc != 0 )
+        {
+            rc = Main();
+            System.out.println ( "RC: " + rc );
+        }
+
+    }
+
+    public static int Main()
     {
         //Check the system
         String systype = System.getProperty ( "os.name" );
@@ -254,12 +267,15 @@ public class Wrapper
             }
 
             System.out.println ( "EXITTING.." );
+            return pc.exitValue();
         }
 
         catch ( IOException e )
         {
             e.printStackTrace();
         }
+
+        return 99;
 
     }
 
@@ -301,6 +317,11 @@ public class Wrapper
 
                 for ( int c = 0; c < oldv.length; c++ )
                 {
+                    if ( newv[c] < oldv[c] )
+                    {
+                        return false;
+                    }
+
                     if ( newv[c] > oldv[c] )
                     {
                         return true;

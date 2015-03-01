@@ -556,60 +556,82 @@ public class SWTApp
             {
                 if ( doUpgrade )
                 {
+
                     File nodedir = new File ( nodeDir );
-                    String upfile = nodedir.getParentFile() +
-                                    File.separator + "upgrade" +
-                                    File.separator + fname;
+                    String parent = nodedir.getParent();
 
-                    File f = new File ( upfile );
+                    //check current version
+                    String libf = parent +
+                                  File.separator + "lib" +
+                                  File.separator + fname;
+                    File cf = new File ( libf );
+                    //do upgrade if current digest does not match the upgrade file
+                    boolean doup = true;
 
-                    if ( f.exists() ) { f.delete(); }
-
-                    co.pushPrivate ( CObj.LOCALFILE, upfile );
-                    co.pushPrivate ( CObj.UPGRADEFLAG, "true" ); //confirm upgrade
-                    co.setType ( CObj.USR_DOWNLOAD_FILE );
-                    //the user to restart his node.
-                    //find a member of this group
-                    CObjList mysubs = getNode().getIndex().getMySubscriptions ( comid );
-                    String selid = null;
-
-                    for ( int c = 0; c < mysubs.size() && selid == null; c++ )
+                    if ( cf.exists() )
                     {
-                        try
-                        {
-                            CObj ss = mysubs.get ( c );
-                            selid = ss.getString ( CObj.CREATOR );
-                        }
-
-                        catch ( Exception e )
-                        {
-                            e.printStackTrace();
-                        }
-
+                        String wdig = FUtils.digWholeFile ( libf );
+                        String ndig = co.getString ( CObj.FILEDIGEST );
+                        doup = !wdig.equals ( ndig );
                     }
 
-                    mysubs.close();
-
-                    if ( selid != null )
+                    if ( doup )
                     {
-                        co.pushString ( CObj.CREATOR, selid );
-                        node.enqueue ( co );
+                        String upfile = parent +
+                                        File.separator + "upgrade" +
+                                        File.separator + fname;
 
-                        Display.getDefault().asyncExec ( new Runnable()
+                        File f = new File ( upfile );
+
+                        if ( f.exists() ) { f.delete(); }
+
+                        co.pushPrivate ( CObj.LOCALFILE, upfile );
+                        co.pushPrivate ( CObj.UPGRADEFLAG, "true" ); //confirm upgrade
+                        co.setType ( CObj.USR_DOWNLOAD_FILE );
+                        //the user to restart his node.
+                        //find a member of this group
+                        CObjList mysubs = getNode().getIndex().getMySubscriptions ( comid );
+                        String selid = null;
+
+                        for ( int c = 0; c < mysubs.size() && selid == null; c++ )
                         {
-                            @Override
-                            public void run()
+                            try
                             {
-                                lblVersion.setText ( Wrapper.VERSION + "  Update downloading.." );
+                                CObj ss = mysubs.get ( c );
+                                selid = ss.getString ( CObj.CREATOR );
                             }
 
-                        } );
+                            catch ( Exception e )
+                            {
+                                e.printStackTrace();
+                            }
 
-                    }
+                        }
 
-                    else
-                    {
-                        log.warning ( "No subscription matching community of update" );
+                        mysubs.close();
+
+                        if ( selid != null )
+                        {
+                            co.pushString ( CObj.CREATOR, selid );
+                            node.enqueue ( co );
+
+                            Display.getDefault().asyncExec ( new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    lblVersion.setText ( Wrapper.VERSION + "  Update downloading.." );
+                                }
+
+                            } );
+
+                        }
+
+                        else
+                        {
+                            log.warning ( "No subscription matching community of update" );
+                        }
+
                     }
 
                 }
@@ -1302,6 +1324,64 @@ public class SWTApp
 
     }
 
+    private boolean isSameOrNewer()
+    {
+        File vf = new File ( nodeDir + File.separator + Wrapper.VERSION_FILE );
+
+        if ( vf.exists() )
+        {
+            try
+            {
+                FileReader fr = new FileReader ( vf );
+                BufferedReader br = new BufferedReader ( fr );
+                String vl = br.readLine();
+                int oldv[] = Wrapper.convertVersionString ( vl );
+                int newv[] = Wrapper.convertVersionString ( Wrapper.VERSION );
+                br.close();
+
+                for ( int c = 0; c < oldv.length; c++ )
+                {
+                    if ( oldv[c] > newv[c] )
+                    {
+                        //this means that we have probably upgraded to an older
+                        //version that what is in the aktie.jar.  so we delete
+                        //the version file and restart.  so the newer jars in
+                        //aktie.jar are unzipped again.
+                        return false;
+                    }
+
+                    if ( oldv[c] < newv[c] )
+                    {
+                        //This is fine.  We have just upgraded.
+                        return true;
+                    }
+
+                }
+
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        return true;
+    }
+
+    private void deleteVersionAndExit()
+    {
+        File vf = new File ( nodeDir + File.separator + Wrapper.VERSION_FILE );
+
+        if ( vf.exists() )
+        {
+            vf.delete();
+        }
+
+        System.exit ( 1 );
+    }
+
     private void saveVersionFile()
     {
         try
@@ -1327,6 +1407,12 @@ public class SWTApp
     {
         splash = new AktieSplash ( nodeDir );
         splash.showScreen ();
+
+        if ( !isSameOrNewer() )
+        {
+            //Something went wrong on upgrade
+            deleteVersionAndExit();
+        }
 
         Display.setAppName ( "aktie" );
         Display display = Display.getDefault();
