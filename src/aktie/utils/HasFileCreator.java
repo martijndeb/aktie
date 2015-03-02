@@ -274,6 +274,8 @@ public class HasFileCreator
             return false;
         }
 
+        //Set the created on time
+        o.pushNumber ( CObj.CREATEDON, System.currentTimeMillis() );
         //Sign it.
         o.sign ( Utils.privateKeyFromString ( myid.getPrivate ( CObj.PRIVATEKEY ) ) );
 

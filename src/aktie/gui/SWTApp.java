@@ -548,88 +548,94 @@ public class SWTApp
                 creator.equals ( developerIdentity.getId() ) )
         {
 
-            String update = co.getString ( CObj.UPGRADEFLAG );
-            String fname = co.getString ( CObj.NAME );
-            String comid = co.getString ( CObj.COMMUNITYID );
+            Long createdon = co.getNumber ( CObj.CREATEDON );
 
-            if ( "true".equals ( update ) )
+            if ( createdon != null && createdon > Wrapper.RELEASETIME )
             {
-                if ( doUpgrade )
+                String update = co.getString ( CObj.UPGRADEFLAG );
+                String fname = co.getString ( CObj.NAME );
+                String comid = co.getString ( CObj.COMMUNITYID );
+
+                if ( "true".equals ( update ) )
                 {
-
-                    File nodedir = new File ( nodeDir );
-                    String parent = nodedir.getParent();
-
-                    //check current version
-                    String libf = parent +
-                                  File.separator + "lib" +
-                                  File.separator + fname;
-                    File cf = new File ( libf );
-                    //do upgrade if current digest does not match the upgrade file
-                    boolean doup = true;
-
-                    if ( cf.exists() )
+                    if ( doUpgrade )
                     {
-                        String wdig = FUtils.digWholeFile ( libf );
-                        String ndig = co.getString ( CObj.FILEDIGEST );
-                        doup = !wdig.equals ( ndig );
-                    }
 
-                    if ( doup )
-                    {
-                        String upfile = parent +
-                                        File.separator + "upgrade" +
-                                        File.separator + fname;
+                        File nodedir = new File ( nodeDir );
+                        String parent = nodedir.getParent();
 
-                        File f = new File ( upfile );
+                        //check current version
+                        String libf = parent +
+                                      File.separator + "lib" +
+                                      File.separator + fname;
+                        File cf = new File ( libf );
+                        //do upgrade if current digest does not match the upgrade file
+                        boolean doup = true;
 
-                        if ( f.exists() ) { f.delete(); }
-
-                        co.pushPrivate ( CObj.LOCALFILE, upfile );
-                        co.pushPrivate ( CObj.UPGRADEFLAG, "true" ); //confirm upgrade
-                        co.setType ( CObj.USR_DOWNLOAD_FILE );
-                        //the user to restart his node.
-                        //find a member of this group
-                        CObjList mysubs = getNode().getIndex().getMySubscriptions ( comid );
-                        String selid = null;
-
-                        for ( int c = 0; c < mysubs.size() && selid == null; c++ )
+                        if ( cf.exists() )
                         {
-                            try
-                            {
-                                CObj ss = mysubs.get ( c );
-                                selid = ss.getString ( CObj.CREATOR );
-                            }
-
-                            catch ( Exception e )
-                            {
-                                e.printStackTrace();
-                            }
-
+                            String wdig = FUtils.digWholeFile ( libf );
+                            String ndig = co.getString ( CObj.FILEDIGEST );
+                            doup = !wdig.equals ( ndig );
                         }
 
-                        mysubs.close();
-
-                        if ( selid != null )
+                        if ( doup )
                         {
-                            co.pushString ( CObj.CREATOR, selid );
-                            node.enqueue ( co );
+                            String upfile = parent +
+                                            File.separator + "upgrade" +
+                                            File.separator + fname;
 
-                            Display.getDefault().asyncExec ( new Runnable()
+                            File f = new File ( upfile );
+
+                            if ( f.exists() ) { f.delete(); }
+
+                            co.pushPrivate ( CObj.LOCALFILE, upfile );
+                            co.pushPrivate ( CObj.UPGRADEFLAG, "true" ); //confirm upgrade
+                            co.setType ( CObj.USR_DOWNLOAD_FILE );
+                            //the user to restart his node.
+                            //find a member of this group
+                            CObjList mysubs = getNode().getIndex().getMySubscriptions ( comid );
+                            String selid = null;
+
+                            for ( int c = 0; c < mysubs.size() && selid == null; c++ )
                             {
-                                @Override
-                                public void run()
+                                try
                                 {
-                                    lblVersion.setText ( Wrapper.VERSION + "  Update downloading.." );
+                                    CObj ss = mysubs.get ( c );
+                                    selid = ss.getString ( CObj.CREATOR );
                                 }
 
-                            } );
+                                catch ( Exception e )
+                                {
+                                    e.printStackTrace();
+                                }
 
-                        }
+                            }
 
-                        else
-                        {
-                            log.warning ( "No subscription matching community of update" );
+                            mysubs.close();
+
+                            if ( selid != null )
+                            {
+                                co.pushString ( CObj.CREATOR, selid );
+                                node.enqueue ( co );
+
+                                Display.getDefault().asyncExec ( new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        lblVersion.setText ( Wrapper.VERSION + "  Update downloading.." );
+                                    }
+
+                                } );
+
+                            }
+
+                            else
+                            {
+                                log.warning ( "No subscription matching community of update" );
+                            }
+
                         }
 
                     }
