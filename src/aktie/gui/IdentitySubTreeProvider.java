@@ -5,6 +5,7 @@ import aktie.data.CObj;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.SortedMap;
 
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
@@ -94,7 +95,7 @@ public class IdentitySubTreeProvider implements ITreeContentProvider
             Object r[] = new Object[m.getSubCommunities().size()];
             int idx = 0;
 
-            for ( Entry<String, Map<String, CObj>> e : m.getSubCommunities().entrySet() )
+            for ( Entry<String, SortedMap<String, CObj>> e : m.getSubCommunities().entrySet() )
             {
                 CObj id = m.getIdentities().get ( e.getKey() );
                 String disp = id.getDisplayName();

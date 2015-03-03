@@ -342,6 +342,12 @@ public class NewCommunityDialog extends Dialog
                 {
                     c.pushString ( CObj.NAME, sname );
                     c.pushString ( CObj.DESCRIPTION, desc );
+
+                    if ( CObj.SCOPE_PRIVATE.equals ( scope ) )
+                    {
+                        c.pushString ( CObj.NAME_IS_PUBLIC, "true" );
+                    }
+
                 }
 
                 if ( app != null )

@@ -53,7 +53,6 @@ import org.eclipse.swt.custom.PaintObjectListener;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.widgets.Tree;
-import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ISelection;
@@ -772,6 +771,15 @@ public class SWTApp
 
                     }
 
+                    if ( CObj.MEMBERSHIP.equals ( type ) )
+                    {
+                        if ( "true".equals ( co.getPrivate ( CObj.MINE ) ) )
+                        {
+                            updateMembership();
+                        }
+
+                    }
+
                     if ( CObj.HASFILE.equals ( type ) )
                     {
                         if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
@@ -911,6 +919,15 @@ public class SWTApp
 
                             } );
 
+                        }
+
+                    }
+
+                    else if ( CObj.MEMBERSHIP.equals ( co.getType() ) )
+                    {
+                        if ( "true".equals ( co.getPrivate ( CObj.MINE ) ) )
+                        {
+                            updateMembership();
                         }
 
                     }
@@ -1583,6 +1600,25 @@ public class SWTApp
 
     }
 
+    private SortField.Type membershipSortType = SortField.Type.STRING;
+    private String membershipSortField = CObj.docPrivate ( CObj.NAME );
+    private boolean membershipSortReverse = false;
+
+    private void updateMembership()
+    {
+        CObjList oldlst = ( CObjList ) membershipTableViewer.getInput();
+        Sort s = new Sort();
+        s.setSort ( new SortField ( membershipSortField, membershipSortType, membershipSortReverse ) );
+        CObjList newlst = getNode().getIndex().getMyMemberships ( s );
+        membershipTableViewer.setInput ( newlst );
+
+        if ( oldlst != null )
+        {
+            oldlst.close();
+        }
+
+    }
+
     private String getPostString ( CObj pst )
     {
         StringBuilder msg = new StringBuilder();
@@ -1792,6 +1828,7 @@ public class SWTApp
         FileListContentProvider fc = ( FileListContentProvider ) fileTableViewer.getContentProvider();
         fc.setHH2Session ( getNode().getSession() );
         localFileColumnProvider.setIndex ( node.getIndex() );
+        updateMembership();
     }
 
     private void exportCommunities()
@@ -1851,6 +1888,9 @@ public class SWTApp
 
     private Composite composite_6;
     private LocalFileColumnLabelProvider localFileColumnProvider;
+    private Table membershipTable;
+    private TableViewer membershipTableViewer;
+    private CObjListContentProvider membershipProvider;
 
     /**
         Create contents of the window.
@@ -1904,14 +1944,12 @@ public class SWTApp
 
         SashForm sashForm = new SashForm ( composite, SWT.NONE );
 
-        Composite composite_1 = new Composite ( sashForm, SWT.NONE );
-        composite_1.setLayout ( new FillLayout ( SWT.HORIZONTAL ) );
+        SashForm sashForm2 = new SashForm ( sashForm, SWT.VERTICAL );
 
-        ScrolledComposite scrolledComposite = new ScrolledComposite ( composite_1, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL );
-        scrolledComposite.setExpandHorizontal ( true );
-        scrolledComposite.setExpandVertical ( true );
+        Composite composite_1 = new Composite ( sashForm2, SWT.NONE );
+        composite_1.setLayout ( new FillLayout ( SWT.VERTICAL ) );
 
-        identTreeViewer = new TreeViewer ( scrolledComposite, SWT.BORDER );
+        identTreeViewer = new TreeViewer ( composite_1, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL );
         identTree = identTreeViewer.getTree();
 
         identTreeViewer.addSelectionChangedListener ( new ISelectionChangedListener()
@@ -2122,6 +2160,139 @@ public class SWTApp
 
         MenuItem mntmNewMember = new MenuItem ( menu_2, SWT.NONE );
         mntmNewMember.setText ( "New Member" );
+
+        membershipTableViewer = new TableViewer ( sashForm2, SWT.BORDER | SWT.FULL_SELECTION );
+        membershipTable = membershipTableViewer.getTable();
+        membershipTable.setHeaderVisible ( true );
+        membershipProvider = new CObjListContentProvider();
+        membershipTableViewer.setContentProvider ( membershipProvider );
+
+        TableViewerColumn mcol0 = new TableViewerColumn ( membershipTableViewer, SWT.NONE );
+        mcol0.getColumn().setText ( "Memberships" );
+        mcol0.getColumn().setWidth ( 100 );
+        mcol0.setLabelProvider ( new CObjListPrivateColumnLabelProvider ( CObj.NAME ) );
+        mcol0.getColumn().addSelectionListener ( new SelectionListener()
+        {
+
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                membershipSortReverse = !membershipSortReverse;
+                updateMembership();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        Menu menu_6 = new Menu ( membershipTable );
+        membershipTable.setMenu ( menu_6 );
+
+        MenuItem mntmSubscribe = new MenuItem ( menu_6, SWT.NONE );
+        mntmSubscribe.setText ( "Subscribe" );
+        mntmSubscribe.addSelectionListener ( new SelectionListener()
+        {
+
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                IStructuredSelection sel = ( IStructuredSelection ) membershipTableViewer.getSelection();
+                @SuppressWarnings ( "rawtypes" )
+                Iterator i = sel.iterator();
+
+                if ( i.hasNext() )
+                {
+                    Object selo = i.next();
+
+                    if ( selo instanceof CObjListArrayElement )
+                    {
+                        CObjListArrayElement ae = ( CObjListArrayElement ) selo;
+                        CObj fr = ae.getCObj();
+
+                        if ( fr != null )
+                        {
+                            String memid = null;
+                            String comid = fr.getDig();
+                            String creator = fr.getString ( CObj.CREATOR );
+                            CObjList idlst = getNode().getIndex().getMyIdentities();
+
+                            for ( int c = 0; c < idlst.size() && memid == null; c++ )
+                            {
+                                try
+                                {
+                                    String id = idlst.get ( c ).getId();
+
+                                    if ( creator.equals ( id ) )
+                                    {
+                                        memid = id;
+                                    }
+
+                                }
+
+                                catch ( Exception e2 )
+                                {
+                                    e2.printStackTrace();
+                                }
+
+                            }
+
+                            idlst.close();
+
+                            if ( memid == null )
+                            {
+                                CObjList mlst = getNode().getIndex().getMyMemberships ( comid );
+
+                                if ( mlst.size() > 0 )
+                                {
+                                    try
+                                    {
+                                        CObj mm = mlst.get ( 0 );
+                                        memid = mm.getPrivate ( CObj.MEMBERID );
+                                    }
+
+                                    catch ( Exception e2 )
+                                    {
+                                        e2.printStackTrace();
+                                    }
+
+                                }
+
+                            }
+
+                            if ( comid != null && memid != null )
+                            {
+                                //Create a subscription
+                                CObj sub = new CObj();
+                                sub.setType ( CObj.SUBSCRIPTION );
+                                sub.pushString ( CObj.CREATOR, memid );
+                                sub.pushString ( CObj.COMMUNITYID, comid );
+                                sub.pushString ( CObj.SUBSCRIBED, "true" );
+                                getNode().enqueue ( sub );
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+                // TODO Auto-generated method stub
+
+            }
+
+        } );
+
+        sashForm2.setWeights ( new int[] {1, 1} );
+
         mntmNewMember.addSelectionListener ( new SelectionListener()
         {
             @Override
@@ -2156,8 +2327,8 @@ public class SWTApp
         } );
 
 
-        scrolledComposite.setContent ( identTree );
-        scrolledComposite.setMinSize ( identTree.computeSize ( SWT.DEFAULT, SWT.DEFAULT ) );
+        //scrolledComposite.setContent ( identTree );
+        //scrolledComposite.setMinSize ( identTree.computeSize ( SWT.DEFAULT, SWT.DEFAULT ) );
 
         Composite composite_2 = new Composite ( sashForm, SWT.NONE );
         GridLayout gl_composite_2 = new GridLayout ( 1, false );
@@ -3245,6 +3416,16 @@ public class SWTApp
     public Label getLblVersion()
     {
         return lblVersion;
+    }
+
+    public Table getMembershipTable()
+    {
+        return membershipTable;
+    }
+
+    public TableViewer getMembershipTableViewer()
+    {
+        return membershipTableViewer;
     }
 
 }

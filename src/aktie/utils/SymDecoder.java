@@ -47,7 +47,7 @@ public class SymDecoder
 
             decodeText ( b, pl0, pl1 );
 
-            if ( pl != null || pl2 != null )
+            if ( pl0 != null || pl1 != null )
             {
                 return true;
             }

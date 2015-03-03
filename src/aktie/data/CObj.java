@@ -87,6 +87,7 @@ public class CObj
     public static String FILESIZE = "filesize";
     public static String SCOPE_PRIVATE = "private";
     public static String SCOPE_PUBLIC = "public";
+    public static String NAME_IS_PUBLIC = "namepub";
     public static String FILEDIGEST = "fdig";
     public static String FRAGDIGEST = "gdig"; //digest of digests
     public static String FRAGDIG = "frgdig"; //digest of single fragment

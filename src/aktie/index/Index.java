@@ -309,6 +309,37 @@ public class Index
         return search ( bq, Integer.MAX_VALUE );
     }
 
+    public CObjList getSemiPrivateCommunities ( Sort s )
+    {
+        //TODO HERE!
+        BooleanQuery bq = new BooleanQuery();
+        Term typterm = new Term ( CObj.PARAM_TYPE, CObj.COMMUNITY );
+        bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
+
+        Term mineterm = new Term ( CObj.docPrivate ( CObj.MINE ), "true" );
+        bq.add ( new TermQuery ( mineterm ), BooleanClause.Occur.MUST );
+
+        Term privterm = new Term ( CObj.docString ( CObj.SCOPE ), CObj.SCOPE_PRIVATE );
+        bq.add ( new TermQuery ( privterm ), BooleanClause.Occur.MUST );
+
+        return search ( bq, Integer.MAX_VALUE, s );
+    }
+
+    public CObjList getMyMemberships ( Sort s )
+    {
+        BooleanQuery bq = new BooleanQuery();
+        Term typterm = new Term ( CObj.PARAM_TYPE, CObj.COMMUNITY );
+        bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
+
+        Term mineterm = new Term ( CObj.docPrivate ( CObj.MINE ), "true" );
+        bq.add ( new TermQuery ( mineterm ), BooleanClause.Occur.MUST );
+
+        Term privterm = new Term ( CObj.docString ( CObj.SCOPE ), CObj.SCOPE_PRIVATE );
+        bq.add ( new TermQuery ( privterm ), BooleanClause.Occur.MUST );
+
+        return search ( bq, Integer.MAX_VALUE, s );
+    }
+
     public CObjList getMyMemberships ( String comid )
     {
         BooleanQuery bq = new BooleanQuery();

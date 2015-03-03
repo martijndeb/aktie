@@ -1,7 +1,9 @@
 package aktie.gui;
 
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import aktie.data.CObj;
 import aktie.index.Index;
@@ -9,15 +11,39 @@ import aktie.index.Index;
 public class IdentitySubTreeModel
 {
 
-    private Map<String, CObj> identities;
-    private Map<String, Map<String, CObj>> subCommunities;
+    private SortedMap<String, CObj> identities;
+    private SortedMap<String, SortedMap<String, CObj>> subCommunities;
     private Index index;
 
     public IdentitySubTreeModel ( Index i )
     {
         index = i;
-        identities = new HashMap<String, CObj>();
-        subCommunities = new HashMap<String, Map<String, CObj>>();
+        identities = new TreeMap<String, CObj>();
+        subCommunities = new TreeMap<String, SortedMap<String, CObj>> ( new Comparator<String>()
+        {
+            @Override
+            public int compare ( String o1, String o2 )
+            {
+                CObj co1 = identities.get ( o1 );
+                CObj co2 = identities.get ( o2 );
+
+                if ( co1 != null && co2 != null )
+                {
+                    String n1 = co1.getDisplayName();
+                    String n2 = co2.getDisplayName();
+
+                    if ( n1 != null && n2 != null )
+                    {
+                        return n1.compareTo ( n2 );
+                    }
+
+                }
+
+                return 0;
+            }
+
+        } );
+
     }
 
     public void update ( CObj c )
@@ -25,23 +51,42 @@ public class IdentitySubTreeModel
         if ( CObj.IDENTITY.equals ( c.getType() ) )
         {
             identities.put ( c.getId(), c );
-            Map<String, CObj> sm = subCommunities.get ( c.getId() );
-
-            if ( sm == null )
-            {
-                subCommunities.put ( c.getId(), new HashMap<String, CObj>() );
-            }
 
         }
 
         if ( CObj.SUBSCRIPTION.equals ( c.getType() ) )
         {
             String cid = c.getString ( CObj.CREATOR );
-            Map<String, CObj> sm = subCommunities.get ( cid );
+            SortedMap<String, CObj> sm = subCommunities.get ( cid );
 
             if ( sm == null )
             {
-                sm = new HashMap<String, CObj>();
+                sm = new TreeMap<String, CObj> ( new Comparator<String>()
+                {
+
+                    @Override
+                    public int compare ( String o1, String o2 )
+                    {
+                        CObj co1 = index.getByDig ( o1 );
+                        CObj co2 = index.getByDig ( o2 );
+
+                        if ( co1 != null && co2 != null )
+                        {
+                            String n1 = co1.getPrivateDisplayName();
+                            String n2 = co2.getPrivateDisplayName();
+
+                            if ( n1 != null && n2 != null )
+                            {
+                                return n1.compareTo ( n2 );
+                            }
+
+                        }
+
+                        return 0;
+                    }
+
+                } );
+
                 subCommunities.put ( cid, sm );
             }
 
@@ -70,7 +115,7 @@ public class IdentitySubTreeModel
         return identities;
     }
 
-    public Map<String, Map<String, CObj>> getSubCommunities()
+    public Map<String, SortedMap<String, CObj>> getSubCommunities()
     {
         return subCommunities;
     }
