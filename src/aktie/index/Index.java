@@ -309,24 +309,6 @@ public class Index
         return search ( bq, Integer.MAX_VALUE );
     }
 
-    public CObjList getSemiPrivateCommunities ( Sort s )
-    {
-        BooleanQuery bq = new BooleanQuery();
-        Term typterm = new Term ( CObj.PARAM_TYPE, CObj.COMMUNITY );
-        bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
-
-        Term mineterm = new Term ( CObj.docPrivate ( CObj.MINE ), "false" );
-        bq.add ( new TermQuery ( mineterm ), BooleanClause.Occur.MUST );
-
-        Term privterm = new Term ( CObj.docString ( CObj.SCOPE ), CObj.SCOPE_PRIVATE );
-        bq.add ( new TermQuery ( privterm ), BooleanClause.Occur.MUST );
-
-        Term pnterm = new Term ( CObj.docString ( CObj.NAME_IS_PUBLIC ), "true" );
-        bq.add ( new TermQuery ( pnterm ), BooleanClause.Occur.MUST );
-
-        return search ( bq, Integer.MAX_VALUE, s );
-    }
-
     public CObjList getMyMemberships ( Sort s )
     {
         BooleanQuery bq = new BooleanQuery();
@@ -387,6 +369,48 @@ public class Index
             return search ( idq, Integer.MAX_VALUE );
         }
 
+    }
+
+    public CObjList searchSemiPrivateCommunities ( String squery,  Sort s )
+    {
+        BooleanQuery bq = new BooleanQuery();
+        Term typterm = new Term ( CObj.PARAM_TYPE, CObj.COMMUNITY );
+        bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
+
+        Term mineterm = new Term ( CObj.docPrivate ( CObj.MINE ), "false" );
+        bq.add ( new TermQuery ( mineterm ), BooleanClause.Occur.MUST );
+
+        Term privterm = new Term ( CObj.docString ( CObj.SCOPE ), CObj.SCOPE_PRIVATE );
+        bq.add ( new TermQuery ( privterm ), BooleanClause.Occur.MUST );
+
+        Term pnterm = new Term ( CObj.docString ( CObj.NAME_IS_PUBLIC ), "true" );
+        bq.add ( new TermQuery ( pnterm ), BooleanClause.Occur.MUST );
+
+        if ( squery != null )
+        {
+            Matcher m = Pattern.compile ( "\\S+" ).matcher ( squery );
+
+            if ( m.find() )
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append ( CObj.docStringText ( CObj.NAME ) );
+                sb.append ( ":\"" );
+                sb.append ( squery );
+                sb.append ( "\" OR " );
+                sb.append ( CObj.docStringText ( CObj.DESCRIPTION ) );
+                sb.append ( ":\"" );
+                sb.append ( squery );
+                sb.append ( "\" OR " );
+                sb.append ( CObj.docStringText ( CObj.CREATOR_NAME ) );
+                sb.append ( ":\"" );
+                sb.append ( squery );
+                sb.append ( "\"" );
+                return search ( bq, sb.toString(), Integer.MAX_VALUE );
+            }
+
+        }
+
+        return search ( bq, Integer.MAX_VALUE, s );
     }
 
     public CObjList searchSubscribable ( String squery, String memid, boolean prv, boolean pub )

@@ -61,6 +61,8 @@ public class NewCommunityProcessor extends GenericProcessor
                 return true;
             }
 
+            o.pushString ( CObj.CREATOR_NAME, myid.getDisplayName() );
+
             String scope = o.getString ( CObj.SCOPE );
 
             if ( scope == null )

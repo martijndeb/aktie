@@ -771,11 +771,20 @@ public class SWTApp
 
                     }
 
-                    if ( CObj.MEMBERSHIP.equals ( type ) )
+                    if ( CObj.MEMBERSHIP.equals ( type ) || CObj.COMMUNITY.equals ( type ) )
                     {
                         if ( "true".equals ( co.getPrivate ( CObj.MINE ) ) )
                         {
-                            updateMembership();
+                            Display.getDefault().asyncExec ( new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    updateMembership();
+                                }
+
+                            } );
+
                         }
 
                     }
@@ -872,7 +881,7 @@ public class SWTApp
 
                     }
 
-                    else if ( CObj.COMMUNITY.equals ( co.getType() ) )
+                    if ( CObj.COMMUNITY.equals ( co.getType() ) )
                     {
                         CObj sub = new CObj();
                         sub.setType ( CObj.SUBSCRIPTION );
@@ -882,7 +891,7 @@ public class SWTApp
                         getNode().enqueue ( sub );
                     }
 
-                    else if ( CObj.SUBSCRIPTION.equals ( co.getType() ) )
+                    if ( CObj.SUBSCRIPTION.equals ( co.getType() ) )
                     {
                         final String creatorid = co.getString ( CObj.CREATOR );
 
@@ -902,7 +911,7 @@ public class SWTApp
 
                     }
 
-                    else if ( CObj.POST.equals ( co.getType() ) )
+                    if ( CObj.POST.equals ( co.getType() ) )
                     {
 
                         updateBanner ( co );
@@ -923,16 +932,26 @@ public class SWTApp
 
                     }
 
-                    else if ( CObj.MEMBERSHIP.equals ( co.getType() ) )
+                    if ( CObj.MEMBERSHIP.equals ( co.getType() ) ||
+                            CObj.COMMUNITY.equals ( co.getType() ) )
                     {
                         if ( "true".equals ( co.getPrivate ( CObj.MINE ) ) )
                         {
-                            updateMembership();
+                            Display.getDefault().asyncExec ( new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    updateMembership();
+                                }
+
+                            } );
+
                         }
 
                     }
 
-                    else if ( CObj.HASFILE.equals ( co.getType() ) )
+                    if ( CObj.HASFILE.equals ( co.getType() ) )
                     {
 
                         checkDownloadUpgrade ( co );
@@ -2189,8 +2208,8 @@ public class SWTApp
 
         TableViewerColumn mcol0 = new TableViewerColumn ( membershipTableViewer, SWT.NONE );
         mcol0.getColumn().setText ( "Memberships" );
-        mcol0.getColumn().setWidth ( 100 );
-        mcol0.setLabelProvider ( new CObjListPrivateColumnLabelProvider ( CObj.NAME ) );
+        mcol0.getColumn().setWidth ( 170 );
+        mcol0.setLabelProvider ( new CObjListPrivDispNameColumnLabelProvider ( ) );
         mcol0.getColumn().addSelectionListener ( new SelectionListener()
         {
 

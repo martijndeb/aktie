@@ -4,6 +4,8 @@ import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -68,6 +70,21 @@ public class ShowPrivComDialog extends Dialog
 
         Button btnSearch = new Button ( container, SWT.NONE );
         btnSearch.setText ( "Search" );
+        btnSearch.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                String str = searchTxt.getText();
+                doSearch ( str );
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
 
         communityTableViewer = new TableViewer ( container, SWT.BORDER | SWT.FULL_SELECTION );
         communityTable = communityTableViewer.getTable();
@@ -80,7 +97,7 @@ public class ShowPrivComDialog extends Dialog
         TableViewerColumn col0 = new TableViewerColumn ( communityTableViewer, SWT.NONE );
         col0.getColumn().setText ( "Community" );
         col0.getColumn().setWidth ( 150 );
-        col0.setLabelProvider ( new CObjListStringColumnLabelProvider ( CObj.NAME ) );
+        col0.setLabelProvider ( new CObjListDisplayNameColumnLabelProvider() );
 
         TableViewerColumn col1 = new TableViewerColumn ( communityTableViewer, SWT.NONE );
         col1.getColumn().setText ( "Creator" );
@@ -98,22 +115,27 @@ public class ShowPrivComDialog extends Dialog
         return super.open();
     }
 
+    private void doSearch ( String str )
+    {
+        CObjList clst = ( CObjList ) communityTableViewer.getInput();
+        Sort s = new Sort();
+        SortField sf = new SortField ( CObj.docString ( CObj.NAME ), SortField.Type.STRING, false );
+        s.setSort ( sf );
+        CObjList nlst = app.getNode().getIndex().searchSemiPrivateCommunities ( str, s );
+        communityTableViewer.setInput ( nlst );
+
+        if ( clst != null )
+        {
+            clst.close();
+        }
+
+    }
+
     public void fillData()
     {
         if ( communityTableViewer != null && communityTable != null && !communityTable.isDisposed() )
         {
-            CObjList clst = ( CObjList ) communityTableViewer.getInput();
-            Sort s = new Sort();
-            SortField sf = new SortField ( CObj.docString ( CObj.NAME ), SortField.Type.STRING, false );
-            s.setSort ( sf );
-            CObjList nlst = app.getNode().getIndex().getSemiPrivateCommunities ( s );
-            communityTableViewer.setInput ( nlst );
-
-            if ( clst != null )
-            {
-                clst.close();
-            }
-
+            doSearch ( null );
         }
 
     }
