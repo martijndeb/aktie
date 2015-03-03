@@ -226,7 +226,7 @@ public class NewCommunityDialog extends Dialog
         btnPublic.setText ( "Public" );
 
         btnPrivateButName = new Button ( composite, SWT.RADIO );
-        btnPrivateButName.setText ( "Private access, name displayed publicly" );
+        btnPrivateButName.setText ( "Private access, name displayed publicly as Locked Community" );
 
         btnPrivate = new Button ( composite, SWT.RADIO );
         btnPrivate.setText ( "Private access, name hidden to public" );

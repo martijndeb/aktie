@@ -51,6 +51,38 @@ public class IdentitySubTreeModel
         if ( CObj.IDENTITY.equals ( c.getType() ) )
         {
             identities.put ( c.getId(), c );
+            SortedMap<String, CObj> sm = subCommunities.get ( c.getId() );
+
+            if ( sm == null )
+            {
+                sm = new TreeMap<String, CObj> ( new Comparator<String>()
+                {
+
+                    @Override
+                    public int compare ( String o1, String o2 )
+                    {
+                        CObj co1 = index.getByDig ( o1 );
+                        CObj co2 = index.getByDig ( o2 );
+
+                        if ( co1 != null && co2 != null )
+                        {
+                            String n1 = co1.getPrivateDisplayName();
+                            String n2 = co2.getPrivateDisplayName();
+
+                            if ( n1 != null && n2 != null )
+                            {
+                                return n1.compareTo ( n2 );
+                            }
+
+                        }
+
+                        return 0;
+                    }
+
+                } );
+
+                subCommunities.put ( c.getId(), sm );
+            }
 
         }
 

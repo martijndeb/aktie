@@ -311,16 +311,18 @@ public class Index
 
     public CObjList getSemiPrivateCommunities ( Sort s )
     {
-        //TODO HERE!
         BooleanQuery bq = new BooleanQuery();
         Term typterm = new Term ( CObj.PARAM_TYPE, CObj.COMMUNITY );
         bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
 
-        Term mineterm = new Term ( CObj.docPrivate ( CObj.MINE ), "true" );
+        Term mineterm = new Term ( CObj.docPrivate ( CObj.MINE ), "false" );
         bq.add ( new TermQuery ( mineterm ), BooleanClause.Occur.MUST );
 
         Term privterm = new Term ( CObj.docString ( CObj.SCOPE ), CObj.SCOPE_PRIVATE );
         bq.add ( new TermQuery ( privterm ), BooleanClause.Occur.MUST );
+
+        Term pnterm = new Term ( CObj.docString ( CObj.NAME_IS_PUBLIC ), "true" );
+        bq.add ( new TermQuery ( pnterm ), BooleanClause.Occur.MUST );
 
         return search ( bq, Integer.MAX_VALUE, s );
     }

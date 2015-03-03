@@ -1148,6 +1148,7 @@ public class SWTApp
     private NewMemberDialog newMemberDialog;
     private NewPostDialog newPostDialog;
     private DownloadPriorityDialog downloadPriorityDialog;
+    private ShowPrivComDialog privComDialog;
     private ShowMembersDialog membersDialog;
     private IdentitySubTreeModel identSubTreeModel;
 
@@ -1825,6 +1826,8 @@ public class SWTApp
         downloadTableViewer.setInput ( getNode().getFileHandler() );
         membersDialog = new ShowMembersDialog ( shell, this );
         membersDialog.create();
+        privComDialog = new ShowPrivComDialog ( shell, this );
+        privComDialog.create();
         FileListContentProvider fc = ( FileListContentProvider ) fileTableViewer.getContentProvider();
         fc.setHH2Session ( getNode().getSession() );
         localFileColumnProvider.setIndex ( node.getIndex() );
@@ -1924,8 +1927,25 @@ public class SWTApp
         mntmSaveSeedFile.setText ( "Save Seed File" );
         mntmSaveSeedFile.addSelectionListener ( new SaveSeeds() );
 
+        MenuItem mntmShowlocked = new MenuItem ( menu_1, SWT.NONE );
+        mntmShowlocked.setText ( "Show Locked Communities" );
+        mntmShowlocked.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                privComDialog.open();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
         MenuItem mntmStartManualUpdate = new MenuItem ( menu_1, SWT.NONE );
-        mntmStartManualUpdate.setText ( "Start Update" );
+        mntmStartManualUpdate.setText ( "Force Update" );
         mntmStartManualUpdate.addSelectionListener ( new ManualUpdate() );
 
         lblVersion = new Label ( shell, SWT.NONE );
@@ -2285,7 +2305,24 @@ public class SWTApp
             @Override
             public void widgetDefaultSelected ( SelectionEvent e )
             {
-                // TODO Auto-generated method stub
+            }
+
+        } );
+
+        MenuItem mntmShowPriv = new MenuItem ( menu_6, SWT.NONE );
+        mntmShowPriv.setText ( "Show Locked Communities" );
+        mntmShowPriv.addSelectionListener ( new SelectionListener()
+        {
+
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                privComDialog.open();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
 
             }
 
