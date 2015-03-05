@@ -1059,17 +1059,38 @@ public class SWTApp
         {
             if ( selectedCommunity != null && selectedIdentity != null )
             {
-                FileDialog fd = new FileDialog ( shell, SWT.OPEN );
+                FileDialog fd = new FileDialog ( shell, SWT.OPEN | SWT.MULTI );
                 fd.setText ( "Add File" );
                 //fd.setFilterPath();
-                String[] filterExt = { "*.*" };
+                String[] filterExt =
+                {
+                    "*.*",
+                    "*.txt",
+                    "*.pdf",
+                    "*.exe",
+                    "*.jpg",
+                    "*.jpeg",
+                    "*.png",
+                    "*.gif",
+                    "*.bmp",
+                    "*.mov",
+                    "*.mpg",
+                    "*.mpeg",
+                    "*.avi",
+                    "*.flv",
+                    "*.wmv",
+                    "*.webv",
+                    "*.rm"
+                };
 
                 fd.setFilterExtensions ( filterExt );
-                String selected = fd.open();
+                fd.open();
+                String selary[] = fd.getFileNames();
+                String selpath = fd.getFilterPath();
 
-                if ( selected != null )
+                for ( int c = 0; c < selary.length; c++ )
                 {
-                    File f = new File ( selected );
+                    File f = new File ( selpath + File.separator + selary[c] );
 
                     if ( f.exists() )
                     {
@@ -1107,6 +1128,11 @@ public class SWTApp
 
                 }
 
+            }
+
+            else
+            {
+                MessageDialog.openWarning ( shell, "Select a community.", "Sorry, you have to select the community you wish to add a file to." );
             }
 
         }
@@ -1707,7 +1733,6 @@ public class SWTApp
                 if ( CObj.IDENTITY.equals ( co.getType() ) )
                 {
                     co.setType ( CObj.USR_SEED );
-                    System.out.println ( "SAVE SEED: " + co.getId() );
                     node.enqueue ( co );
                 }
 
@@ -1862,7 +1887,6 @@ public class SWTApp
                 File exf = new File ( exportCommunitiesFile );
                 CObjList pubcoms = node.getIndex().getPublicCommunities();
                 PrintWriter pw = new PrintWriter ( new FileOutputStream ( exf ) );
-                System.out.println ( "EXPORT COMMUNITIES: " + pubcoms.size() );
 
                 for ( int c = 0; c < pubcoms.size(); c++ )
                 {
@@ -2428,6 +2452,11 @@ public class SWTApp
                     newPostDialog.open ( selectedIdentity, selectedCommunity, null );
                 }
 
+                else
+                {
+                    MessageDialog.openWarning ( shell, "Select a community.", "Sorry, you have to select the community you wish to post to." );
+                }
+
             }
 
             @Override
@@ -2467,7 +2496,7 @@ public class SWTApp
         btnAdvanced.setLayoutData ( new GridData ( SWT.RIGHT, SWT.CENTER, false, false, 1, 1 ) );
         btnAdvanced.setText ( "Advanced" );
 
-        postTableViewer = new TableViewer ( composite_5, SWT.BORDER | SWT.FULL_SELECTION | SWT.H_SCROLL | SWT.V_SCROLL );
+        postTableViewer = new TableViewer ( composite_5, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION | SWT.H_SCROLL | SWT.V_SCROLL );
         postTable = postTableViewer.getTable();
         postTable.setLayoutData ( BorderLayout.CENTER );
         postTable.setHeaderVisible ( true );
@@ -2763,10 +2792,11 @@ public class SWTApp
                 if ( selectedIdentity != null )
                 {
                     IStructuredSelection sel = ( IStructuredSelection ) postTableViewer.getSelection();
+
                     @SuppressWarnings ( "rawtypes" )
                     Iterator i = sel.iterator();
 
-                    if ( i.hasNext() )
+                    while ( i.hasNext() )
                     {
                         Object selo = i.next();
 
@@ -2792,11 +2822,51 @@ public class SWTApp
 
         } );
 
+        MenuItem mntmReply = new MenuItem ( menu_5, SWT.NONE );
+        mntmReply.setText ( "Reply" );
+        mntmReply.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                if ( selectedIdentity != null )
+                {
+                    IStructuredSelection sel = ( IStructuredSelection ) postTableViewer.getSelection();
+
+                    @SuppressWarnings ( "rawtypes" )
+                    Iterator i = sel.iterator();
+
+                    while ( i.hasNext() )
+                    {
+                        Object selo = i.next();
+
+                        if ( selo instanceof CObjListArrayElement )
+                        {
+                            CObjListArrayElement ae = ( CObjListArrayElement ) selo;
+                            CObj pst = ae.getCObj();
+                            newPostDialog.reply ( selectedIdentity, selectedCommunity, pst );
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
         composite_6 = new Composite ( sashForm_1, SWT.NONE );
         composite_6.setLayout ( new GridLayout() );
 
         postText = new StyledText ( composite_6, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL );
         postText.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, true ) );
+        postText.setEditable ( false );
 
         // use a verify listener to dispose the images
         postText.addVerifyListener ( new VerifyListener()
@@ -3093,10 +3163,11 @@ public class SWTApp
                 if ( selectedIdentity != null )
                 {
                     IStructuredSelection sel = ( IStructuredSelection ) fileTableViewer.getSelection();
+
                     @SuppressWarnings ( "rawtypes" )
                     Iterator i = sel.iterator();
 
-                    if ( i.hasNext() )
+                    while ( i.hasNext() )
                     {
                         Object selo = i.next();
 
@@ -3167,7 +3238,7 @@ public class SWTApp
         tbtmDownloadds.setControl ( composite_10 );
         composite_10.setLayout ( new GridLayout ( 1, false ) );
 
-        downloadTableViewer = new TableViewer ( composite_10, SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI );
+        downloadTableViewer = new TableViewer ( composite_10, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION | SWT.MULTI );
         downloadTableViewer.setContentProvider ( new DownloadContentProvider() );
         downloadTable = downloadTableViewer.getTable();
         downloadTable.setHeaderVisible ( true );

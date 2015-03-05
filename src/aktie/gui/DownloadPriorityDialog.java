@@ -123,7 +123,6 @@ public class DownloadPriorityDialog extends Dialog
         if ( app != null && selected != null )
         {
             int pri = priority.getSelection();
-            System.out.println ( "NEW PRIORITY: " + pri );
             Iterator i = selected.iterator();
 
             while ( i.hasNext() )

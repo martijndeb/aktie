@@ -1,6 +1,8 @@
 package aktie.gui;
 
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import aktie.data.CObj;
 
@@ -20,6 +22,9 @@ import org.eclipse.swt.widgets.Button;
 
 public class NewPostDialog extends Dialog
 {
+
+    public static int REPLY_WRAP_LENGTH = 80;
+
     private Text subject;
     private Label lblPostingToCommunity;
     private Label lblNewLabel;
@@ -28,6 +33,7 @@ public class NewPostDialog extends Dialog
     private SWTApp app;
     private StyledText postBody;
     private CObj fileRef;
+    private CObj replyPost;
 
     /**
         Create the dialog.
@@ -53,16 +59,94 @@ public class NewPostDialog extends Dialog
             {
                 lblPostingToCommunity.setText ( "Posting to community: " + community.getPrivateDisplayName() );
                 lblNewLabel.setText ( "Posting as: " + postIdentity.getDisplayName() );
+
+                if ( replyPost != null )
+                {
+                    String fdig = replyPost.getString ( CObj.FILEDIGEST );
+
+                    if ( fdig != null )
+                    {
+                        fileRef = replyPost;
+                    }
+
+                    String subj = replyPost.getString ( CObj.SUBJECT );
+                    String body = replyPost.getText ( CObj.BODY );
+
+                    if ( subj == null ) { subj = ""; }
+
+                    Matcher m = Pattern.compile ( "^Re:" ).matcher ( subj );
+
+                    if ( !m.find() )
+                    {
+                        subj = "Re: " + subj;
+
+                    }
+
+                    subject.setText ( subj );
+
+                    if ( body != null )
+                    {
+                        StringBuilder rb = new StringBuilder();
+                        rb.append ( "\n" );
+                        String lines[] = body.split ( "\r\n|\n" );
+
+                        Matcher mt = Pattern.compile ( "^> " ).matcher ( "" );
+
+                        for ( int c = 0; c < lines.length; c++ )
+                        {
+                            String bln = lines[c];
+                            mt.reset ( bln );
+
+                            if ( !mt.find() )
+                            {
+                                if ( bln.length() == 0 )
+                                {
+                                    rb.append ( "> \n" );
+                                }
+
+                                for ( int cn = 0; cn < bln.length(); cn += REPLY_WRAP_LENGTH )
+                                {
+                                    rb.append ( "> " );
+                                    rb.append ( bln.substring ( cn,
+                                                                Math.min ( cn + REPLY_WRAP_LENGTH, bln.length() ) ) );
+                                    rb.append ( "\n" );
+                                }
+
+                            }
+
+                            else
+                            {
+                                rb.append ( "> " );
+                                rb.append ( bln );
+                                rb.append ( "\n" );
+                            }
+
+                        }
+
+                        postBody.setText ( rb.toString() );
+                    }
+
+                }
+
             }
 
         }
 
     }
 
+    public void reply ( CObj id, CObj comid, CObj rpst )
+    {
+        fileRef = null;
+        replyPost = rpst;
+        selectIdentity ( id, comid );
+        super.open();
+    }
+
     public void open ( CObj id, CObj comid, CObj fileref )
     {
-        selectIdentity ( id, comid );
+        replyPost = null;
         fileRef = fileref;
+        selectIdentity ( id, comid );
         super.open();
     }
 

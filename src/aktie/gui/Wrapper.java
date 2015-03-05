@@ -15,12 +15,14 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import aktie.utils.FUtils;
+
 public class Wrapper
 {
 
-    public static String VERSION = "version 0.1.1";
+    public static String VERSION = "version 0.1.3";
     public static String VERSION_FILE = "version.txt";
-    public static long RELEASETIME = 1425417188L * 1000L;
+    public static long RELEASETIME = 1425569593L * 1000L;
 
     public static String RUNDIR = "aktie_run_dir";
     public static String JARFILE = "aktie.jar";
@@ -194,12 +196,37 @@ public class Wrapper
 
                 if ( ef.exists() )
                 {
-                    ef.renameTo ( bakfile );
+                    try
+                    {
+                        FUtils.copy ( ef, bakfile );
+                    }
+
+                    catch ( IOException e )
+                    {
+                        e.printStackTrace();
+                    }
+
                 }
 
                 //Now change upgrade file
                 System.out.println ( "UPGRADING: " + ef.getPath() );
-                uf.renameTo ( ef );
+
+                try
+                {
+                    FUtils.copy ( uf, ef );
+
+                    if ( !uf.delete() )
+                    {
+                        System.out.println ( "ERROR: Could not delete upgrade file." );
+                    }
+
+                }
+
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                }
+
             }
 
         }
