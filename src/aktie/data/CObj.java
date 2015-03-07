@@ -63,6 +63,13 @@ public class CObj
     public static String USR_SEED = "usr_seed";
     public static String USR_COMMUNITY = "usr_com";
 
+    public static String PRV_NAME        = "prv_name";
+    public static String PRV_FILESIZE    = "prv_filesize";
+    public static String PRV_FRAGDIGEST  = "prv_fragdig";
+    public static String PRV_FRAGSIZE    = "prv_fragsize";
+    public static String PRV_FRAGNUMBER  = "prv_fragnum";
+    public static String PRV_FILEDIGEST  = "prv_filedig";
+
     public static String NAME = "name";
     public static String TXTNAME = "txtname";
     public static String DESCRIPTION = "desc";
