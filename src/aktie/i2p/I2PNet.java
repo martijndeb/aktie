@@ -14,11 +14,15 @@ import aktie.net.Net;
 public class I2PNet  implements Net
 {
 
+    private Properties customProps;
+
     private File i2pdir;
     private Router router;
 
-    public I2PNet ( String nodedir )
+    public I2PNet ( String nodedir, Properties p )
     {
+        customProps = p;
+
         i2pdir = new File ( nodedir + File.separator + "i2p" );
 
         if ( i2pdir.exists() )
@@ -26,17 +30,42 @@ public class I2PNet  implements Net
             i2pdir.mkdirs();
         }
 
-        if ( !testClient() )
+        if ( !externHost() )
         {
-            System.out.println ( "No i2p found.  Starting router." );
-            startI2P ();
+            if ( !testClient() )
+            {
+                System.out.println ( "No i2p found.  Starting router." );
+                startI2P ();
+            }
+
+            else
+            {
+                System.out.println ( "Router seems to be running already." );
+            }
+
         }
 
         else
         {
-            System.out.println ( "Router seems to be running already." );
+            System.out.println ( "You have selected to use an external I2P router." );
         }
 
+    }
+
+    private boolean externHost()
+    {
+        if ( customProps != null )
+        {
+            String hst = customProps.getProperty ( "i2cp.tcp.host" );
+
+            if ( hst != null && !"".equals ( hst ) )
+            {
+                return true;
+            }
+
+        }
+
+        return false;
     }
 
     private void startI2P ()
@@ -61,9 +90,18 @@ public class I2PNet  implements Net
     public Destination getExistingDestination ( File privateinfo )
     {
         Properties p = new Properties();
-        p.setProperty ( "i2cp.tcp.host", "127.0.0.1" );
-        p.setProperty ( "i2cp.tcp.port", "7654" );
-        p.setProperty ( "inbound.nickname", "aktie" );
+
+        if ( customProps == null )
+        {
+            p.setProperty ( "i2cp.tcp.host", "127.0.0.1" );
+            p.setProperty ( "i2cp.tcp.port", "7654" );
+            p.setProperty ( "inbound.nickname", "aktie" );
+        }
+
+        else
+        {
+            p.putAll ( customProps );
+        }
 
         try
         {

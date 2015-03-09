@@ -1273,6 +1273,39 @@ public class SWTApp
 
     }
 
+    private void startI2P()
+    {
+        Properties p = null;
+        File i2pp = new File ( nodeDir + File.separator + "i2p.props" );
+
+        if ( !i2pp.exists() )
+        {
+            i2pp = new File ( "i2p.props" );
+        }
+
+        if ( i2pp.exists() )
+        {
+            p = new Properties();
+
+            try
+            {
+                FileInputStream fis = new FileInputStream ( i2pp );
+                p.load ( fis );
+                fis.close();
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        i2pnet = new I2PNet ( nodeDir , p );
+        i2pnet.waitUntilReady();
+
+    }
+
 
     private I2PNet i2pnet;
 
@@ -1287,8 +1320,7 @@ public class SWTApp
             splash.setProgress ( "Starting I2P", 20 );
 
             // new RawNet ( new File ( nodeDir ) )
-            i2pnet = new I2PNet ( nodeDir );
-            i2pnet.waitUntilReady();
+            startI2P();
 
             splash.setProgress ( "Loading node data.", 40 );
 
@@ -1948,6 +1980,7 @@ public class SWTApp
             p.setType ( CObj.USR_DOWNLOAD_FILE );
             p.pushString ( CObj.CREATOR, selectedIdentity.getId() );
             p.pushString ( CObj.NAME, c.getString ( CObj.NAME ) );
+            p.pushString ( CObj.COMMUNITYID, c.getString ( CObj.COMMUNITYID ) );
             p.pushNumber ( CObj.FILESIZE, c.getNumber ( CObj.FILESIZE ) );
             p.pushString ( CObj.FRAGDIGEST, c.getString ( CObj.FRAGDIGEST ) );
             p.pushNumber ( CObj.FRAGSIZE, c.getNumber ( CObj.FRAGSIZE ) );
@@ -1969,6 +2002,7 @@ public class SWTApp
             CObj p = new CObj();
             p.setType ( CObj.USR_DOWNLOAD_FILE );
             p.pushString ( CObj.CREATOR, selectedIdentity.getId() );
+            p.pushString ( CObj.COMMUNITYID, c.getString ( CObj.COMMUNITYID ) );
             p.pushString ( CObj.NAME, c.getString ( CObj.PRV_NAME ) );
             p.pushNumber ( CObj.FILESIZE, c.getNumber ( CObj.PRV_FILESIZE ) );
             p.pushString ( CObj.FRAGDIGEST, c.getString ( CObj.PRV_FRAGDIGEST ) );

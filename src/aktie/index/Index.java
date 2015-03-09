@@ -115,8 +115,9 @@ public class Index
         catch ( Exception e )
         {
             e.printStackTrace();
-            throw new RuntimeException ( "Parse failure.  Don't let that happen." );
         }
+
+        return null;
 
     }
 
@@ -139,8 +140,9 @@ public class Index
         catch ( Exception e )
         {
             e.printStackTrace();
-            throw new RuntimeException ( "Parse failure.  Don't let that happen." );
         }
+
+        return null;
 
     }
 
@@ -158,8 +160,9 @@ public class Index
         catch ( Exception e )
         {
             e.printStackTrace();
-            throw new RuntimeException ( "Parse failure.  Don't let that happen." );
         }
+
+        return null;
 
     }
 
@@ -177,8 +180,9 @@ public class Index
         catch ( Exception e )
         {
             e.printStackTrace();
-            throw new RuntimeException ( "Parse failure.  Don't let that happen." );
         }
+
+        return null;
 
     }
 
@@ -1130,7 +1134,7 @@ public class Index
     {
         if ( o.getDig() == null && o.getId() == null )
         {
-            throw new RuntimeException ( "Digest or id required!" );
+            throw new IOException ( "Digest or id required!" );
         }
 
         boolean indexit = true;
