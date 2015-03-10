@@ -89,24 +89,40 @@ public class I2PNet  implements Net
     @Override
     public Destination getExistingDestination ( File privateinfo )
     {
+        String hst = "127.0.0.1";
+        int port = 7654;
         Properties p = new Properties();
 
         if ( customProps == null )
         {
-            p.setProperty ( "i2cp.tcp.host", "127.0.0.1" );
-            p.setProperty ( "i2cp.tcp.port", "7654" );
+            p.setProperty ( "i2cp.tcp.host", hst );
+            p.setProperty ( "i2cp.tcp.port", Integer.toString ( port ) );
             p.setProperty ( "inbound.nickname", "aktie" );
         }
 
         else
         {
             p.putAll ( customProps );
+            String h = customProps.getProperty ( "i2cp.tcp.host" );
+
+            if ( h != null )
+            {
+                hst = h;
+            }
+
+            String pt = customProps.getProperty ( "i2cp.tcp.port" );
+
+            if ( pt != null )
+            {
+                port = Integer.valueOf ( pt );
+            }
+
         }
 
         try
         {
             FileInputStream fis = new FileInputStream ( privateinfo );
-            I2PSocketManager manager = I2PSocketManagerFactory.createManager ( fis, p );
+            I2PSocketManager manager = I2PSocketManagerFactory.createManager ( fis, hst, port, p );
             fis.close();
             return new I2PDestination ( i2pdir, manager );
         }
@@ -122,11 +138,37 @@ public class I2PNet  implements Net
     @Override
     public Destination getNewDestination()
     {
+        String hst = "127.0.0.1";
+        int port = 7654;
         Properties p = new Properties();
-        p.setProperty ( "i2cp.tcp.host", "127.0.0.1" );
-        p.setProperty ( "i2cp.tcp.port", "7654" );
-        p.setProperty ( "inbound.nickname", "aktie" );
-        I2PSocketManager manager = I2PSocketManagerFactory.createManager ( p );
+
+        if ( customProps == null )
+        {
+            p.setProperty ( "i2cp.tcp.host", hst );
+            p.setProperty ( "i2cp.tcp.port", Integer.toString ( port ) );
+            p.setProperty ( "inbound.nickname", "aktie" );
+        }
+
+        else
+        {
+            p.putAll ( customProps );
+            String h = customProps.getProperty ( "i2cp.tcp.host" );
+
+            if ( h != null )
+            {
+                hst = h;
+            }
+
+            String pt = customProps.getProperty ( "i2cp.tcp.port" );
+
+            if ( pt != null )
+            {
+                port = Integer.valueOf ( pt );
+            }
+
+        }
+
+        I2PSocketManager manager = I2PSocketManagerFactory.createManager ( hst, port, p );
         return new I2PDestination ( i2pdir, manager );
     }
 
@@ -153,7 +195,28 @@ public class I2PNet  implements Net
     {
         try
         {
-            Socket s = new Socket ( "127.0.0.1", 7654 );
+            String hst = "127.0.0.1";
+            int port = 7654;
+
+            if ( customProps != null )
+            {
+                String h = customProps.getProperty ( "i2cp.tcp.host" );
+
+                if ( h != null )
+                {
+                    hst = h;
+                }
+
+                String pt = customProps.getProperty ( "i2cp.tcp.port" );
+
+                if ( pt != null )
+                {
+                    port = Integer.valueOf ( pt );
+                }
+
+            }
+
+            Socket s = new Socket ( hst, port );
             s.close();
             return true;
         }
