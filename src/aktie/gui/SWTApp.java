@@ -1482,7 +1482,7 @@ public class SWTApp
             vf.delete();
         }
 
-        System.exit ( 1 );
+        System.exit ( Wrapper.RESTART_RC );
     }
 
     private void saveVersionFile()
