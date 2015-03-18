@@ -1521,7 +1521,7 @@ public class IdentityManager
                     r.add ( cid );
                 }
 
-                CObjList mlst = index.getMemberships ( comid );
+                CObjList mlst = index.getMemberships ( comid, null );
 
                 for ( int ct = 0; ct < mlst.size(); ct++ )
                 {

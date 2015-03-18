@@ -4,6 +4,8 @@ import java.util.Date;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 
+import aktie.data.CObj;
+
 public class CObjListDateColumnLabelProvider extends ColumnLabelProvider
 {
 
@@ -18,7 +20,20 @@ public class CObjListDateColumnLabelProvider extends ColumnLabelProvider
     public String getText ( Object element )
     {
         CObjListGetter o = ( CObjListGetter ) element;
-        return ( new Date ( o.getCObj().getNumber ( key ) ) ).toString();
+        CObj co = o.getCObj();
+
+        if ( co != null )
+        {
+            Long cl = co.getNumber ( key );
+
+            if ( cl != null )
+            {
+                return ( new Date ( o.getCObj().getNumber ( key ) ) ).toString();
+            }
+
+        }
+
+        return "";
     }
 
 }

@@ -75,8 +75,7 @@ public class ShowPrivComDialog extends Dialog
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
-                String str = searchTxt.getText();
-                doSearch ( str );
+                doSearch ( );
             }
 
             @Override
@@ -98,11 +97,70 @@ public class ShowPrivComDialog extends Dialog
         col0.getColumn().setText ( "Community" );
         col0.getColumn().setWidth ( 150 );
         col0.setLabelProvider ( new CObjListDisplayNameColumnLabelProvider() );
+        col0.getColumn().addSelectionListener ( new SelectionListener()
+        {
+
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                String ns = CObj.docString ( CObj.NAME );
+
+                if ( ns.equals ( sortPostField1 ) )
+                {
+                    sortPostReverse = !sortPostReverse;
+                }
+
+                else
+                {
+                    sortPostField1 = ns;
+                    sortPostReverse = false;
+                    sortPostType1 = SortField.Type.STRING;
+                }
+
+                doSearch();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
 
         TableViewerColumn col1 = new TableViewerColumn ( communityTableViewer, SWT.NONE );
         col1.getColumn().setText ( "Creator" );
         col1.getColumn().setWidth ( 150 );
         col1.setLabelProvider ( new CObjListStringColumnLabelProvider ( CObj.CREATOR_NAME ) );
+        col1.getColumn().addSelectionListener ( new SelectionListener()
+        {
+
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                String ns = CObj.docString ( CObj.CREATOR_NAME );
+
+                if ( ns.equals ( sortPostField1 ) )
+                {
+                    sortPostReverse = !sortPostReverse;
+                }
+
+                else
+                {
+                    sortPostField1 = ns;
+                    sortPostReverse = false;
+                    sortPostType1 = SortField.Type.STRING;
+                }
+
+                doSearch();
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
 
         fillData();
 
@@ -115,12 +173,33 @@ public class ShowPrivComDialog extends Dialog
         return super.open();
     }
 
+    private String sortPostField1;
+    private boolean sortPostReverse;
+    private SortField.Type sortPostType1;
+
+    private void doSearch ()
+    {
+        String str = searchTxt.getText();
+        doSearch ( str );
+    }
+
     private void doSearch ( String str )
     {
         CObjList clst = ( CObjList ) communityTableViewer.getInput();
         Sort s = new Sort();
-        SortField sf = new SortField ( CObj.docString ( CObj.NAME ), SortField.Type.STRING, false );
-        s.setSort ( sf );
+
+        if ( sortPostField1 != null )
+        {
+            SortField sf = new SortField ( sortPostField1, sortPostType1, sortPostReverse );
+            s.setSort ( sf );
+        }
+
+        else
+        {
+            SortField sf = new SortField ( CObj.docString ( CObj.NAME ), SortField.Type.STRING, false );
+            s.setSort ( sf );
+        }
+
         CObjList nlst = app.getNode().getIndex().searchSemiPrivateCommunities ( str, s );
         communityTableViewer.setInput ( nlst );
 

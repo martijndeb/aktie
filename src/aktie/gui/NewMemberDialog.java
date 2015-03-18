@@ -5,6 +5,8 @@ import java.io.IOException;
 import aktie.data.CObj;
 import aktie.index.CObjList;
 
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.events.SelectionEvent;
@@ -207,19 +209,7 @@ public class NewMemberDialog extends Dialog
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
-                CObjList oldl = ( CObjList ) tableViewer.getInput();
-                String squery = searchText.getText();
-                CObjList l = app.getNode().getIndex().searchIdenties ( squery );
-
-                if ( tableViewer != null )
-                {
-                    tableViewer.setInput ( l );
-                }
-
-                if ( oldl != null )
-                {
-                    oldl.close();
-                }
+                doSearch();
 
             }
 
@@ -243,11 +233,67 @@ public class NewMemberDialog extends Dialog
         col0.getColumn().setText ( "Name" );
         col0.getColumn().setWidth ( 150 );
         col0.setLabelProvider ( new CObjListDisplayNameColumnLabelProvider() );
+        col0.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                String ns = CObj.docString ( CObj.NAME );
+
+                if ( ns.equals ( sortPostField1 ) )
+                {
+                    sortPostReverse = !sortPostReverse;
+                }
+
+                else
+                {
+                    sortPostField1 = ns;
+                    sortPostReverse = false;
+                    sortPostType1 = SortField.Type.STRING;
+                }
+
+                doSearch();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
 
         TableViewerColumn col1 = new TableViewerColumn ( tableViewer, SWT.NONE );
         col1.getColumn().setText ( "Description" );
         col1.getColumn().setWidth ( 150 );
         col1.setLabelProvider ( new CObjListStringColumnLabelProvider ( CObj.DESCRIPTION ) );
+        col1.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                String ns = CObj.docString ( CObj.DESCRIPTION );
+
+                if ( ns.equals ( sortPostField1 ) )
+                {
+                    sortPostReverse = !sortPostReverse;
+                }
+
+                else
+                {
+                    sortPostField1 = ns;
+                    sortPostReverse = false;
+                    sortPostType1 = SortField.Type.STRING;
+                }
+
+                doSearch();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
 
         Composite composite = new Composite ( container, SWT.NONE );
         composite.setLayout ( new RowLayout ( SWT.VERTICAL ) );
@@ -269,14 +315,54 @@ public class NewMemberDialog extends Dialog
         return container;
     }
 
+    private String sortPostField1;
+    private boolean sortPostReverse;
+    private SortField.Type sortPostType1;
+
+    private void doSearch()
+    {
+        String squery = searchText.getText();
+        doSearch ( squery );
+    }
+
+    private void doSearch ( String str )
+    {
+        Sort s = new Sort();
+
+        if ( sortPostField1 != null )
+        {
+            s.setSort ( new SortField ( sortPostField1, sortPostType1, sortPostReverse ) );
+
+        }
+
+        else
+        {
+            s.setSort ( new SortField ( CObj.docNumber ( CObj.CREATEDON ), SortField.Type.LONG, true ) );
+        }
+
+        CObjList oldl = ( CObjList ) tableViewer.getInput();
+
+        CObjList l = app.getNode().getIndex().searchIdenties ( str, s );
+
+        if ( tableViewer != null )
+        {
+            tableViewer.setInput ( l );
+        }
+
+        if ( oldl != null )
+        {
+            oldl.close();
+        }
+
+    }
+
     private void defaultSearch()
     {
         if ( app != null )
         {
             if ( tableViewer != null && !table.isDisposed() )
             {
-                CObjList l = app.getNode().getIndex().searchIdenties ( "" );
-                tableViewer.setInput ( l );
+                doSearch ( "" );
             }
 
         }

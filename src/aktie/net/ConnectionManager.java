@@ -451,7 +451,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
             {
                 if ( dt.numberConnection() < MAX_CONNECTIONS )
                 {
-                    CObjList hlst = index.getSubscriptions ( cm.getCommunityId() );
+                    CObjList hlst = index.getSubscriptions ( cm.getCommunityId(), null );
                     //See how many of these nodes we're connected to
                     attemptDestinationConnection ( hlst, dt, mymap );
                 }
@@ -471,7 +471,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
             {
                 if ( dt.numberConnection() < MAX_CONNECTIONS )
                 {
-                    CObjList hlst = index.getSubscriptions ( cm.getCommunityId() );
+                    CObjList hlst = index.getSubscriptions ( cm.getCommunityId(), null );
                     //See how many of these nodes we're connected to
                     attemptDestinationConnection ( hlst, dt, mymap );
                 }
@@ -497,7 +497,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
                     if ( CObj.SCOPE_PRIVATE.equals ( com.getString ( CObj.SCOPE ) ) )
                     {
-                        CObjList hlst = index.getMemberships ( cm.getCommunityId() );
+                        CObjList hlst = index.getMemberships ( cm.getCommunityId(), null );
                         hlst.add ( com ); //attempt to connect to the community creator too
                         log.info ( "subscription update nodes to try: " + hlst.size() );
                         //See how many of these nodes we're connected to
@@ -672,8 +672,6 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             }
 
-            //If there are no real fragments to request yet, then go ahead and request
-            //fragment lists for ones we don't have yet.
             if ( r == null )
             {
                 //First find the highest priority file we're tryiing to get
@@ -759,9 +757,11 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
                         if ( cl.size() > 0 )
                         {
+                            int idx = Utils.Random.nextInt ( cl.size() );
+
                             try
                             {
-                                CObj co = cl.get ( Utils.Random.nextInt ( cl.size() ) );
+                                CObj co = cl.get ( idx );
                                 co.pushPrivate ( CObj.COMPLETE, "req" );
                                 index.index ( co );
                                 CObj sr = new CObj();

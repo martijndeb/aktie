@@ -74,6 +74,7 @@ public class I2PNet  implements Net
         System.setProperty ( "i2p.dir.base", i2pdir.getPath() );
         System.setProperty ( "loggerFilenameOverride", "log" + File.separator + "log-router.log" );
         router = new Router();
+        router.setKillVMOnEnd ( false );
         router.runRouter();
     }
 
@@ -121,9 +122,22 @@ public class I2PNet  implements Net
 
         try
         {
-            FileInputStream fis = new FileInputStream ( privateinfo );
-            I2PSocketManager manager = I2PSocketManagerFactory.createManager ( fis, hst, port, p );
-            fis.close();
+            I2PSocketManager manager = null;
+
+            while ( manager == null )
+            {
+                FileInputStream fis = new FileInputStream ( privateinfo );
+                manager = I2PSocketManagerFactory.createManager ( fis, hst, port, p );
+                fis.close();
+
+                if ( manager == null )
+                {
+                    System.out.println ( "Wating for socket manager for existing destination." );
+                    Thread.sleep ( 1000 );
+                }
+
+            }
+
             return new I2PDestination ( i2pdir, manager );
         }
 
@@ -168,7 +182,30 @@ public class I2PNet  implements Net
 
         }
 
-        I2PSocketManager manager = I2PSocketManagerFactory.createManager ( hst, port, p );
+        I2PSocketManager manager = null;
+
+        while ( manager == null )
+        {
+            manager = I2PSocketManagerFactory.createManager ( hst, port, p );
+
+            if ( manager == null )
+            {
+                System.out.println ( "Wating for socket manager for new destination." );
+
+                try
+                {
+                    Thread.sleep ( 1000 );
+                }
+
+                catch ( InterruptedException e )
+                {
+                    e.printStackTrace();
+                }
+
+            }
+
+        }
+
         return new I2PDestination ( i2pdir, manager );
     }
 

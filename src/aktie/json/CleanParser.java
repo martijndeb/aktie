@@ -32,7 +32,11 @@ public class CleanParser
         bytesRead = 0;
         StringBuilder sb = new StringBuilder();
         int pcnt = 1;
-        char cr = ( char ) InStream.read();
+        int rs = InStream.read();
+
+        if ( rs < 0 ) { throw new IOException ( "EOF0" ); }
+
+        char cr = ( char ) rs;
         bytesRead++;
 
         if ( '{' != cr )
@@ -47,7 +51,12 @@ public class CleanParser
 
         while ( pcnt > 0 )
         {
-            cr = ( char ) InStream.read();
+            rs = InStream.read();
+
+            if ( rs < 0 ) { throw new IOException ( "EOF1" ); }
+
+            cr = ( char ) rs;
+
             bytesRead++;
             sb.append ( cr );
 

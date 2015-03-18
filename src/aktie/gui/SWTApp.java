@@ -181,6 +181,8 @@ public class SWTApp
 
         }
 
+        @SuppressWarnings ( { "rawtypes", "unchecked" } )
+
         public int compare ( Viewer viewer, Object e1, Object e2 )
         {
             if ( e1 instanceof ConnectionThread &&
@@ -207,8 +209,17 @@ public class SWTApp
 
                 if ( labprov != null )
                 {
-                    String dn0 = labprov.getText ( ct1 );
-                    String dn1 = labprov.getText ( ct2 );
+                    String s0 = labprov.getText ( ct1 );
+                    String s1 = labprov.getText ( ct2 );
+
+                    Comparable dn0 = s0;
+                    Comparable dn1 = s1;
+
+                    if ( column > 0 )
+                    {
+                        dn0 = Long.valueOf ( s0 );
+                        dn1 = Long.valueOf ( s1 );
+                    }
 
                     if ( !reverse )
                     {
@@ -338,6 +349,8 @@ public class SWTApp
 
         }
 
+        @SuppressWarnings ( { "rawtypes", "unchecked" } )
+
         public int compare ( Viewer viewer, Object e1, Object e2 )
         {
             if ( e1 instanceof RequestFile &&
@@ -374,8 +387,18 @@ public class SWTApp
 
                 if ( labprov != null )
                 {
-                    String dn0 = labprov.getText ( ct1 );
-                    String dn1 = labprov.getText ( ct2 );
+
+                    String s0 = labprov.getText ( ct1 );
+                    String s1 = labprov.getText ( ct2 );
+
+                    Comparable dn0 = s0;
+                    Comparable dn1 = s1;
+
+                    if ( column > 0 )
+                    {
+                        dn0 = Long.valueOf ( s0 );
+                        dn1 = Long.valueOf ( s1 );
+                    }
 
                     if ( !reverse )
                     {
@@ -1958,7 +1981,7 @@ public class SWTApp
         int w = rect.width;
         int h = rect.height;
 
-        resize = true;
+        //resize = true;
         style.metrics = new GlyphMetrics ( h, 0, w );
         postText.setStyleRange ( style );
     }

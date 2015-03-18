@@ -553,18 +553,18 @@ public class TestNode
                 e.printStackTrace();
             }
 
-            clist = n1.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n1.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 0, clist.size() );
             clist.close();
 
-            clist = n2.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n2.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 1, clist.size() );
             co = clist.get ( 0 );
             assertEquals ( n0seed.getId(), co.getString ( CObj.CREATOR ) );
             assertEquals ( com0n0.getDig(), co.getString ( CObj.COMMUNITYID ) );
             clist.close();
 
-            clist = n3.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n3.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 0, clist.size() );
             clist.close();
 
@@ -628,7 +628,7 @@ public class TestNode
                 e.printStackTrace();
             }
 
-            clist = n0.getIndex().getMemberships ( com0n0.getDig() );
+            clist = n0.getIndex().getMemberships ( com0n0.getDig(), null );
             System.out.println ( "N0: " + clist.size() );
             assertEquals ( 2, clist.size() );
 
@@ -642,12 +642,12 @@ public class TestNode
 
             clist.close();
 
-            clist = n1.getIndex().getMemberships ( com0n0.getDig() );
+            clist = n1.getIndex().getMemberships ( com0n0.getDig(), null );
             System.out.println ( "N1: " + clist.size() );
             assertEquals ( 0, clist.size() );
             clist.close();
 
-            clist = n2.getIndex().getMemberships ( com0n0.getDig() );
+            clist = n2.getIndex().getMemberships ( com0n0.getDig(), null );
             System.out.println ( "N2: " + clist.size() );
             assertEquals ( 2, clist.size() );
 
@@ -661,7 +661,7 @@ public class TestNode
 
             clist.close();
 
-            clist = n3.getIndex().getMemberships ( com0n0.getDig() );
+            clist = n3.getIndex().getMemberships ( com0n0.getDig(), null );
             System.out.println ( "N3: " + clist.size() );
             assertEquals ( 2, clist.size() );
 
@@ -730,18 +730,18 @@ public class TestNode
                 e.printStackTrace();
             }
 
-            clist = n1.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n1.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 0, clist.size() );
             clist.close();
 
-            clist = n2.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n2.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 1, clist.size() );
             co = clist.get ( 0 );
             assertEquals ( n0seed.getId(), co.getString ( CObj.CREATOR ) );
             assertEquals ( com0n0.getDig(), co.getString ( CObj.COMMUNITYID ) );
             clist.close();
 
-            clist = n3.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n3.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 1, clist.size() );
             co = clist.get ( 0 );
             assertEquals ( n0seed.getId(), co.getString ( CObj.CREATOR ) );
@@ -797,7 +797,7 @@ public class TestNode
                 e.printStackTrace();
             }
 
-            clist = n0.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n0.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 2, clist.size() );
 
             for ( int c = 0; c < clist.size(); c++ )
@@ -810,11 +810,11 @@ public class TestNode
 
             clist.close();
 
-            clist = n1.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n1.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 0, clist.size() );
             clist.close();
 
-            clist = n2.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n2.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 2, clist.size() );
 
             for ( int c = 0; c < clist.size(); c++ )
@@ -827,7 +827,7 @@ public class TestNode
 
             clist.close();
 
-            clist = n3.getIndex().getSubscriptions ( com0n0.getDig() );
+            clist = n3.getIndex().getSubscriptions ( com0n0.getDig(), null );
             assertEquals ( 2, clist.size() );
 
             for ( int c = 0; c < clist.size(); c++ )

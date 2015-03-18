@@ -1,7 +1,11 @@
 package aktie.gui;
 
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -61,6 +65,21 @@ public class ShowMembersDialog extends Dialog
         col0.getColumn().setText ( "Identity" );
         col0.getColumn().setWidth ( 300 );
         col0.setLabelProvider ( new CObjListDisplayNameColumnLabelProvider() );
+        col0.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                memberReverseSort = !memberReverseSort;
+                doMemSearch();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
 
         lblSubscribers = new Label ( container, SWT.NONE );
         lblSubscribers.setText ( "Subscribers" );
@@ -80,11 +99,30 @@ public class ShowMembersDialog extends Dialog
         scol0.getColumn().setText ( "Identity" );
         scol0.getColumn().setWidth ( 300 );
         scol0.setLabelProvider ( new CObjListDisplayNameColumnLabelProvider() );
+        scol0.getColumn().addSelectionListener ( new SelectionListener()
+        {
+
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                subReverseSort = !subReverseSort;
+                doSubSearch();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
 
         setCommunity ( selectedCommunity );
 
         return container;
     }
+
+    private boolean memberReverseSort = false;
+    private boolean subReverseSort = false;
 
     /**
         Create contents of the button bar.
@@ -117,42 +155,62 @@ public class ShowMembersDialog extends Dialog
         if ( selectedCommunity != null && !memberTable.isDisposed() &&
                 !subTable.isDisposed() && !lblMembersOfCommunity.isDisposed() )
         {
-            String name = selectedCommunity.getPrivate ( CObj.NAME );
-            String lablestr = "Members of Community: " + name;
+            doMemSearch();
 
-            CObjList ol = ( CObjList ) memberTableViewer.getInput();
+            doSubSearch();
 
-            if ( CObj.SCOPE_PUBLIC.equals ( selectedCommunity.getString ( CObj.SCOPE ) ) )
-            {
-                lablestr = lablestr + " (PUBLIC)";
-                CObjList tl = new CObjList();
-                memberTableViewer.setInput ( tl );
-            }
+        }
 
-            else
-            {
-                CObjList memlst =
-                    app.getNode().getIndex().getMemberships ( selectedCommunity.getDig() );
-                memberTableViewer.setInput ( memlst );
-            }
+    }
 
-            lblMembersOfCommunity.setText ( lablestr );
+    private void doSubSearch()
+    {
+        Sort s = new Sort();
 
-            if ( ol != null )
-            {
-                ol.close();
-            }
+        s.setSort ( new SortField ( CObj.docString ( CObj.CREATOR ), SortField.Type.STRING, subReverseSort ) );
 
-            ol = ( CObjList ) subTableViewer.getInput();
-            CObjList sublst =
-                app.getNode().getIndex().getSubscriptions ( selectedCommunity.getDig() );
-            subTableViewer.setInput ( sublst );
+        CObjList ol = ( CObjList ) subTableViewer.getInput();
+        CObjList sublst =
+            app.getNode().getIndex().getSubscriptions ( selectedCommunity.getDig(), s );
+        subTableViewer.setInput ( sublst );
 
-            if ( ol != null )
-            {
-                ol.close();
-            }
+        if ( ol != null )
+        {
+            ol.close();
+        }
 
+    }
+
+    private void doMemSearch()
+    {
+        String name = selectedCommunity.getPrivate ( CObj.NAME );
+        String lablestr = "Members of Community: " + name;
+
+        CObjList ol = ( CObjList ) memberTableViewer.getInput();
+
+        if ( CObj.SCOPE_PUBLIC.equals ( selectedCommunity.getString ( CObj.SCOPE ) ) )
+        {
+            lablestr = lablestr + " (PUBLIC)";
+            CObjList tl = new CObjList();
+            memberTableViewer.setInput ( tl );
+        }
+
+        else
+        {
+            Sort s = new Sort();
+
+            s.setSort ( new SortField ( CObj.docString ( CObj.NAME ), SortField.Type.STRING, memberReverseSort ) );
+
+            CObjList memlst =
+                app.getNode().getIndex().getMemberships ( selectedCommunity.getDig(), s );
+            memberTableViewer.setInput ( memlst );
+        }
+
+        lblMembersOfCommunity.setText ( lablestr );
+
+        if ( ol != null )
+        {
+            ol.close();
         }
 
     }

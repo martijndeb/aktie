@@ -298,7 +298,7 @@ public class Index
         return r;
     }
 
-    public CObjList getMemberships ( String comid )
+    public CObjList getMemberships ( String comid, Sort s )
     {
         BooleanQuery bq = new BooleanQuery();
         Term typterm = new Term ( CObj.PARAM_TYPE, CObj.MEMBERSHIP );
@@ -310,7 +310,7 @@ public class Index
         Term validterm = new Term ( CObj.docPrivate ( CObj.VALIDMEMBER ), "true" );
         bq.add ( new TermQuery ( validterm ), BooleanClause.Occur.MUST );
 
-        return search ( bq, Integer.MAX_VALUE );
+        return search ( bq, Integer.MAX_VALUE, s );
     }
 
     public CObjList getMyMemberships ( Sort s )
@@ -346,7 +346,7 @@ public class Index
         return search ( bq, Integer.MAX_VALUE );
     }
 
-    public CObjList searchIdenties ( String squery )
+    public CObjList searchIdenties ( String squery, Sort s )
     {
         BooleanQuery idq = new BooleanQuery();
         Term idterm = new Term ( CObj.PARAM_TYPE, CObj.IDENTITY );
@@ -365,12 +365,12 @@ public class Index
             sb.append ( ":\"" );
             sb.append ( squery );
             sb.append ( "\"" );
-            return search ( idq, sb.toString(), Integer.MAX_VALUE );
+            return search ( idq, sb.toString(), Integer.MAX_VALUE, s );
         }
 
         else
         {
-            return search ( idq, Integer.MAX_VALUE );
+            return search ( idq, Integer.MAX_VALUE, s );
         }
 
     }
@@ -417,7 +417,7 @@ public class Index
         return search ( bq, Integer.MAX_VALUE, s );
     }
 
-    public CObjList searchSubscribable ( String squery, String memid, boolean prv, boolean pub )
+    public CObjList searchSubscribable ( String squery, String memid, boolean prv, boolean pub, Sort s )
     {
         if ( !prv && !pub )
         {
@@ -462,12 +462,12 @@ public class Index
                 sb.append ( ":\"" );
                 sb.append ( squery );
                 sb.append ( "\"" );
-                return search ( combined, sb.toString(), Integer.MAX_VALUE );
+                return search ( combined, sb.toString(), Integer.MAX_VALUE, s );
             }
 
         }
 
-        return search ( combined, Integer.MAX_VALUE );
+        return search ( combined, Integer.MAX_VALUE, s );
     }
 
     public CObjList searchPosts ( String comid, String qstr, Sort srt )
@@ -536,7 +536,7 @@ public class Index
 
     }
 
-    public CObjList getSubscriptions ( String comid )
+    public CObjList getSubscriptions ( String comid, Sort s )
     {
         BooleanQuery bq = new BooleanQuery();
         Term typterm = new Term ( CObj.PARAM_TYPE, CObj.SUBSCRIPTION );
@@ -548,7 +548,7 @@ public class Index
         Term subterm = new Term ( CObj.docString ( CObj.SUBSCRIBED ), "true" );
         bq.add ( new TermQuery ( subterm ), BooleanClause.Occur.MUST );
 
-        return search ( bq, Integer.MAX_VALUE );
+        return search ( bq, Integer.MAX_VALUE, s );
     }
 
     public CObjList getSubsUnsubs ( String comid )
