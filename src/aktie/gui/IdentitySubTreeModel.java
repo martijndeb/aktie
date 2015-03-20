@@ -48,6 +48,14 @@ public class IdentitySubTreeModel
 
     public void update ( CObj c )
     {
+    	if ( CObj.POST.equals(c.getType())) {
+    		//loop through subCommunities to look for community 
+    		String comid = c.getString(CObj.COMMUNITYID);
+    		if (comid != null) {
+    			subCommunities.values().iterator();
+    			//TODO HERE
+    		}
+    	}
         if ( CObj.IDENTITY.equals ( c.getType() ) )
         {
             identities.put ( c.getId(), c );

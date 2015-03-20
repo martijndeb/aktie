@@ -583,11 +583,382 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         }
 
     }
+    
+    private Object findNext( String localdest, String remotedest, List<String> comlist, long rdy ) {
+    	Object r = null;
+
+    	//get files if we want them
+    	if ( rdy == 0 ) 
+    	{
+    		List<RequestFile> rflst = fileHandler.findFileListFrags ( localdest, 10L * 60L * 1000L );
+    		log.info ( "Requests for fragment list: " + rflst.size() );
+    		Iterator<RequestFile> it = rflst.iterator();
+
+    		while ( it.hasNext() && r == null )
+    		{
+    			RequestFile rf = it.next();
+    			CObj nhf = index.getIdentHasFile ( rf.getCommunityId(), remotedest,
+    					rf.getWholeDigest(), rf.getFragmentDigest() );
+
+    			if ( nhf != null && "true".equals ( nhf.getString ( CObj.STILLHASFILE ) ) )
+    			{
+    				if ( fileHandler.claimFileListClaim ( rf ) )
+    				{
+    					CObj cr = new CObj();
+    					cr.setType ( CObj.CON_REQ_FRAGLIST );
+    					cr.pushString ( CObj.COMMUNITYID, rf.getCommunityId() );
+    					cr.pushString ( CObj.FILEDIGEST, rf.getWholeDigest() );
+    					cr.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
+    					r = cr;
+    				}
+
+    			}
+
+    		}
+
+    		if ( r == null )
+    		{
+    			//First find the highest priority file we're tryiing to get
+    			//from the communities this node is subscribed to.
+    			List<RequestFile> rlst = fileHandler.findFileToGetFrags ( localdest );
+    			it = rlst.iterator();
+
+    			while ( it.hasNext() && r == null )
+    			{
+    				//See if the remote dest has the file.
+    				RequestFile rf = it.next();
+    				CObj nhf = index.getIdentHasFile ( rf.getCommunityId(), remotedest,
+    						rf.getWholeDigest(), rf.getFragmentDigest() );
+
+    				if ( nhf != null && "true".equals ( nhf.getString ( CObj.STILLHASFILE ) ) )
+    				{
+    					//Find the fragments that haven't been requested yet.
+    					CObjList cl = index.getFragmentsToRequest ( rf.getCommunityId(),
+    							rf.getWholeDigest(), rf.getFragmentDigest() );
+
+    					if ( cl.size() == 0 )
+    					{
+    						//If there are no fragments that have not be requested yet,
+    						//then let's reset the ones that in the req status, and not
+    						//complete, in case we just failed to get it back after
+    						//requesting.
+    						cl.close();
+    						cl = index.getFragmentsToReset ( rf.getCommunityId(),
+    								rf.getWholeDigest(), rf.getFragmentDigest() );
+
+    						for ( int c = 0; c < cl.size(); c++ )
+    						{
+    							try
+    							{
+    								//Set to false, so that we'll request again.
+    								//Ones already complete won't be reset.
+    								CObj co = cl.get ( c );
+    								co.pushPrivate ( CObj.COMPLETE, "false" );
+    								index.index ( co );
+    							}
+
+    							catch ( IOException e )
+    							{
+    								e.printStackTrace();
+    							}
+
+    						}
+
+    						cl.close();
+    						//Get the new list of fragments to request after resetting
+    						cl = index.getFragmentsToRequest ( rf.getCommunityId(),
+    								rf.getWholeDigest(), rf.getFragmentDigest() );
+
+    						if ( cl.size() == 0 )
+    						{
+    							//We're done, but the RequestFile wasn't updated properly.  do it now.
+    							if ( fileHandler.claimFileComplete ( rf ) )
+    							{
+    								//Generate a HasFileRecord
+    								CObj hf = new CObj();
+    								hf.setType ( CObj.HASFILE );
+    								hf.pushString ( CObj.CREATOR, rf.getRequestId() );
+    								hf.pushString ( CObj.COMMUNITYID, rf.getCommunityId() );
+    								hf.pushString ( CObj.NAME, ( new File ( rf.getLocalFile() ) ).getName() );
+    								hf.pushText ( CObj.NAME, hf.getString ( CObj.NAME ) );
+    								hf.pushNumber ( CObj.FRAGSIZE, rf.getFragSize() );
+    								hf.pushNumber ( CObj.FILESIZE, rf.getFileSize() );
+    								hf.pushNumber ( CObj.FRAGNUMBER, rf.getFragsTotal() );
+    								hf.pushString ( CObj.STILLHASFILE, "true" );
+    								hf.pushString ( CObj.FILEDIGEST, rf.getWholeDigest() );
+    								hf.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
+    								hf.pushPrivate ( CObj.LOCALFILE, rf.getLocalFile() );
+    								hf.pushPrivate ( CObj.UPGRADEFLAG, rf.isUpgrade() ? "true" : "false" );
+    								log.info ( "File download completed. 1  Upgrade flag: " + rf.isUpgrade() );
+    								hfc.createHasFile ( hf );
+    								hfc.updateFileInfo ( hf );
+    								callback.update ( hf );
+    							}
+
+    						}
+
+    					}
+
+    					if ( cl.size() > 0 )
+    					{
+    						int idx = Utils.Random.nextInt ( cl.size() );
+
+    						try
+    						{
+    							CObj co = cl.get ( idx );
+    							co.pushPrivate ( CObj.COMPLETE, "req" );
+    							index.index ( co );
+    							CObj sr = new CObj();
+    							sr.setType ( CObj.CON_REQ_FRAG );
+    							sr.pushString ( CObj.COMMUNITYID, co.getString ( CObj.COMMUNITYID ) );
+    							sr.pushString ( CObj.FILEDIGEST, co.getString ( CObj.FILEDIGEST ) );
+    							sr.pushString ( CObj.FRAGDIGEST, co.getString ( CObj.FRAGDIGEST ) );
+    							sr.pushString ( CObj.FRAGDIG, co.getString ( CObj.FRAGDIG ) );
+    							r = sr;
+    						}
+
+    						catch ( IOException e )
+    						{
+    							e.printStackTrace();
+    						}
+
+    					}
+
+    					cl.close();
+    				}
+
+    			}
+
+    		}
+
+    	}
+
+    	//get has file information
+    	if ( rdy == 1 || ( rdy < 1 && r == null) ) 
+    	{
+    		CommunityMember cm = identManager.claimHasFileUpdate ( comlist );
+
+    		if ( cm != null )
+    		{
+    			log.info ( "send has file update request" );
+    			CObj cr = new CObj();
+    			cr.setType ( CObj.CON_REQ_HASFILE );
+    			cr.pushString ( CObj.COMMUNITYID, cm.getCommunityId() );
+    			cr.pushString ( CObj.CREATOR, cm.getMemberId() );
+    			cr.pushNumber ( CObj.FIRSTNUM, cm.getLastFileNumber() + 1 );
+    			cr.pushNumber ( CObj.LASTNUM, Long.MAX_VALUE );
+    			r = cr;
+    		}
+
+    	}
+
+    	//get posts
+    	if ( rdy == 2 || ( rdy < 2 && r == null) ) 
+    	{
+    		CommunityMember cm = identManager.claimPostUpdate ( comlist );
+
+    		if ( cm != null )
+    		{
+    			CObj cr = new CObj();
+    			cr.setType ( CObj.CON_REQ_POSTS );
+    			cr.pushString ( CObj.COMMUNITYID, cm.getCommunityId() );
+    			cr.pushString ( CObj.CREATOR, cm.getMemberId() );
+    			cr.pushNumber ( CObj.FIRSTNUM, cm.getLastPostNumber() + 1 );
+    			cr.pushNumber ( CObj.LASTNUM, Long.MAX_VALUE );
+    			r = cr;
+    		}
+
+    	}
+
+    	//get subscriptions
+    	if ( rdy == 3 || ( rdy < 3 && r == null) ) 
+    	{
+
+    		List<String> allmems = new LinkedList<String>();
+    		//See which communities the remote identity is a member
+    		//does not have to be subscribed
+    		CObjList memlst = index.getIdentityMemberships ( remotedest );
+
+    		for ( int c = 0; c < memlst.size(); c++ )
+    		{
+    			try
+    			{
+    				CObj m = memlst.get ( c );
+    				allmems.add ( m.getPrivate ( CObj.COMMUNITYID ) );
+    			}
+
+    			catch ( IOException e )
+    			{
+    				e.printStackTrace();
+    			}
+
+    		}
+
+    		memlst.close();
+    		//Get all the private communities created by this node.
+    		memlst = index.getIdentityPrivateCommunities ( remotedest );
+
+    		for ( int c = 0; c < memlst.size(); c++ )
+    		{
+    			try
+    			{
+    				CObj m = memlst.get ( c );
+    				allmems.add ( m.getDig() );
+    			}
+
+    			catch ( IOException e )
+    			{
+    				e.printStackTrace();
+    			}
+
+    		}
+
+    		memlst.close();
+
+    		//Only keep communities we are membership of
+    		List<String> mymems = new LinkedList<String>();
+    		memlst = index.getIdentityMemberships ( localdest );
+
+    		for ( int c = 0; c < memlst.size(); c++ )
+    		{
+    			try
+    			{
+    				CObj m = memlst.get ( c );
+    				String comid = m.getPrivate ( CObj.COMMUNITYID );
+
+    				if ( comid != null && allmems.contains ( comid ) )
+    				{
+    					mymems.add ( comid );
+    				}
+
+    			}
+
+    			catch ( IOException e )
+    			{
+    				e.printStackTrace();
+    			}
+
+    		}
+
+    		memlst.close();
+    		//Get all the private communities created by this node.
+    		memlst = index.getIdentityPrivateCommunities ( localdest );
+
+    		for ( int c = 0; c < memlst.size(); c++ )
+    		{
+    			try
+    			{
+    				CObj m = memlst.get ( c );
+    				String comid = m.getDig();
+
+    				if ( comid != null && allmems.contains ( comid ) )
+    				{
+    					mymems.add ( m.getDig() );
+    				}
+
+    			}
+
+    			catch ( IOException e )
+    			{
+    				e.printStackTrace();
+    			}
+
+    		}
+
+    		memlst.close();
+    		allmems = mymems;
+    		//Get all the public communities.  Everyone is a member of public communties.
+    		//Does not matter if not subscribed
+    		memlst = index.getPublicCommunities();
+
+    		for ( int c = 0; c < memlst.size(); c++ )
+    		{
+    			try
+    			{
+    				CObj m = memlst.get ( c );
+    				allmems.add ( m.getDig() );
+    			}
+
+    			catch ( IOException e )
+    			{
+    				e.printStackTrace();
+    			}
+
+    		}
+
+    		memlst.close();
+    		log.info ( "memberships in common for requesting subscription update: " + allmems.size() );
+    		CommunityMember cm = identManager.claimSubUpdate ( allmems );
+
+    		if ( cm != null )
+    		{
+    			log.info ( "send subscription update request" );
+    			CObj cr = new CObj();
+    			cr.setType ( CObj.CON_REQ_SUBS );
+    			cr.pushString ( CObj.COMMUNITYID, cm.getCommunityId() );
+    			r = cr;
+    		}
+
+    	}
+
+    	//get memberships
+    	if ( rdy == 4 || ( rdy < 4 && r == null ) ) 
+    	{
+    		IdentityData id = identManager.claimMemberUpdate();
+
+    		if ( id != null )
+    		{
+    			CObj cr = new CObj();
+    			cr.setType ( CObj.CON_REQ_MEMBERSHIPS );
+    			cr.pushString ( CObj.CREATOR, id.getId() );
+    			cr.pushNumber ( CObj.FIRSTNUM, id.getLastMembershipNumber() + 1 );
+    			cr.pushNumber ( CObj.LASTNUM, Long.MAX_VALUE );
+    			r = cr;
+    		}
+
+    	}
+
+    	//get communities
+    	if ( rdy == 5 || ( rdy < 5 && r == null ) ) 
+    	{
+    		IdentityData id = identManager.claimCommunityUpdate();
+
+    		if ( id != null )
+    		{
+    			CObj cr = new CObj();
+    			cr.setType ( CObj.CON_REQ_COMMUNITIES );
+    			cr.pushString ( CObj.CREATOR, id.getId() );
+    			cr.pushNumber ( CObj.FIRSTNUM, id.getLastCommunityNumber() + 1 );
+    			cr.pushNumber ( CObj.LASTNUM, Long.MAX_VALUE );
+    			r = cr;
+    		}
+
+    	}
+
+    	//Check if we want to get identities
+    	if ( rdy == 6 || (rdy < 6 && r == null ) ) 
+    	{
+    		IdentityData id = identManager.claimIdentityUpdate ( remotedest );
+
+    		if ( id != null )
+    		{
+    			CObj cr = new CObj();
+    			cr.setType ( CObj.CON_REQ_IDENTITIES );
+    			r = cr;
+    		}
+
+    	}
+
+    	return r;
+    }
+    
+    private Map<String,Integer> lastRequestType = new HashMap<String,Integer>();
 
     @Override
     public Object next ( String localdest, String remotedest )
     {
         Object r = null;
+        
         //Find all subscriptions the remotedest has
         CObjList clst = index.getMemberSubscriptions ( remotedest );
         List<String> comlist = new LinkedList<String>();
@@ -640,402 +1011,29 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         }
 
         clst.close();
-        comlist = ncomlst;
-        //Check if we want a file
-        int doit = Utils.Random.nextInt ( 100 );
-
-        if ( doit < 50 ) //50% chance
-        {
-            List<RequestFile> rflst = fileHandler.findFileListFrags ( localdest, 10L * 60L * 1000L );
-            log.info ( "Requests for fragment list: " + rflst.size() );
-            Iterator<RequestFile> it = rflst.iterator();
-
-            while ( it.hasNext() && r == null )
-            {
-                RequestFile rf = it.next();
-                CObj nhf = index.getIdentHasFile ( rf.getCommunityId(), remotedest,
-                                                   rf.getWholeDigest(), rf.getFragmentDigest() );
-
-                if ( nhf != null && "true".equals ( nhf.getString ( CObj.STILLHASFILE ) ) )
-                {
-                    if ( fileHandler.claimFileListClaim ( rf ) )
-                    {
-                        CObj cr = new CObj();
-                        cr.setType ( CObj.CON_REQ_FRAGLIST );
-                        cr.pushString ( CObj.COMMUNITYID, rf.getCommunityId() );
-                        cr.pushString ( CObj.FILEDIGEST, rf.getWholeDigest() );
-                        cr.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
-                        r = cr;
-                    }
-
-                }
-
-            }
-
-            if ( r == null )
-            {
-                //First find the highest priority file we're tryiing to get
-                //from the communities this node is subscribed to.
-                List<RequestFile> rlst = fileHandler.findFileToGetFrags ( localdest );
-                it = rlst.iterator();
-
-                while ( it.hasNext() && r == null )
-                {
-                    //See if the remote dest has the file.
-                    RequestFile rf = it.next();
-                    CObj nhf = index.getIdentHasFile ( rf.getCommunityId(), remotedest,
-                                                       rf.getWholeDigest(), rf.getFragmentDigest() );
-
-                    if ( nhf != null && "true".equals ( nhf.getString ( CObj.STILLHASFILE ) ) )
-                    {
-                        //Find the fragments that haven't been requested yet.
-                        CObjList cl = index.getFragmentsToRequest ( rf.getCommunityId(),
-                                      rf.getWholeDigest(), rf.getFragmentDigest() );
-
-                        if ( cl.size() == 0 )
-                        {
-                            //If there are no fragments that have not be requested yet,
-                            //then let's reset the ones that in the req status, and not
-                            //complete, in case we just failed to get it back after
-                            //requesting.
-                            cl.close();
-                            cl = index.getFragmentsToReset ( rf.getCommunityId(),
-                                                             rf.getWholeDigest(), rf.getFragmentDigest() );
-
-                            for ( int c = 0; c < cl.size(); c++ )
-                            {
-                                try
-                                {
-                                    //Set to false, so that we'll request again.
-                                    //Ones already complete won't be reset.
-                                    CObj co = cl.get ( c );
-                                    co.pushPrivate ( CObj.COMPLETE, "false" );
-                                    index.index ( co );
-                                }
-
-                                catch ( IOException e )
-                                {
-                                    e.printStackTrace();
-                                }
-
-                            }
-
-                            cl.close();
-                            //Get the new list of fragments to request after resetting
-                            cl = index.getFragmentsToRequest ( rf.getCommunityId(),
-                                                               rf.getWholeDigest(), rf.getFragmentDigest() );
-
-                            if ( cl.size() == 0 )
-                            {
-                                //We're done, but the RequestFile wasn't updated properly.  do it now.
-                                if ( fileHandler.claimFileComplete ( rf ) )
-                                {
-                                    //Generate a HasFileRecord
-                                    CObj hf = new CObj();
-                                    hf.setType ( CObj.HASFILE );
-                                    hf.pushString ( CObj.CREATOR, rf.getRequestId() );
-                                    hf.pushString ( CObj.COMMUNITYID, rf.getCommunityId() );
-                                    hf.pushString ( CObj.NAME, ( new File ( rf.getLocalFile() ) ).getName() );
-                                    hf.pushText ( CObj.NAME, hf.getString ( CObj.NAME ) );
-                                    hf.pushNumber ( CObj.FRAGSIZE, rf.getFragSize() );
-                                    hf.pushNumber ( CObj.FILESIZE, rf.getFileSize() );
-                                    hf.pushNumber ( CObj.FRAGNUMBER, rf.getFragsTotal() );
-                                    hf.pushString ( CObj.STILLHASFILE, "true" );
-                                    hf.pushString ( CObj.FILEDIGEST, rf.getWholeDigest() );
-                                    hf.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
-                                    hf.pushPrivate ( CObj.LOCALFILE, rf.getLocalFile() );
-                                    hf.pushPrivate ( CObj.UPGRADEFLAG, rf.isUpgrade() ? "true" : "false" );
-                                    log.info ( "File download completed. 1  Upgrade flag: " + rf.isUpgrade() );
-                                    hfc.createHasFile ( hf );
-                                    hfc.updateFileInfo ( hf );
-                                    callback.update ( hf );
-                                }
-
-                            }
-
-                        }
-
-                        if ( cl.size() > 0 )
-                        {
-                            int idx = Utils.Random.nextInt ( cl.size() );
-
-                            try
-                            {
-                                CObj co = cl.get ( idx );
-                                co.pushPrivate ( CObj.COMPLETE, "req" );
-                                index.index ( co );
-                                CObj sr = new CObj();
-                                sr.setType ( CObj.CON_REQ_FRAG );
-                                sr.pushString ( CObj.COMMUNITYID, co.getString ( CObj.COMMUNITYID ) );
-                                sr.pushString ( CObj.FILEDIGEST, co.getString ( CObj.FILEDIGEST ) );
-                                sr.pushString ( CObj.FRAGDIGEST, co.getString ( CObj.FRAGDIGEST ) );
-                                sr.pushString ( CObj.FRAGDIG, co.getString ( CObj.FRAGDIG ) );
-                                r = sr;
-                            }
-
-                            catch ( IOException e )
-                            {
-                                e.printStackTrace();
-                            }
-
-                        }
-
-                        cl.close();
-                    }
-
-                }
-
-            }
-
+        
+        Integer rdy = null;
+        String rdykey = localdest + remotedest;
+        synchronized (lastRequestType) {
+        	rdy = lastRequestType.get(rdykey);
         }
-
-        //Check if we want to get a has file
-        if ( r == null )
-        {
-            doit = Utils.Random.nextInt ( 100 );
-
-            if ( doit < 50 ) //25% chance
-            {
-                CommunityMember cm = identManager.claimHasFileUpdate ( comlist );
-
-                if ( cm != null )
-                {
-                    log.info ( "send has file update request" );
-                    CObj cr = new CObj();
-                    cr.setType ( CObj.CON_REQ_HASFILE );
-                    cr.pushString ( CObj.COMMUNITYID, cm.getCommunityId() );
-                    cr.pushString ( CObj.CREATOR, cm.getMemberId() );
-                    cr.pushNumber ( CObj.FIRSTNUM, cm.getLastFileNumber() + 1 );
-                    cr.pushNumber ( CObj.LASTNUM, Long.MAX_VALUE );
-                    r = cr;
-                }
-
-            }
-
+        if (rdy == null) {
+        	rdy = 0;
         }
-
-        //Check if we want to get posts
-        if ( r == null )
-        {
-            doit = Utils.Random.nextInt ( 100 );
-
-            if ( doit < 50 ) //12.5%
-            {
-                CommunityMember cm = identManager.claimPostUpdate ( comlist );
-
-                if ( cm != null )
-                {
-                    CObj cr = new CObj();
-                    cr.setType ( CObj.CON_REQ_POSTS );
-                    cr.pushString ( CObj.COMMUNITYID, cm.getCommunityId() );
-                    cr.pushString ( CObj.CREATOR, cm.getMemberId() );
-                    cr.pushNumber ( CObj.FIRSTNUM, cm.getLastPostNumber() + 1 );
-                    cr.pushNumber ( CObj.LASTNUM, Long.MAX_VALUE );
-                    r = cr;
-                }
-
-            }
-
+        r = findNext( localdest, remotedest, ncomlst, rdy ) ;
+        if (r == null) {
+        	r = findNext( localdest, remotedest, ncomlst, 0 ) ;
         }
-
-        //Check if we want to get subscriptions
-        if ( r == null )
-        {
-            doit = Utils.Random.nextInt ( 100 );
-
-            if ( doit < 50 ) //6.25%
-            {
-
-                List<String> allmems = new LinkedList<String>();
-                //See which communities the remote identity is a member
-                //does not have to be subscribed
-                CObjList memlst = index.getIdentityMemberships ( remotedest );
-
-                for ( int c = 0; c < memlst.size(); c++ )
-                {
-                    try
-                    {
-                        CObj m = memlst.get ( c );
-                        allmems.add ( m.getPrivate ( CObj.COMMUNITYID ) );
-                    }
-
-                    catch ( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                memlst.close();
-                //Get all the private communities created by this node.
-                memlst = index.getIdentityPrivateCommunities ( remotedest );
-
-                for ( int c = 0; c < memlst.size(); c++ )
-                {
-                    try
-                    {
-                        CObj m = memlst.get ( c );
-                        allmems.add ( m.getDig() );
-                    }
-
-                    catch ( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                memlst.close();
-
-                //Only keep communities we are membership of
-                List<String> mymems = new LinkedList<String>();
-                memlst = index.getIdentityMemberships ( localdest );
-
-                for ( int c = 0; c < memlst.size(); c++ )
-                {
-                    try
-                    {
-                        CObj m = memlst.get ( c );
-                        String comid = m.getPrivate ( CObj.COMMUNITYID );
-
-                        if ( comid != null && allmems.contains ( comid ) )
-                        {
-                            mymems.add ( comid );
-                        }
-
-                    }
-
-                    catch ( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                memlst.close();
-                //Get all the private communities created by this node.
-                memlst = index.getIdentityPrivateCommunities ( localdest );
-
-                for ( int c = 0; c < memlst.size(); c++ )
-                {
-                    try
-                    {
-                        CObj m = memlst.get ( c );
-                        String comid = m.getDig();
-
-                        if ( comid != null && allmems.contains ( comid ) )
-                        {
-                            mymems.add ( m.getDig() );
-                        }
-
-                    }
-
-                    catch ( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                memlst.close();
-                allmems = mymems;
-                //Get all the public communities.  Everyone is a member of public communties.
-                //Does not matter if not subscribed
-                memlst = index.getPublicCommunities();
-
-                for ( int c = 0; c < memlst.size(); c++ )
-                {
-                    try
-                    {
-                        CObj m = memlst.get ( c );
-                        allmems.add ( m.getDig() );
-                    }
-
-                    catch ( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                memlst.close();
-                log.info ( "memberships in common for requesting subscription update: " + allmems.size() );
-                CommunityMember cm = identManager.claimSubUpdate ( allmems );
-
-                if ( cm != null )
-                {
-                    log.info ( "send subscription update request" );
-                    CObj cr = new CObj();
-                    cr.setType ( CObj.CON_REQ_SUBS );
-                    cr.pushString ( CObj.COMMUNITYID, cm.getCommunityId() );
-                    r = cr;
-                }
-
-            }
-
+        rdy++;
+    	if (rdy > 6) {
+    		rdy = 0;
+    	}
+        synchronized (lastRequestType) {
+        	lastRequestType.put(rdykey, rdy);
         }
-
-        //Check if we want to get memberships
-        if ( r == null )
-        {
-            doit = Utils.Random.nextInt ( 100 );
-
-            if ( doit < 50 ) //3.125%
-            {
-                IdentityData id = identManager.claimMemberUpdate();
-
-                if ( id != null )
-                {
-                    CObj cr = new CObj();
-                    cr.setType ( CObj.CON_REQ_MEMBERSHIPS );
-                    cr.pushString ( CObj.CREATOR, id.getId() );
-                    cr.pushNumber ( CObj.FIRSTNUM, id.getLastMembershipNumber() + 1 );
-                    cr.pushNumber ( CObj.LASTNUM, Long.MAX_VALUE );
-                    r = cr;
-                }
-
-            }
-
-        }
-
-        //Check if we want to get communities
-        if ( r == null )
-        {
-            doit = Utils.Random.nextInt ( 100 );
-
-            if ( doit < 50 ) //1.5625%
-            {
-                IdentityData id = identManager.claimCommunityUpdate();
-
-                if ( id != null )
-                {
-                    CObj cr = new CObj();
-                    cr.setType ( CObj.CON_REQ_COMMUNITIES );
-                    cr.pushString ( CObj.CREATOR, id.getId() );
-                    cr.pushNumber ( CObj.FIRSTNUM, id.getLastCommunityNumber() + 1 );
-                    cr.pushNumber ( CObj.LASTNUM, Long.MAX_VALUE );
-                    r = cr;
-                }
-
-            }
-
-        }
-
-        //Check if we want to get identities
-        if ( r == null ) //1.5625%
-        {
-            IdentityData id = identManager.claimIdentityUpdate ( remotedest );
-
-            if ( id != null )
-            {
-                CObj cr = new CObj();
-                cr.setType ( CObj.CON_REQ_IDENTITIES );
-                r = cr;
-            }
-
-        }
-
+        
         return r;
+
     }
 
     private void deleteOldRequests()

@@ -246,12 +246,12 @@ public class NewCommunityDialog extends Dialog
         description.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
 
         Label lblCreator_1 = new Label ( container, SWT.NONE );
-        lblCreator_1.setLayoutData ( new GridData ( SWT.RIGHT, SWT.CENTER, false, false, 1, 1 ) );
+        lblCreator_1.setLayoutData ( new GridData ( SWT.RIGHT, SWT.CENTER, false, true, 1, 1 ) );
         lblCreator_1.setText ( "Creator" );
 
         identListViewer = new ListViewer ( container, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE );
         identList = identListViewer.getList();
-        GridData gd_identList = new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 );
+        GridData gd_identList = new GridData ( SWT.FILL, SWT.CENTER, false, true, 1, 1 );
         gd_identList.heightHint = 50;
         identList.setLayoutData ( gd_identList );
         populateIdentities ( identListViewer );
@@ -272,8 +272,11 @@ public class NewCommunityDialog extends Dialog
 
         txtUse = new Text ( container, SWT.BORDER | SWT.WRAP );
         txtUse.setEditable ( false );
-        txtUse.setText ( "Use anonymous identities for creating communites.  Then grant non-anonymous identities access." );
-        txtUse.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, true, 1, 1 ) );
+        txtUse.setText ( "We recommend creating communities with your \"anon\" identity.\n"
+        		+ "Then you can grant your named identities membership as you wish.\n"
+        		+ "See here for more information:\n"
+        		+ "https://github.com/retsamknaps/aktie/wiki/Creating-communities-with-anon" );
+        txtUse.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, false, 1, 1 ) );
 
         return container;
     }
@@ -368,7 +371,7 @@ public class NewCommunityDialog extends Dialog
     @Override
     protected Point getInitialSize()
     {
-        return new Point ( 450, 336 );
+        return new Point ( 500, 336 );
     }
 
     protected Button getBtnPublic()

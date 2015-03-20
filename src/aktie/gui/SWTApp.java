@@ -55,6 +55,7 @@ import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -62,6 +63,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.widgets.Table;
@@ -96,7 +98,8 @@ public class SWTApp
 
     class ConnectionColumnId extends ColumnLabelProvider
     {
-        @Override
+
+    	@Override
         public String getText ( Object element )
         {
             ConnectionThread ct = ( ConnectionThread ) element;
@@ -770,71 +773,79 @@ public class SWTApp
             {
                 if ( o != null )
                 {
-                    final CObj co = ( ( CObj ) o ).clone();
-                    String type = co.getType();
-                    String comid = co.getString ( CObj.COMMUNITYID );
+                	final CObj co = ( ( CObj ) o ).clone();
+                	if ( co.getString ( CObj.ERROR ) != null )
+                	{
+                		System.out.println ( "ERROR: " + co.getString ( CObj.ERROR ) );
+                	}
 
-                    if ( CObj.POST.equals ( type ) )
-                    {
+                	else
+                	{
+                		String type = co.getType();
+                		String comid = co.getString ( CObj.COMMUNITYID );
 
-                        updateBanner ( co );
+                		if ( CObj.POST.equals ( type ) )
+                		{
 
-                        if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
-                        {
+                			updateBanner ( co );
 
-                            Display.getDefault().asyncExec ( new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    postSearch();
-                                }
+                			if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
+                			{
 
-                            } );
+                				Display.getDefault().asyncExec ( new Runnable()
+                				{
+                					@Override
+                					public void run()
+                					{
+                						postSearch();
+                					}
 
-                        }
+                				} );
 
-                    }
+                			}
 
-                    if ( CObj.MEMBERSHIP.equals ( type ) || CObj.COMMUNITY.equals ( type ) )
-                    {
-                        if ( "true".equals ( co.getPrivate ( CObj.MINE ) ) )
-                        {
-                            Display.getDefault().asyncExec ( new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    updateMembership();
-                                }
+                		}
 
-                            } );
+                		if ( CObj.MEMBERSHIP.equals ( type ) || CObj.COMMUNITY.equals ( type ) )
+                		{
+                			if ( "true".equals ( co.getPrivate ( CObj.MINE ) ) )
+                			{
+                				Display.getDefault().asyncExec ( new Runnable()
+                				{
+                					@Override
+                					public void run()
+                					{
+                						updateMembership();
+                					}
 
-                        }
+                				} );
 
-                    }
+                			}
 
-                    if ( CObj.HASFILE.equals ( type ) )
-                    {
-                        if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
-                        {
-                            Display.getDefault().asyncExec ( new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    filesSearch();
-                                }
+                		}
 
-                            } );
+                		if ( CObj.HASFILE.equals ( type ) )
+                		{
+                			if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
+                			{
+                				Display.getDefault().asyncExec ( new Runnable()
+                				{
+                					@Override
+                					public void run()
+                					{
+                						filesSearch();
+                					}
 
-                        }
+                				} );
 
-                        checkUpgradeDownloadComplete ( co );
-                        checkDownloadUpgrade ( co );
+                			}
 
-                    }
+                			checkUpgradeDownloadComplete ( co );
+                			checkDownloadUpgrade ( co );
 
+                		}
+
+                	}
                 }
 
             }
@@ -1351,7 +1362,14 @@ public class SWTApp
                               netcallback, concallback );
             identSubTreeModel = new IdentitySubTreeModel ( node.getIndex() );
             identTreeViewer.setContentProvider ( new IdentitySubTreeProvider() );
-            identTreeViewer.setLabelProvider ( new IdentitySubTreeLabelProvider() );
+            
+    		TreeViewerColumn tvc1 = new TreeViewerColumn(identTreeViewer, SWT.NONE);
+    		tvc1.getColumn().setText("Name"); //$NON-NLS-1$
+    		tvc1.getColumn().setWidth(200);
+    		tvc1.setLabelProvider(new DelegatingStyledCellLabelProvider(
+    				new IdentitySubTreeLabelProvider()));
+            
+            
             CObjList mlst = node.getIndex().getMyIdentities();
 
             if ( mlst.size() == 0 )
@@ -2953,8 +2971,14 @@ public class SWTApp
                             else if ( file != null )
                             {
                                 Display defdesp = Display.getDefault();
-                                Image image = new Image ( defdesp, file.getPath() );
-                                addImage ( image, msg.length() - 1 );
+                                try {
+                                	Image image = new Image ( defdesp, file.getPath() );
+                                	addImage ( image, msg.length() - 1 );
+                                }
+                                catch (Exception ei) {
+                                	//do not spam the user.  this could happen a lot if someone
+                                	//is a jerk
+                                }
                             }
 
                         }

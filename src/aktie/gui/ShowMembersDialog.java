@@ -35,6 +35,7 @@ public class ShowMembersDialog extends Dialog
     public ShowMembersDialog ( Shell parentShell, SWTApp a )
     {
         super ( parentShell );
+        setShellStyle ( getShellStyle() | SWT.RESIZE );
         app = a;
     }
 
