@@ -111,6 +111,7 @@ public class InPostProcessor extends GenericProcessor
 
                             s.getTransaction().commit();
                             s.close();
+                            b.pushPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS, 1L );
                             index.index ( b );
                             guicallback.update ( b );
                         }

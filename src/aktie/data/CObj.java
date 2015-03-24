@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+//import java.util.Set;
 import java.util.Map.Entry;
 
 import org.apache.lucene.document.Document;
@@ -69,6 +69,8 @@ public class CObj
     public static String PRV_FRAGSIZE    = "prv_fragsize";
     public static String PRV_FRAGNUMBER  = "prv_fragnum";
     public static String PRV_FILEDIGEST  = "prv_filedig";
+
+    public static String PRV_TEMP_NEWPOSTS = "newposts";
 
     public static String NAME = "name";
     public static String TXTNAME = "txtname";
@@ -994,19 +996,30 @@ public class CObj
     @Override
     public int hashCode()
     {
+        if ( id != null )
+        {
+            return id.hashCode();
+        }
+
+        if ( dig != null )
+        {
+            return dig.hashCode();
+        }
+
         return 1;
     }
 
-    private boolean strEq ( String x, String y )
-    {
+    /*
+        private boolean strEq ( String x, String y )
+        {
         if ( x != null ) { return x.equals ( y ); }
 
         else { return y == null; }
 
-    }
+        }
 
-    public boolean mapEq ( Map<?, ?> m, Map<?, ?> n )
-    {
+        public boolean mapEq ( Map<?, ?> m, Map<?, ?> n )
+        {
         if ( m == null && n == null ) { return true; }
 
         if ( m == null || n == null ) { return false; }
@@ -1040,11 +1053,9 @@ public class CObj
         }
 
         return true;
-    }
+        }
 
-    @Override
-    public boolean equals ( Object o )
-    {
+        private boolean whoopyEquals( Object o ) {
         if ( ! ( o instanceof CObj ) ) { return false; }
 
         CObj b = ( CObj ) o;
@@ -1070,6 +1081,34 @@ public class CObj
         if ( !mapEq ( privatenumbers, b.getPrivateNumbers() ) ) { return false; }
 
         return true;
+        }
+
+    */
+
+    private boolean productionEquals ( Object o )
+    {
+        if ( ! ( o instanceof CObj ) ) { return false; }
+
+        CObj b = ( CObj ) o;
+
+        if ( id != null )
+        {
+            return id.equals ( b.getId() );
+        }
+
+        if ( dig != null )
+        {
+            return dig.equals ( b.getDig() );
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean equals ( Object o )
+    {
+        return productionEquals ( o );
+        //return whoopyEquals(o);
     }
 
 }

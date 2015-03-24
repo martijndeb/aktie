@@ -23,31 +23,45 @@ public class IdentitySubTreeProvider implements ITreeContentProvider
 
         public TreeIdentity parent;
         public CObj community;
+        public boolean equals ( Object o )
+        {
+            if ( ! ( o instanceof TreeSubscription ) )
+            {
+                return false;
+            }
+
+            TreeSubscription ts = ( TreeSubscription ) o;
+            return ts.community.getDig().equals ( community.getDig() );
+        }
+
+        public int hashCode()
+        {
+            return community.getDig().hashCode();
+        }
+
     }
 
     public class TreeIdentity
     {
-        public TreeIdentity ( String i, String disp, Map<String, CObj> m )
+        public TreeIdentity ( CObj i, Map<String, CObj> m )
         {
-            id = i;
-            display = disp;
+            identity = i;
             children = m;
         }
 
-        public String id;
-        public String display;
+        public CObj identity;
         public Map<String, CObj> children;
         public boolean equals ( Object o )
         {
             if ( ! ( o instanceof TreeIdentity ) ) { return false; }
 
             TreeIdentity t = ( TreeIdentity ) o;
-            return id.equals ( t.id );
+            return identity.getId().equals ( t.identity.getId() );
         }
 
         public int hashCode()
         {
-            return id.hashCode();
+            return identity.getId().hashCode();
         }
 
     }
@@ -98,8 +112,7 @@ public class IdentitySubTreeProvider implements ITreeContentProvider
             for ( Entry<String, SortedMap<String, CObj>> e : m.getSubCommunities().entrySet() )
             {
                 CObj id = m.getIdentities().get ( e.getKey() );
-                String disp = id.getDisplayName();
-                r[idx] = new TreeIdentity ( e.getKey(), disp, e.getValue() );
+                r[idx] = new TreeIdentity ( id, e.getValue() );
                 idx++;
             }
 

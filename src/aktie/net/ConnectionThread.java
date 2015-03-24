@@ -353,6 +353,18 @@ public class ConnectionThread implements Runnable
             outstream.write ( ob );
         }
 
+        private void seeIfUseless()
+        {
+            long curtime = System.currentTimeMillis();
+            long cuttime = curtime - ConnectionManager.MAX_TIME_WITH_NO_REQUESTS;
+
+            if ( lastMyRequest < cuttime )
+            {
+                stop();
+            }
+
+        }
+
         @Override
         public void run()
         {
@@ -360,6 +372,9 @@ public class ConnectionThread implements Runnable
             {
                 try
                 {
+
+                    seeIfUseless();
+
                     Object o = getData();
 
                     if ( o == null )

@@ -99,7 +99,7 @@ public class SWTApp
     class ConnectionColumnId extends ColumnLabelProvider
     {
 
-    	@Override
+        @Override
         public String getText ( Object element )
         {
             ConnectionThread ct = ( ConnectionThread ) element;
@@ -773,79 +773,91 @@ public class SWTApp
             {
                 if ( o != null )
                 {
-                	final CObj co = ( ( CObj ) o ).clone();
-                	if ( co.getString ( CObj.ERROR ) != null )
-                	{
-                		System.out.println ( "ERROR: " + co.getString ( CObj.ERROR ) );
-                	}
+                    final CObj co = ( ( CObj ) o ).clone();
 
-                	else
-                	{
-                		String type = co.getType();
-                		String comid = co.getString ( CObj.COMMUNITYID );
+                    if ( co.getString ( CObj.ERROR ) != null )
+                    {
+                        System.out.println ( "ERROR: " + co.getString ( CObj.ERROR ) );
+                    }
 
-                		if ( CObj.POST.equals ( type ) )
-                		{
+                    else
+                    {
+                        String type = co.getType();
+                        String comid = co.getString ( CObj.COMMUNITYID );
 
-                			updateBanner ( co );
+                        if ( CObj.POST.equals ( type ) )
+                        {
 
-                			if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
-                			{
+                            updateBanner ( co );
 
-                				Display.getDefault().asyncExec ( new Runnable()
-                				{
-                					@Override
-                					public void run()
-                					{
-                						postSearch();
-                					}
+                            Display.getDefault().asyncExec ( new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    addData ( co );
+                                }
 
-                				} );
+                            } );
 
-                			}
+                            if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
+                            {
 
-                		}
+                                Display.getDefault().asyncExec ( new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        postSearch();
+                                    }
 
-                		if ( CObj.MEMBERSHIP.equals ( type ) || CObj.COMMUNITY.equals ( type ) )
-                		{
-                			if ( "true".equals ( co.getPrivate ( CObj.MINE ) ) )
-                			{
-                				Display.getDefault().asyncExec ( new Runnable()
-                				{
-                					@Override
-                					public void run()
-                					{
-                						updateMembership();
-                					}
+                                } );
 
-                				} );
+                            }
 
-                			}
+                        }
 
-                		}
+                        if ( CObj.MEMBERSHIP.equals ( type ) || CObj.COMMUNITY.equals ( type ) )
+                        {
+                            if ( "true".equals ( co.getPrivate ( CObj.MINE ) ) )
+                            {
+                                Display.getDefault().asyncExec ( new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        updateMembership();
+                                    }
 
-                		if ( CObj.HASFILE.equals ( type ) )
-                		{
-                			if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
-                			{
-                				Display.getDefault().asyncExec ( new Runnable()
-                				{
-                					@Override
-                					public void run()
-                					{
-                						filesSearch();
-                					}
+                                } );
 
-                				} );
+                            }
 
-                			}
+                        }
 
-                			checkUpgradeDownloadComplete ( co );
-                			checkDownloadUpgrade ( co );
+                        if ( CObj.HASFILE.equals ( type ) )
+                        {
+                            if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
+                            {
+                                Display.getDefault().asyncExec ( new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        filesSearch();
+                                    }
 
-                		}
+                                } );
 
-                	}
+                            }
+
+                            checkUpgradeDownloadComplete ( co );
+                            checkDownloadUpgrade ( co );
+
+                        }
+
+                    }
+
                 }
 
             }
@@ -951,6 +963,16 @@ public class SWTApp
                     {
 
                         updateBanner ( co );
+
+                        Display.getDefault().asyncExec ( new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                addData ( co );
+                            }
+
+                        } );
 
                         if ( selectedCommunity != null && comid != null && comid.equals ( selectedCommunity.getDig() ) )
                         {
@@ -1254,17 +1276,26 @@ public class SWTApp
     private String exportCommunitiesFile;
     private CObj developerIdentity;
 
+    public CObj getSelectedCommunity()
+    {
+        return selectedCommunity;
+    }
+
     public Node getNode()
     {
         return node;
     }
 
-    public void setSelected ( CObj id, CObj comid )
+    public void setSelected ( CObj id, CObj comid, ISelection sel )
     {
         selectedIdentity = id;
         selectedCommunity = comid;
         lblIdentCommunity.setText ( "Identity: " + selectedIdentity.getDisplayName() +
                                     "  Community: " + selectedCommunity.getPrivateDisplayName() );
+
+        identSubTreeModel.clearNew ( comid );
+        identTreeViewer.refresh ( true );
+
         postSearch ( "" );
         filesSearch ( "" );
         postText.setText ( "" );
@@ -1360,16 +1391,16 @@ public class SWTApp
 
             node = new Node ( nodeDir, i2pnet, usrcallback,
                               netcallback, concallback );
-            identSubTreeModel = new IdentitySubTreeModel ( node.getIndex() );
+            identSubTreeModel = new IdentitySubTreeModel ( this );
             identTreeViewer.setContentProvider ( new IdentitySubTreeProvider() );
-            
-    		TreeViewerColumn tvc1 = new TreeViewerColumn(identTreeViewer, SWT.NONE);
-    		tvc1.getColumn().setText("Name"); //$NON-NLS-1$
-    		tvc1.getColumn().setWidth(200);
-    		tvc1.setLabelProvider(new DelegatingStyledCellLabelProvider(
-    				new IdentitySubTreeLabelProvider()));
-            
-            
+
+            TreeViewerColumn tvc1 = new TreeViewerColumn ( identTreeViewer, SWT.NONE );
+            tvc1.getColumn().setText ( "Name" ); //$NON-NLS-1$
+            tvc1.getColumn().setWidth ( 200 );
+            tvc1.setLabelProvider ( new DelegatingStyledCellLabelProvider (
+                                        new IdentitySubTreeLabelProvider() ) );
+
+
             CObjList mlst = node.getIndex().getMyIdentities();
 
             if ( mlst.size() == 0 )
@@ -1560,6 +1591,7 @@ public class SWTApp
 
         Display.setAppName ( "aktie" );
         Display display = Display.getDefault();
+
         createContents();
         shell.open();
         shell.layout();
@@ -1599,7 +1631,11 @@ public class SWTApp
             tm.put ( ti, exp );
         }
 
-        identSubTreeModel.update ( co );
+        if ( co != null )
+        {
+            identSubTreeModel.update ( co );
+        }
+
         identTreeViewer.setInput ( identSubTreeModel );
         oa = prov.getElements ( identSubTreeModel );
 
@@ -2227,6 +2263,10 @@ public class SWTApp
             public void selectionChanged ( SelectionChangedEvent s )
             {
                 IStructuredSelection sel = ( IStructuredSelection ) s.getSelection();
+
+                CObj id = null;
+                CObj com = null;
+
                 Iterator i = sel.iterator();
 
                 if ( i.hasNext() )
@@ -2236,17 +2276,17 @@ public class SWTApp
                     if ( selo instanceof TreeSubscription )
                     {
                         TreeSubscription ts = ( TreeSubscription ) selo;
-                        String idstr = ts.parent.id;
-                        CObj id = identSubTreeModel.getIdentities().get ( idstr );
-                        CObj com = ts.community;
-
-                        if ( id != null && com != null )
-                        {
-                            setSelected ( id, com );
-                        }
+                        String idstr = ts.parent.identity.getId();
+                        id = identSubTreeModel.getIdentities().get ( idstr );
+                        com = ts.community;
 
                     }
 
+                }
+
+                if ( id != null && com != null )
+                {
+                    setSelected ( id, com, sel );
                 }
 
             }
@@ -2263,30 +2303,11 @@ public class SWTApp
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
-                IStructuredSelection sel = ( IStructuredSelection ) identTreeViewer.getSelection();
-                String selid = null;
-                @SuppressWarnings ( "rawtypes" )
-                Iterator i = sel.iterator();
-
-                if ( i.hasNext() && selid == null )
+                if ( selectedIdentity != null )
                 {
-                    Object selo = i.next();
-
-                    if ( selo instanceof TreeIdentity )
-                    {
-                        TreeIdentity ti = ( TreeIdentity ) selo;
-                        selid = ti.id;
-                    }
-
-                    if ( selo instanceof TreeSubscription )
-                    {
-                        TreeSubscription ts = ( TreeSubscription ) selo;
-                        selid = ts.parent.id;
-                    }
-
+                    subscriptionDialog.open ( selectedIdentity.getId() );
                 }
 
-                subscriptionDialog.open ( selid );
             }
 
             @Override
@@ -2315,7 +2336,7 @@ public class SWTApp
                     if ( selo instanceof TreeSubscription )
                     {
                         TreeSubscription ts = ( TreeSubscription ) selo;
-                        String identid = ts.parent.id;
+                        String identid = ts.parent.identity.getId();
                         String comid = ts.community.getDig();
                         CObj unsub = new CObj();
                         unsub.setType ( CObj.SUBSCRIPTION );
@@ -2343,21 +2364,9 @@ public class SWTApp
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
-                IStructuredSelection sel = ( IStructuredSelection ) identTreeViewer.getSelection();
-                String selid = null;
-                @SuppressWarnings ( "rawtypes" )
-                Iterator i = sel.iterator();
-
-                if ( i.hasNext() && selid == null )
+                if ( selectedCommunity != null )
                 {
-                    Object selo = i.next();
-
-                    if ( selo instanceof TreeSubscription )
-                    {
-                        TreeSubscription ts = ( TreeSubscription ) selo;
-                        membersDialog.open ( ts.community );
-                    }
-
+                    membersDialog.open ( selectedCommunity );
                 }
 
             }
@@ -2388,13 +2397,13 @@ public class SWTApp
                     if ( selo instanceof TreeIdentity )
                     {
                         TreeIdentity ti = ( TreeIdentity ) selo;
-                        selid = ti.id;
+                        selid = ti.identity.getId();
                     }
 
                     if ( selo instanceof TreeSubscription )
                     {
                         TreeSubscription ts = ( TreeSubscription ) selo;
-                        selid = ts.parent.id;
+                        selid = ts.parent.identity.getId();
                     }
 
                 }
@@ -2583,23 +2592,9 @@ public class SWTApp
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
-                IStructuredSelection sel = ( IStructuredSelection ) identTreeViewer.getSelection();
-                String selid = null;
-                @SuppressWarnings ( "rawtypes" )
-                Iterator i = sel.iterator();
-
-                if ( i.hasNext() && selid == null )
+                if ( selectedIdentity != null && selectedCommunity != null )
                 {
-                    Object selo = i.next();
-
-                    if ( selo instanceof TreeSubscription )
-                    {
-                        TreeSubscription ts = ( TreeSubscription ) selo;
-                        String identid = ts.parent.id;
-                        String comid = ts.community.getDig();
-                        newMemberDialog.open ( identid, comid );
-                    }
-
+                    newMemberDialog.open ( selectedIdentity.getId(), selectedCommunity.getDig() );
                 }
 
             }
@@ -2940,6 +2935,20 @@ public class SWTApp
                         {
                             CObjListArrayElement selm = ( CObjListArrayElement ) selo;
                             displayedPost = selm.getCObj();
+                            displayedPost.pushPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS, 0L );
+
+                            try
+                            {
+                                node.getIndex().index ( displayedPost );
+                            }
+
+                            catch ( IOException e1 )
+                            {
+                                e1.printStackTrace();
+                            }
+
+                            postSearch();
+
                             String msgdisp = getPostString ( displayedPost );
                             msgdisp = NewPostDialog.formatDisplay ( msgdisp, false );
                             String lines = "\n==========================\n=";
@@ -2971,14 +2980,19 @@ public class SWTApp
                             else if ( file != null )
                             {
                                 Display defdesp = Display.getDefault();
-                                try {
-                                	Image image = new Image ( defdesp, file.getPath() );
-                                	addImage ( image, msg.length() - 1 );
+
+                                try
+                                {
+                                    Image image = new Image ( defdesp, file.getPath() );
+                                    addImage ( image, msg.length() - 1 );
                                 }
-                                catch (Exception ei) {
-                                	//do not spam the user.  this could happen a lot if someone
-                                	//is a jerk
+
+                                catch ( Exception ei )
+                                {
+                                    //do not spam the user.  this could happen a lot if someone
+                                    //is a jerk
                                 }
+
                             }
 
                         }

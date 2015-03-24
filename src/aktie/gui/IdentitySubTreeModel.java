@@ -1,7 +1,9 @@
 package aktie.gui;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -14,10 +16,13 @@ public class IdentitySubTreeModel
     private SortedMap<String, CObj> identities;
     private SortedMap<String, SortedMap<String, CObj>> subCommunities;
     private Index index;
+    private SWTApp app;
 
-    public IdentitySubTreeModel ( Index i )
+
+    public IdentitySubTreeModel ( SWTApp ap )
     {
-        index = i;
+        app = ap;
+        index = ap.getNode().getIndex();
         identities = new TreeMap<String, CObj>();
         subCommunities = new TreeMap<String, SortedMap<String, CObj>> ( new Comparator<String>()
         {
@@ -46,16 +51,99 @@ public class IdentitySubTreeModel
 
     }
 
+    public void clearNew ( CObj c )
+    {
+        String comid = c.getDig();
+
+        if ( CObj.COMMUNITY.equals ( c.getType() ) && comid != null )
+        {
+            //loop through subCommunities to look for community
+            Iterator<Entry<String, SortedMap<String, CObj>>> it = subCommunities.entrySet().iterator();
+
+            while ( it.hasNext() )
+            {
+                Entry<String, SortedMap<String, CObj>> mp = it.next();
+                Iterator<CObj> ci = mp.getValue().values().iterator();
+                boolean newstuff = false;
+
+                while ( ci.hasNext() )
+                {
+                    CObj co = ci.next();
+
+                    if ( comid.equals ( co.getDig() ) )
+                    {
+                        co.pushPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS, 0L );
+                    }
+
+                    else
+                    {
+                        Long tn = co.getPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS );
+
+                        if ( tn != null && tn == 1L )
+                        {
+                            newstuff = true;
+                        }
+
+                    }
+
+                }
+
+                if ( !newstuff )
+                {
+                    identities.get ( mp.getKey() ).pushPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS, 0L );
+                }
+
+            }
+
+        }
+
+    }
+
     public void update ( CObj c )
     {
-    	if ( CObj.POST.equals(c.getType())) {
-    		//loop through subCommunities to look for community 
-    		String comid = c.getString(CObj.COMMUNITYID);
-    		if (comid != null) {
-    			subCommunities.values().iterator();
-    			//TODO HERE
-    		}
-    	}
+        if ( CObj.POST.equals ( c.getType() ) )
+        {
+            //loop through subCommunities to look for community
+            String comid = c.getString ( CObj.COMMUNITYID );
+
+            if ( comid != null )
+            {
+                if ( app.getSelectedCommunity() == null ||
+                        ( !comid.equals ( app.getSelectedCommunity().getDig() ) ) )
+                {
+                    Iterator<Entry<String, SortedMap<String, CObj>>> it = subCommunities.entrySet().iterator();
+
+                    while ( it.hasNext() )
+                    {
+                        Entry<String, SortedMap<String, CObj>> mp = it.next();
+                        Iterator<CObj> ci = mp.getValue().values().iterator();
+                        boolean newstuff = false;
+
+                        while ( ci.hasNext() )
+                        {
+                            CObj co = ci.next();
+
+                            if ( comid.equals ( co.getDig() ) )
+                            {
+                                co.pushPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS, 1L );
+                                newstuff = true;
+                            }
+
+                        }
+
+                        if ( newstuff )
+                        {
+                            identities.get ( mp.getKey() ).pushPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS, 1L );
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
         if ( CObj.IDENTITY.equals ( c.getType() ) )
         {
             identities.put ( c.getId(), c );

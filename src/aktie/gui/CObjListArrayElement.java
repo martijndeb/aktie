@@ -46,4 +46,33 @@ public class CObjListArrayElement implements CObjListGetter
         return r;
     }
 
+    public boolean equals ( Object o )
+    {
+        if ( o instanceof CObjListArrayElement )
+        {
+            CObjListArrayElement ce = ( CObjListArrayElement ) o;
+            CObj oco = ce.getCObj();
+
+            if ( oco != null )
+            {
+                return oco.equals ( getCObj() );
+            }
+
+        }
+
+        return false;
+    }
+
+    public int hashCode()
+    {
+        CObj co = getCObj();
+
+        if ( co != null )
+        {
+            return co.hashCode();
+        }
+
+        return 0;
+    }
+
 }

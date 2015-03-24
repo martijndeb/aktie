@@ -27,6 +27,7 @@ public class CObjList
     private TopDocs documents;
     private Sort sort;
     private List<CObj> extras;
+    //Barrett .50
 
     public CObjList()
     {

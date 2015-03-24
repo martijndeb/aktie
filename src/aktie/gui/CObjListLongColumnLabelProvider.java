@@ -1,8 +1,13 @@
 package aktie.gui;
 
-import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.StyledCellLabelProvider;
+import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 
-public class CObjListLongColumnLabelProvider extends ColumnLabelProvider
+import aktie.data.CObj;
+
+public class CObjListLongColumnLabelProvider extends StyledCellLabelProvider
 {
 
     private String key;
@@ -13,10 +18,41 @@ public class CObjListLongColumnLabelProvider extends ColumnLabelProvider
     }
 
     @Override
-    public String getText ( Object element )
+    public void update ( ViewerCell cell )
     {
-        CObjListGetter o = ( CObjListGetter ) element;
-        return Long.toString ( o.getCObj().getNumber ( key ) );
+        CObjListGetter o = ( CObjListGetter ) cell.getElement();
+        CObj co = o.getCObj();
+
+        if ( co != null )
+        {
+            Long r = co.getNumber ( key );
+
+            if ( r == null )
+            {
+                r = 0L;
+            }
+
+            cell.setText ( Long.toString ( r ) );
+
+            Long nv = co.getPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS );
+
+            if ( nv != null && 1L == nv )
+            {
+                cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_BLUE ) );
+            }
+
+            else
+            {
+                cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_BLACK ) );
+            }
+
+        }
+
+        else
+        {
+            cell.setText ( "" );
+        }
+
     }
 
 }

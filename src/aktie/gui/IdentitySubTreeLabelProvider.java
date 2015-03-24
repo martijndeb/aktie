@@ -4,8 +4,7 @@ import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelP
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.jface.viewers.StyledString.Styler;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Device;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.TextStyle;
 import org.eclipse.swt.widgets.Display;
@@ -16,22 +15,24 @@ import aktie.gui.IdentitySubTreeProvider.TreeSubscription;
 
 public class IdentitySubTreeLabelProvider implements IStyledLabelProvider
 {
-	
-	private Styler blueStyle;
 
-	public IdentitySubTreeLabelProvider() {
-		Device device = Display.getCurrent ();
-		final Color blue = new Color (device, 0, 0, 255);
-		blueStyle = new Styler() {
+    private Styler blueStyle;
 
-			@Override
-			public void applyStyles(TextStyle a) {
-				a.foreground = blue;
-			}
-			
-		};
-	}
-	
+    public IdentitySubTreeLabelProvider()
+    {
+        blueStyle = new Styler()
+        {
+
+            @Override
+            public void applyStyles ( TextStyle a )
+            {
+                a.foreground = Display.getDefault().getSystemColor ( SWT.COLOR_BLUE );
+            }
+
+        };
+
+    }
+
     @Override
     public void addListener ( ILabelProviderListener arg0 )
     {
@@ -60,13 +61,19 @@ public class IdentitySubTreeLabelProvider implements IStyledLabelProvider
     }
 
     @Override
-	public StyledString getStyledText(Object a) 
+    public StyledString getStyledText ( Object a )
     {
         if ( a instanceof TreeIdentity )
         {
             TreeIdentity e = ( TreeIdentity ) a;
-            StyledString ss = new StyledString(e.display, blueStyle);
-            return ss;
+            Long np = e.identity.getPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS );
+
+            if ( np != null && np == 1L )
+            {
+                return new StyledString ( e.identity.getDisplayName(), blueStyle );
+            }
+
+            return new StyledString ( e.identity.getDisplayName() );
         }
 
         else if ( a instanceof TreeSubscription )
@@ -80,11 +87,17 @@ public class IdentitySubTreeLabelProvider implements IStyledLabelProvider
                 name = "* " + name;
             }
 
-            return new StyledString(name);
+            Long np = ts.community.getPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS );
+
+            if ( np != null && np == 1L )
+            {
+                return new StyledString ( name, blueStyle );
+            }
+
+            return new StyledString ( name );
         }
 
         return null;
     }
 
 }
-    
