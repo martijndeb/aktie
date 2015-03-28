@@ -637,6 +637,63 @@ public class RequestFileHandler
         return null;
     }
 
+    @SuppressWarnings ( "unchecked" )
+    private boolean alreadyRequested ( String comid, String wdig, String fdig, String creator )
+    {
+        boolean already = false;
+        Session s = null;
+
+        try
+        {
+            s = session.getSession();
+            Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.communityId = :comid AND "
+                                      + "x.wholeDigest = :wdig AND x.fragmentDigest = :fdig AND x.requestId = :creator AND "
+                                      + "x.state != :state" );
+            q.setParameter ( "comid", comid );
+            q.setParameter ( "wdig", wdig );
+            q.setParameter ( "fdig", fdig );
+            q.setParameter ( "creator", creator );
+            q.setParameter ( "state", RequestFile.COMPLETE );
+            List<RequestFile> l = q.list();
+            already = l.size() > 0;
+            s.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+
+            if ( s != null )
+            {
+                try
+                {
+                    if ( s.getTransaction().isActive() )
+                    {
+                        s.getTransaction().rollback();
+                    }
+
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+                try
+                {
+                    s.close();
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+            }
+
+        }
+
+        return already;
+    }
+
     public RequestFile createRequestFile ( CObj hasfile )
     {
         if ( CObj.USR_DOWNLOAD_FILE.equals ( hasfile.getType() ) )
@@ -646,6 +703,11 @@ public class RequestFileHandler
             String pdig = hasfile.getString ( CObj.FRAGDIGEST ) ;
             String wdig = hasfile.getString ( CObj.FILEDIGEST ) ;
             String creator = hasfile.getString ( CObj.CREATOR ) ;
+
+            if ( alreadyRequested ( comid, wdig, pdig, creator ) )
+            {
+                return null;
+            }
 
             boolean okcreate = true;
             String localpath = null;

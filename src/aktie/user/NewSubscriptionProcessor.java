@@ -39,7 +39,7 @@ public class NewSubscriptionProcessor extends GenericProcessor
 
             if ( creator == null )
             {
-                o.pushString ( CObj.ERROR, "Creator must be defined" );
+                o.pushString ( CObj.ERROR, "creator must be defined" );
                 guicallback.update ( o );
                 return true;
             }
@@ -48,7 +48,7 @@ public class NewSubscriptionProcessor extends GenericProcessor
 
             if ( myid == null )
             {
-                o.pushString ( CObj.ERROR, "You may only use your own identity" );
+                o.pushString ( CObj.ERROR, "you may only use your own identity" );
                 guicallback.update ( o );
                 return true;
             }
@@ -58,14 +58,14 @@ public class NewSubscriptionProcessor extends GenericProcessor
 
             if ( comid == null )
             {
-                o.pushString ( CObj.ERROR, "Community must be defined" );
+                o.pushString ( CObj.ERROR, "community must be defined" );
                 guicallback.update ( o );
                 return true;
             }
 
             if ( !validator.canSubscribe ( comid, creator ) )
             {
-                o.pushString ( CObj.ERROR, "May not subscribe" );
+                o.pushString ( CObj.ERROR, "may not subscribe" );
                 guicallback.update ( o );
                 return true;
             }
@@ -148,7 +148,7 @@ public class NewSubscriptionProcessor extends GenericProcessor
             catch ( Exception e )
             {
                 e.printStackTrace();
-                o.pushString ( CObj.ERROR, "Subscription could not be indexed" );
+                o.pushString ( CObj.ERROR, "subscription could not be indexed" );
                 guicallback.update ( o );
                 return true;
             }

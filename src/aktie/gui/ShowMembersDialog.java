@@ -204,6 +204,9 @@ public class ShowMembersDialog extends Dialog
 
             CObjList memlst =
                 app.getNode().getIndex().getMemberships ( selectedCommunity.getDig(), s );
+            CObj ownerref = new CObj();
+            ownerref.pushPrivate ( CObj.MEMBERID, selectedCommunity.getString ( CObj.CREATOR ) );
+            memlst.add ( ownerref );
             memberTableViewer.setInput ( memlst );
         }
 

@@ -116,6 +116,10 @@ public class NewFileProcessor extends GenericProcessor
 
                 while ( idx < f.length() )
                 {
+                    CObj updatemsg = new CObj();
+                    updatemsg.pushPrivate ( CObj.ERROR, "Adding new file: " + f.getName() );
+                    guicallback.update ( updatemsg );
+
                     long mlenl = Math.min ( flvl, ( f.length() - idx ) );
                     idx += mlenl;
                     int mlen = ( int ) mlenl;
@@ -161,7 +165,7 @@ public class NewFileProcessor extends GenericProcessor
 
                 if ( existhf != null && "true".equals ( existhf.getString ( CObj.STILLHASFILE ) ) )
                 {
-                    o.pushString ( CObj.ERROR, "Already added file " + fsize );
+                    o.pushString ( CObj.ERROR, "Already added file " + wfs );
                     guicallback.update ( o );
                     return true;
                 }

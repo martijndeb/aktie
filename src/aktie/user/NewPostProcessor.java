@@ -49,7 +49,7 @@ public class NewPostProcessor extends GenericProcessor
 
             if ( myid == null )
             {
-                o.pushString ( CObj.ERROR, "You must be subscribed" );
+                o.pushString ( CObj.ERROR, "you must be subscribed to post" );
                 guicallback.update ( o );
                 return true;
             }
@@ -127,7 +127,7 @@ public class NewPostProcessor extends GenericProcessor
             catch ( Exception e )
             {
                 e.printStackTrace();
-                o.pushString ( CObj.ERROR, "Subscription could not be indexed" );
+                o.pushString ( CObj.ERROR, "subscription could not be indexed" );
                 guicallback.update ( o );
                 return true;
             }

@@ -47,7 +47,7 @@ public class NewCommunityProcessor extends GenericProcessor
 
             if ( creator == null )
             {
-                o.pushString ( CObj.ERROR, "Creator must be defined" );
+                o.pushString ( CObj.ERROR, "Please select an identity for community" );
                 guicallback.update ( o );
                 return true;
             }
@@ -141,7 +141,7 @@ public class NewCommunityProcessor extends GenericProcessor
                 {
                     s.getTransaction().commit();
                     s.close();
-                    o.pushString ( CObj.ERROR, "You can only add community one of your identities" );
+                    o.pushString ( CObj.ERROR, "You must use one of your identities" );
                     guicallback.update ( o );
                     return true;
                 }

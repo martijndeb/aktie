@@ -70,6 +70,10 @@ public class NewIdentityProcessor extends GenericProcessor
 
             else
             {
+                CObj updatemsg = new CObj();
+                updatemsg.pushPrivate ( CObj.ERROR, "Creating new identity.." );
+                guicallback.update ( updatemsg );
+
                 AsymmetricCipherKeyPair pair = Utils.generateKeyPair();
                 o.pushPrivate ( CObj.PRIVATEKEY, Utils.stringFromPrivateKey (
                                     ( RSAPrivateCrtKeyParameters ) pair.getPrivate() ) );
@@ -95,7 +99,7 @@ public class NewIdentityProcessor extends GenericProcessor
                 catch ( IOException e )
                 {
                     e.printStackTrace();
-                    o.pushString ( CObj.ERROR, "Failed to index new identity" );
+                    o.pushString ( CObj.ERROR, "failed to index new identity" );
                     guicallback.update ( o );
                     return true;
                 }
@@ -118,7 +122,7 @@ public class NewIdentityProcessor extends GenericProcessor
                 catch ( Exception e )
                 {
                     e.printStackTrace();
-                    o.pushString ( CObj.ERROR, "Failed to save identity data" );
+                    o.pushString ( CObj.ERROR, "failed to save identity data" );
                     guicallback.update ( o );
 
                     if ( s != null )

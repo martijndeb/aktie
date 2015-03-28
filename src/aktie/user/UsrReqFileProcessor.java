@@ -28,7 +28,17 @@ public class UsrReqFileProcessor extends GenericProcessor
 
             if ( callback != null )
             {
-                callback.update ( rf );
+                if ( rf != null )
+                {
+                    callback.update ( rf );
+                }
+
+                else
+                {
+                    CObj err = new CObj();
+                    err.pushString ( CObj.ERROR, "Could not download " + b.getString ( CObj.NAME ) );
+                }
+
             }
 
             return true;

@@ -91,7 +91,7 @@ public class NewMembershipProcessor extends GenericProcessor
 
             if ( !CObj.SCOPE_PRIVATE.equals ( scope ) )
             {
-                o.pushString ( CObj.ERROR, "scope must be private" );
+                o.pushString ( CObj.ERROR, "only add members to private or locked communities" );
                 guicallback.update ( o );
                 return true;
             }
@@ -99,7 +99,7 @@ public class NewMembershipProcessor extends GenericProcessor
             //Make sure not exceeding authority
             if ( validator.canGrantMemebership ( comid, creator, auth ) == null )
             {
-                o.pushString ( CObj.ERROR, "You cannot grant membership" );
+                o.pushString ( CObj.ERROR, "you cannot grant membership" );
                 guicallback.update ( o );
                 return true;
             }
@@ -109,7 +109,7 @@ public class NewMembershipProcessor extends GenericProcessor
 
             if ( member == null )
             {
-                o.pushString ( CObj.ERROR, "Member identity not found" );
+                o.pushString ( CObj.ERROR, "member identity not found" );
                 guicallback.update ( o );
                 return true;
             }

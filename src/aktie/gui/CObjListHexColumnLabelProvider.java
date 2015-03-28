@@ -53,7 +53,7 @@ public class CObjListHexColumnLabelProvider extends StyledCellLabelProvider
 
                 else
                 {
-                    cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_BLACK ) );
+                    cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_LIST_FOREGROUND ) );
                 }
 
             }

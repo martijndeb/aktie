@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-//import java.util.Set;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import org.apache.lucene.document.Document;
@@ -1009,17 +1009,16 @@ public class CObj
         return 1;
     }
 
-    /*
-        private boolean strEq ( String x, String y )
-        {
+    private boolean strEq ( String x, String y )
+    {
         if ( x != null ) { return x.equals ( y ); }
 
         else { return y == null; }
 
-        }
+    }
 
-        public boolean mapEq ( Map<?, ?> m, Map<?, ?> n )
-        {
+    public boolean mapEq ( Map<?, ?> m, Map<?, ?> n )
+    {
         if ( m == null && n == null ) { return true; }
 
         if ( m == null || n == null ) { return false; }
@@ -1053,9 +1052,10 @@ public class CObj
         }
 
         return true;
-        }
+    }
 
-        private boolean whoopyEquals( Object o ) {
+    public boolean whoopyEquals ( Object o )
+    {
         if ( ! ( o instanceof CObj ) ) { return false; }
 
         CObj b = ( CObj ) o;
@@ -1081,9 +1081,8 @@ public class CObj
         if ( !mapEq ( privatenumbers, b.getPrivateNumbers() ) ) { return false; }
 
         return true;
-        }
+    }
 
-    */
 
     private boolean productionEquals ( Object o )
     {

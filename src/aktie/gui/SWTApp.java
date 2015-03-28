@@ -777,7 +777,7 @@ public class SWTApp
 
                     if ( co.getString ( CObj.ERROR ) != null )
                     {
-                        System.out.println ( "ERROR: " + co.getString ( CObj.ERROR ) );
+                        setErrorMessage ( co.getString ( CObj.ERROR ) );
                     }
 
                     else
@@ -902,11 +902,12 @@ public class SWTApp
 
                 if ( co.getString ( CObj.ERROR ) != null )
                 {
-                    System.out.println ( "ERROR: " + co.getString ( CObj.ERROR ) );
+                    setErrorMessage ( co.getString ( CObj.ERROR ) );
                 }
 
                 else
                 {
+                    setErrorMessage ( "" );
                     String comid = co.getString ( CObj.COMMUNITYID );
 
                     if ( CObj.IDENTITY.equals ( co.getType() ) )
@@ -1239,7 +1240,7 @@ public class SWTApp
 
     }
 
-
+    private Label lblVersion;
     private boolean doUpgrade = true;
     protected Shell shell;
     private Text searchText;
@@ -1461,6 +1462,51 @@ public class SWTApp
         {
             e.printStackTrace();
         }
+
+    }
+
+    private boolean pendingClear = false;
+
+    private void setErrorMessage ( final String msg )
+    {
+        Display.getDefault().asyncExec ( new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                lblError.setText ( msg );
+                composite_header.layout();
+
+                if ( !pendingClear )
+                {
+                    pendingClear = true;
+                    Timer t = new Timer ( "Error message clear", true );
+                    t.schedule ( new TimerTask()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            pendingClear = false;
+                            Display.getDefault().asyncExec ( new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    lblError.setText ( "" );
+                                    composite_header.layout();
+                                }
+
+                            } );
+
+                        }
+
+                    }, 5L * 60L * 1000L );
+
+                }
+
+            }
+
+        } );
 
     }
 
@@ -1716,7 +1762,6 @@ public class SWTApp
     private SortField.Type sortFileType1;
     private SortField.Type sortFileType2;
     private Text bannerText;
-    private Label lblVersion;
 
     private void filesSearch ( String srch )
     {
@@ -2046,6 +2091,8 @@ public class SWTApp
     private Table membershipTable;
     private TableViewer membershipTableViewer;
     private CObjListContentProvider membershipProvider;
+    private Composite composite_header;
+    private Label lblError;
 
     private boolean doDownloadLrg ( CObj c )
     {
@@ -2232,9 +2279,17 @@ public class SWTApp
         mntmStartManualUpdate.setText ( "Force Update" );
         mntmStartManualUpdate.addSelectionListener ( new ManualUpdate() );
 
-        lblVersion = new Label ( shell, SWT.NONE );
-        lblVersion.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
+        composite_header = new Composite ( shell, SWT.NONE );
+        composite_header.setLayout ( new GridLayout ( 2, false ) );
+        composite_header.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
+
+        lblVersion = new Label ( composite_header, SWT.NONE );
+        lblVersion.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
         lblVersion.setText ( Wrapper.VERSION );
+
+        lblError = new Label ( composite_header, SWT.NONE );
+        lblError.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
+        lblError.setText ( "" );
 
         TabFolder tabFolder = new TabFolder ( shell, SWT.NONE );
         tabFolder.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, true, 1, 1 ) );
@@ -3009,7 +3064,7 @@ public class SWTApp
         postTable.setMenu ( menu_5 );
 
         MenuItem mntmDownloadFile2 = new MenuItem ( menu_5, SWT.NONE );
-        mntmDownloadFile2.setText ( "Download File" );
+        mntmDownloadFile2.setText ( "Download File(s)" );
         mntmDownloadFile2.addSelectionListener ( new SelectionListener()
         {
             @Override
@@ -3047,7 +3102,7 @@ public class SWTApp
         } );
 
         MenuItem mntmDownloadPrv = new MenuItem ( menu_5, SWT.NONE );
-        mntmDownloadPrv.setText ( "Download Preview" );
+        mntmDownloadPrv.setText ( "Download Preview(s)" );
         mntmDownloadPrv.addSelectionListener ( new SelectionListener()
         {
             @Override
@@ -3873,6 +3928,11 @@ public class SWTApp
     public TableViewer getMembershipTableViewer()
     {
         return membershipTableViewer;
+    }
+
+    public Label getLblError()
+    {
+        return lblError;
     }
 
 }

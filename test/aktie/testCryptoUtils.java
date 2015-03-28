@@ -135,7 +135,7 @@ public class testCryptoUtils
         Document d = o.getDocument();
         CObj o2 = new CObj();
         o2.loadDocument ( d );
-        assertEquals ( o, o2 );
+        assertTrue ( o.whoopyEquals ( o2 ) );
     }
 
     @Test
@@ -187,7 +187,7 @@ public class testCryptoUtils
         JSONObject j2 = new JSONObject ( new JSONTokener ( js ) );
         CObj o2 = new CObj();
         o2.loadJSON ( j2 );
-        assertEquals ( o, o2 );
+        assertTrue ( o.whoopyEquals ( o2 ) );
     }
 
     @Test
