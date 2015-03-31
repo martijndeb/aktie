@@ -2492,6 +2492,129 @@ public class SWTApp
 
         MenuItem mntmNewMember = new MenuItem ( menu_2, SWT.NONE );
         mntmNewMember.setText ( "New Member" );
+        mntmNewMember.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                if ( selectedIdentity != null && selectedCommunity != null )
+                {
+                    newMemberDialog.open ( selectedIdentity.getId(), selectedCommunity.getDig() );
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        MenuItem mntmClose = new MenuItem ( menu_2, SWT.NONE );
+        mntmClose.setText ( "Disconnect Identity" );
+        mntmClose.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                IStructuredSelection sel = ( IStructuredSelection ) identTreeViewer.getSelection();
+                CObj selid = null;
+                @SuppressWarnings ( "rawtypes" )
+                Iterator i = sel.iterator();
+
+                if ( i.hasNext() && selid == null )
+                {
+                    Object selo = i.next();
+
+                    if ( selo instanceof TreeIdentity )
+                    {
+                        TreeIdentity ti = ( TreeIdentity ) selo;
+                        selid = ti.identity;
+                    }
+
+                    if ( selo instanceof TreeSubscription )
+                    {
+                        TreeSubscription ts = ( TreeSubscription ) selo;
+                        selid = ts.parent.identity;
+                    }
+
+                }
+
+                if ( selid != null )
+                {
+                    CObj cl = selid.clone();
+                    cl.setType ( CObj.USR_START_DEST );
+                    cl.pushPrivateNumber ( CObj.PRV_DEST_OPEN, 0L );
+
+                    if ( node != null )
+                    {
+                        node.enqueue ( cl );
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        MenuItem mntmConnect = new MenuItem ( menu_2, SWT.NONE );
+        mntmConnect.setText ( "Connect Identity" );
+        mntmConnect.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                IStructuredSelection sel = ( IStructuredSelection ) identTreeViewer.getSelection();
+                CObj selid = null;
+                @SuppressWarnings ( "rawtypes" )
+                Iterator i = sel.iterator();
+
+                if ( i.hasNext() && selid == null )
+                {
+                    Object selo = i.next();
+
+                    if ( selo instanceof TreeIdentity )
+                    {
+                        TreeIdentity ti = ( TreeIdentity ) selo;
+                        selid = ti.identity;
+                    }
+
+                    if ( selo instanceof TreeSubscription )
+                    {
+                        TreeSubscription ts = ( TreeSubscription ) selo;
+                        selid = ts.parent.identity;
+                    }
+
+                }
+
+                if ( selid != null )
+                {
+                    CObj cl = selid.clone();
+                    cl.setType ( CObj.USR_START_DEST );
+                    cl.pushPrivateNumber ( CObj.PRV_DEST_OPEN, 1L );
+
+                    if ( node != null )
+                    {
+                        node.enqueue ( cl );
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
 
         membershipTableViewer = new TableViewer ( sashForm2, SWT.BORDER | SWT.FULL_SELECTION );
         membershipTable = membershipTableViewer.getTable();
@@ -2641,25 +2764,6 @@ public class SWTApp
         } );
 
         sashForm2.setWeights ( new int[] {1, 1} );
-
-        mntmNewMember.addSelectionListener ( new SelectionListener()
-        {
-            @Override
-            public void widgetSelected ( SelectionEvent e )
-            {
-                if ( selectedIdentity != null && selectedCommunity != null )
-                {
-                    newMemberDialog.open ( selectedIdentity.getId(), selectedCommunity.getDig() );
-                }
-
-            }
-
-            @Override
-            public void widgetDefaultSelected ( SelectionEvent e )
-            {
-            }
-
-        } );
 
 
         //scrolledComposite.setContent ( identTree );
@@ -3788,6 +3892,37 @@ public class SWTApp
         connectionTable.setLinesVisible ( true );
         connectionTableViewer.setContentProvider ( new ConnectionContentProvider() );
         connectionTableViewer.setSorter ( new ConnectionSorter() );
+
+
+        Menu menu_7 = new Menu ( connectionTable );
+        connectionTable.setMenu ( menu_7 );
+
+        MenuItem closecon = new MenuItem ( menu_7, SWT.NONE );
+        closecon.setText ( "Close Connection" );
+        closecon.addSelectionListener ( new SelectionListener()
+        {
+            @SuppressWarnings ( "rawtypes" )
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                IStructuredSelection sel = ( IStructuredSelection ) connectionTableViewer.getSelection();
+                Iterator i = sel.iterator();
+
+                while ( i.hasNext() )
+                {
+                    ConnectionThread ct = ( ConnectionThread ) i.next();
+                    ct.stop();
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
 
         TableViewerColumn concol0 = new TableViewerColumn ( connectionTableViewer, SWT.NONE );
         concol0.getColumn().setText ( "Id" );

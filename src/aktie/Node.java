@@ -10,8 +10,6 @@ import aktie.index.CObjList;
 import aktie.index.Index;
 import aktie.net.ConnectionListener;
 import aktie.net.ConnectionManager;
-import aktie.net.Destination;
-import aktie.net.DestinationThread;
 import aktie.net.Net;
 import aktie.user.IdentityManager;
 import aktie.user.NewCommunityProcessor;
@@ -31,6 +29,7 @@ import aktie.user.UsrReqPostProcessor;
 import aktie.user.UsrReqSubProcessor;
 import aktie.user.UsrSeed;
 import aktie.user.UsrSeedCommunity;
+import aktie.user.UsrStartDestinationProcessor;
 
 public class Node
 {
@@ -74,6 +73,8 @@ public class Node
         userQueue.addProcessor ( new NewMembershipProcessor ( session, index, usrCallback ) );
         userQueue.addProcessor ( new NewPostProcessor ( session, index, usrCallback ) );
         userQueue.addProcessor ( new NewSubscriptionProcessor ( session, index, usrCallback ) );
+        userQueue.addProcessor ( new UsrStartDestinationProcessor ( network, conMan, session,
+                                 index, usrCallback, netCallback, conCallback, conMan, requestHandler ) );
         userQueue.addProcessor ( new UsrReqComProcessor ( identManager ) );
         userQueue.addProcessor ( new UsrReqFileProcessor ( requestHandler, usrCallback ) );
         userQueue.addProcessor ( new UsrReqHasFileProcessor ( identManager ) );
@@ -89,17 +90,8 @@ public class Node
         for ( int c = 0; c < myids.size(); c++ )
         {
             CObj myid = myids.get ( c );
-            String destfile = myid.getPrivate ( CObj.DEST );
-
-            if ( destfile != null )
-            {
-                File f = new File ( destfile );
-                Destination d = network.getExistingDestination ( f );
-                DestinationThread dt =
-                    new DestinationThread ( d, conMan, session, index, netCallback, conCallback, requestHandler );
-                dt.setIdentity ( myid );
-                conMan.addDestination ( dt );
-            }
+            myid.setType ( CObj.USR_START_DEST );
+            enqueue ( myid );
 
         }
 

@@ -287,7 +287,10 @@ public class UserTest implements GuiCallback, GetSendData, ConnectionListener, D
     {
         if ( o instanceof CObj )
         {
-            lastupdate = ( CObj ) o;
+        	CObj co = (CObj)o;
+        	if (co.getType() != null && co.getString(CObj.ERROR) == null) {
+        		lastupdate = co;
+        	}
         }
 
     }
@@ -315,6 +318,20 @@ public class UserTest implements GuiCallback, GetSendData, ConnectionListener, D
 
     @Override
     public void addDestination ( DestinationThread d )
+    {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public boolean isDestinationOpen ( String dest )
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void closeDestination ( CObj myid )
     {
         // TODO Auto-generated method stub
 

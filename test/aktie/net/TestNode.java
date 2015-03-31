@@ -87,7 +87,15 @@ public class TestNode implements GuiCallback, ConnectionListener, DestinationLis
     public void update ( Object o )
     {
         System.out.println ( "UPDATE: " + o );
-        updateQueue.add ( o );
+        if (o instanceof CObj) {
+        	CObj co = (CObj) o;
+        	if (co.getType() != null && co.getString(CObj.ERROR) == null) {
+                updateQueue.add ( o );
+        	}
+        }
+        else {
+        	updateQueue.add ( o );
+        }
     }
 
     public Object pollGuiQueue()
@@ -141,6 +149,20 @@ public class TestNode implements GuiCallback, ConnectionListener, DestinationLis
 
     @Override
     public void addDestination ( DestinationThread d )
+    {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public boolean isDestinationOpen ( String dest )
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void closeDestination ( CObj myid )
     {
         // TODO Auto-generated method stub
 

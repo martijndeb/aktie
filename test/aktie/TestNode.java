@@ -31,7 +31,15 @@ public class TestNode
 
         public synchronized void update ( Object o )
         {
-            oqueue.add ( o );
+        	if (o instanceof CObj) {
+        		CObj co = (CObj)o;
+        		if (co.getType() != null && co.getString(CObj.ERROR) == null) {
+                    oqueue.add ( o );
+        		}
+        	}
+        	else {
+                oqueue.add ( o );
+        	}
             notifyAll();
         }
 

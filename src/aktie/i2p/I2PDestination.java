@@ -100,6 +100,16 @@ public class I2PDestination implements Destination
             e.printStackTrace();
         }
 
+        try
+        {
+            manager.destroySocketManager();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+        }
+
     }
 
 }

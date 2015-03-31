@@ -84,6 +84,42 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
     }
 
+    @Override
+    public boolean isDestinationOpen ( String dest )
+    {
+        boolean opn = true;
+
+        synchronized ( destinations )
+        {
+            opn = destinations.containsKey ( dest );
+        }
+
+        return opn;
+    }
+
+    @Override
+    public void closeDestination ( CObj myid )
+    {
+        String dest = myid.getString ( CObj.DEST );
+
+        if ( dest != null )
+        {
+            synchronized ( destinations )
+            {
+                DestinationThread dt = destinations.remove ( dest );
+
+                if ( dt != null )
+                {
+                    dt.stop();
+                }
+
+            }
+
+        }
+
+    }
+
+    @Override
     public void push ( CObj fromid, CObj o )
     {
         String dest = fromid.getString ( CObj.DEST );

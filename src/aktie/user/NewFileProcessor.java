@@ -105,6 +105,10 @@ public class NewFileProcessor extends GenericProcessor
             //Process file
             try
             {
+                CObj updatemsg = new CObj();
+                updatemsg.pushString ( CObj.ERROR, "Adding new file: " + f.getName() );
+                guicallback.update ( updatemsg );
+
                 List<byte[]> fragdiglst = new LinkedList<byte[]>();
                 long flvl = fsize;
                 int flv = ( int ) flvl;
@@ -116,9 +120,6 @@ public class NewFileProcessor extends GenericProcessor
 
                 while ( idx < f.length() )
                 {
-                    CObj updatemsg = new CObj();
-                    updatemsg.pushPrivate ( CObj.ERROR, "Adding new file: " + f.getName() );
-                    guicallback.update ( updatemsg );
 
                     long mlenl = Math.min ( flvl, ( f.length() - idx ) );
                     idx += mlenl;

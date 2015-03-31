@@ -17,6 +17,7 @@ public class IdentitySubTreeLabelProvider implements IStyledLabelProvider
 {
 
     private Styler blueStyle;
+    private Styler redStyle;
 
     public IdentitySubTreeLabelProvider()
     {
@@ -27,6 +28,17 @@ public class IdentitySubTreeLabelProvider implements IStyledLabelProvider
             public void applyStyles ( TextStyle a )
             {
                 a.foreground = Display.getDefault().getSystemColor ( SWT.COLOR_BLUE );
+            }
+
+        };
+
+        redStyle = new Styler()
+        {
+
+            @Override
+            public void applyStyles ( TextStyle a )
+            {
+                a.foreground = Display.getDefault().getSystemColor ( SWT.COLOR_RED );
             }
 
         };
@@ -67,6 +79,12 @@ public class IdentitySubTreeLabelProvider implements IStyledLabelProvider
         {
             TreeIdentity e = ( TreeIdentity ) a;
             Long np = e.identity.getPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS );
+            Long open = e.identity.getPrivateNumber ( CObj.PRV_DEST_OPEN );
+
+            if ( open != null && open == 0L )
+            {
+                return new StyledString ( e.identity.getDisplayName() + " (OFF)", redStyle );
+            }
 
             if ( np != null && np == 1L )
             {

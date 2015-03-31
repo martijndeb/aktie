@@ -71,7 +71,7 @@ public class NewIdentityProcessor extends GenericProcessor
             else
             {
                 CObj updatemsg = new CObj();
-                updatemsg.pushPrivate ( CObj.ERROR, "Creating new identity.." );
+                updatemsg.pushString ( CObj.ERROR, "Creating new identity.." );
                 guicallback.update ( updatemsg );
 
                 AsymmetricCipherKeyPair pair = Utils.generateKeyPair();
