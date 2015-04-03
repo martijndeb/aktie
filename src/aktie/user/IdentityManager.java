@@ -241,7 +241,7 @@ public class IdentityManager
                                       + "x.fileUpdatePriority DESC, "
                                       + "x.lastFileUpdate ASC" );
             q.setParameter ( "st", CommunityMember.UPDATE );
-            q.setMaxResults ( 100 );
+            //q.setMaxResults ( 100 );
             CommunityMember cm = null;
             List<CommunityMember> r = q.list();
             Iterator<CommunityMember> i = r.iterator();
@@ -318,7 +318,7 @@ public class IdentityManager
                                       + "x.postUpdatePriority DESC, "
                                       + "x.lastPostUpdate ASC" );
             q.setParameter ( "st", CommunityMember.UPDATE );
-            q.setMaxResults ( 100 );
+            //q.setMaxResults ( 100 );
             CommunityMember cm = null;
             List<CommunityMember> r = q.list();
             Iterator<CommunityMember> i = r.iterator();
@@ -395,7 +395,7 @@ public class IdentityManager
                                       + "x.subscriptionUpdatePriority DESC, "
                                       + "x.lastSubscriptionUpdate ASC" );
             q.setParameter ( "st", CommunityMember.UPDATE );
-            q.setMaxResults ( 100 );
+            //q.setMaxResults ( 100 );
             CommunityMember cm = null;
             List<CommunityMember> r = q.list();
             Iterator<CommunityMember> i = r.iterator();

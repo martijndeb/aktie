@@ -85,23 +85,43 @@ public class Node
         userQueue.addProcessor ( new UsrSeed ( session, index, netCallback ) );
         userQueue.addProcessor ( new UsrSeedCommunity ( session, index, netCallback ) );
         userQueue.addProcessor ( new NewPushProcessor ( index, conMan ) );
-        CObjList myids = index.getMyIdentities();
 
-        for ( int c = 0; c < myids.size(); c++ )
-        {
-            CObj myid = myids.get ( c );
-            myid.setType ( CObj.USR_START_DEST );
-            enqueue ( myid );
-
-        }
-
-        myids.close();
         doUpdate();
     }
 
     private void doUpdate()
     {
         requestHandler.setRequestedOn();
+    }
+
+    public void startDestinations()
+    {
+
+        CObjList myids = index.getMyIdentities();
+
+        for ( int c = 0; c < myids.size(); c++ )
+        {
+            try
+            {
+                CObj myid = myids.get ( c );
+                myid.setType ( CObj.USR_START_DEST );
+                enqueue ( myid );
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        myids.close();
+
+    }
+
+    public void sendRequestsNow()
+    {
+        conMan.sendRequestsNow();
     }
 
     public void close()

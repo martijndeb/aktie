@@ -287,10 +287,13 @@ public class UserTest implements GuiCallback, GetSendData, ConnectionListener, D
     {
         if ( o instanceof CObj )
         {
-        	CObj co = (CObj)o;
-        	if (co.getType() != null && co.getString(CObj.ERROR) == null) {
-        		lastupdate = co;
-        	}
+            CObj co = ( CObj ) o;
+
+            if ( co.getType() != null && co.getString ( CObj.ERROR ) == null )
+            {
+                lastupdate = co;
+            }
+
         }
 
     }

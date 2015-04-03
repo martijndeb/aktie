@@ -86,7 +86,7 @@ public class NewFileProcessor extends GenericProcessor
 
             if ( fsize == null )
             {
-                fsize = 512L * 1024L; //500K (we convert each fragment to b64 string!  not too big!
+                fsize = 512L * 1024L; //500K
                 o.pushNumber ( CObj.FRAGSIZE, fsize );
             }
 

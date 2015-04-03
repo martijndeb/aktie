@@ -1,6 +1,7 @@
 package aktie.i2p;
 
 import java.io.File;
+import java.util.logging.Logger;
 
 import net.i2p.I2PException;
 import net.i2p.client.I2PSession;
@@ -13,6 +14,8 @@ import aktie.net.Destination;
 
 public class I2PDestination implements Destination
 {
+
+    Logger log = Logger.getLogger ( "aktie" );
 
     private File i2pdir;
     private I2PSocketManager manager;
@@ -39,7 +42,7 @@ public class I2PDestination implements Destination
 
         catch ( Exception e )
         {
-            e.printStackTrace();
+            log.info ( e.getMessage() );
         }
 
         return null;
@@ -64,7 +67,7 @@ public class I2PDestination implements Destination
 
         catch ( Exception e )
         {
-            e.printStackTrace();
+            log.info ( e.getMessage() );
         }
 
         return null;
@@ -81,7 +84,7 @@ public class I2PDestination implements Destination
 
         catch ( Exception e )
         {
-            e.printStackTrace();
+            log.info ( e.getMessage() );
         }
 
         return null;
@@ -97,7 +100,7 @@ public class I2PDestination implements Destination
 
         catch ( I2PException e )
         {
-            e.printStackTrace();
+            log.info ( e.getMessage() );
         }
 
         try
@@ -107,7 +110,7 @@ public class I2PDestination implements Destination
 
         catch ( Exception e )
         {
-            e.printStackTrace();
+            log.info ( e.getMessage() );
         }
 
     }

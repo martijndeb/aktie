@@ -4,12 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.jboss.logging.Logger;
 
 import aktie.data.CObj;
 import aktie.data.HH2Session;

@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import aktie.data.CObj;
 import aktie.data.HH2Session;
@@ -13,6 +14,8 @@ import aktie.user.RequestFileHandler;
 
 public class DestinationThread implements Runnable
 {
+
+    Logger log = Logger.getLogger ( "aktie" );
 
     public static Map<String, DestinationThread> threadlist = new HashMap<String, DestinationThread>();
 
@@ -206,6 +209,27 @@ public class DestinationThread implements Runnable
         for ( ConnectionThread t : tl )
         {
             t.enqueue ( o );
+        }
+
+    }
+
+    public void poke()
+    {
+
+        List<ConnectionThread> tl = new LinkedList<ConnectionThread>();
+
+        synchronized ( connections )
+        {
+            for ( List<ConnectionThread> l : connections.values() )
+            {
+                tl.addAll ( l );
+            }
+
+        }
+
+        for ( ConnectionThread t : tl )
+        {
+            t.poke();
         }
 
     }

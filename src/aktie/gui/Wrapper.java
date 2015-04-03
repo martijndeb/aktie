@@ -29,7 +29,7 @@ public class Wrapper
     //the upgrade file added to the network by the developer account.
     //This keeps new installs from downloading the same version as
     //an upgrade
-    public static long RELEASETIME = ( 1427819632L * 1000L ) + 3600000;
+    public static long RELEASETIME = ( 1428094686L * 1000L ) + 3600000;
 
     public static String RUNDIR = "aktie_run_dir";
     public static String JARFILE = "aktie.jar";
@@ -41,14 +41,25 @@ public class Wrapper
 
         while ( rc == RESTART_RC )
         {
-            rc = Main();
+            rc = Main ( args );
             System.out.println ( "RC: " + rc );
         }
 
     }
 
-    public static int Main()
+    public static int Main ( String args[] )
     {
+        boolean verbose = false;
+
+        for ( int ct = 0; ct < args.length; ct++ )
+        {
+            if ( "-v".equals ( args[ct] ) )
+            {
+                verbose = true;
+            }
+
+        }
+
         //Check the system
         String systype = System.getProperty ( "os.name" );
         System.out.println ( "SYS: " + systype );
@@ -278,6 +289,12 @@ public class Wrapper
         cmd.add ( sb.toString() );
         cmd.add ( "aktie.gui.SWTApp" );
         cmd.add ( RUNDIR + File.separator + "aktie_node" );
+
+        if ( verbose )
+        {
+            cmd.add ( "-v" );
+        }
+
         ProcessBuilder pb = new ProcessBuilder();
         pb.redirectErrorStream ( true );
         pb.command ( cmd );

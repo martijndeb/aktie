@@ -1223,6 +1223,7 @@ public class SWTApp
         u = new CObj();
         u.setType ( CObj.USR_POST_UPDATE );
         getNode().enqueue ( u );
+        getNode().sendRequestsNow();
     }
 
     class ManualUpdate implements SelectionListener
@@ -1302,12 +1303,19 @@ public class SWTApp
         postText.setText ( "" );
     }
 
+    public void setVerbose()
+    {
+        log.setLevel ( Level.INFO );
+    }
+
     /**
         Launch the application.
         @param args
     */
     public static void main ( String[] args )
     {
+        boolean verbose = false;
+
         try
         {
 
@@ -1319,7 +1327,25 @@ public class SWTApp
 
                 if ( args.length > 1 )
                 {
-                    window.exportCommunitiesFile = args[1];
+                    if ( "-v".equals ( args[1] ) )
+                    {
+                        verbose = true;
+                    }
+
+                    else
+                    {
+                        window.exportCommunitiesFile = args[1];
+                    }
+
+                }
+
+                if ( args.length > 2 )
+                {
+                    for ( int ct = 2; ct < args.length && !verbose; ct++ )
+                    {
+                        verbose = "-v".equals ( args[ct] );
+                    }
+
                 }
 
             }
@@ -1327,6 +1353,11 @@ public class SWTApp
             else
             {
                 window.nodeDir = "aktie_node";
+            }
+
+            if ( verbose )
+            {
+                window.setVerbose();
             }
 
             window.open();
@@ -1456,6 +1487,8 @@ public class SWTApp
             }
 
             mlst.close();
+
+            node.startDestinations();
         }
 
         catch ( IOException e )

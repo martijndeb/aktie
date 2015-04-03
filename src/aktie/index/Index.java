@@ -81,6 +81,7 @@ public class Index
         SimpleFSDirectory fsdir = new SimpleFSDirectory ( indexdir );
         writer = new IndexWriter ( fsdir, idxconf );
         writer.commit();
+
     }
 
     public void close()

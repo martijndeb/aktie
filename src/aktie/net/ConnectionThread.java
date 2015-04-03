@@ -12,11 +12,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bouncycastle.crypto.digests.RIPEMD256Digest;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.jboss.logging.Logger;
 import org.json.JSONObject;
 
 import aktie.BatchProcessor;
@@ -32,7 +33,7 @@ import aktie.user.IdentityManager;
 import aktie.user.RequestFileHandler;
 import aktie.utils.HasFileCreator;
 
-public class ConnectionThread implements Runnable
+public class ConnectionThread implements Runnable, GuiCallback
 {
     Logger log = Logger.getLogger ( "aktie" );
 
@@ -84,19 +85,19 @@ public class ConnectionThread implements Runnable
         accumulateTypes = new HashSet<String>();
         accumulateTypes.add ( CObj.FRAGMENT );
         preprocProcessor = new BatchProcessor();
-        InIdentityProcessor ip = new InIdentityProcessor ( session, index, guicallback );
+        InIdentityProcessor ip = new InIdentityProcessor ( session, index, this );
         preprocProcessor.addProcessor ( new ConnectionValidatorProcessor ( ip, d, this ) );
         //!!!!!!!!!!!!!!!!!! InFragProcessor - should be first !!!!!!!!!!!!!!!!!!!!!!!
         //Otherwise the list of fragments will be interate though for preceding processors
         //that don't need to and time will be wasted.
-        preprocProcessor.addProcessor ( new InFragProcessor ( session, index, guicallback ) );
+        preprocProcessor.addProcessor ( new InFragProcessor ( session, index, this ) );
         preprocProcessor.addProcessor ( ip );
         preprocProcessor.addProcessor ( new InFileProcessor ( this ) );
-        preprocProcessor.addProcessor ( new InComProcessor ( session, index, guicallback ) );
-        preprocProcessor.addProcessor ( new InHasFileProcessor ( dest.getIdentity(), session, index, guicallback, hfc ) );
-        preprocProcessor.addProcessor ( new InMemProcessor ( session, index, guicallback ) );
-        preprocProcessor.addProcessor ( new InPostProcessor ( dest.getIdentity(), session, index, guicallback ) );
-        preprocProcessor.addProcessor ( new InSubProcessor ( session, index, guicallback ) );
+        preprocProcessor.addProcessor ( new InComProcessor ( session, index, this ) );
+        preprocProcessor.addProcessor ( new InHasFileProcessor ( dest.getIdentity(), session, index, this, hfc ) );
+        preprocProcessor.addProcessor ( new InMemProcessor ( session, index, this ) );
+        preprocProcessor.addProcessor ( new InPostProcessor ( dest.getIdentity(), session, index, this ) );
+        preprocProcessor.addProcessor ( new InSubProcessor ( session, index, this ) );
         //!!!!!!!!!!!!!!!!! EnqueueRequestProcessor - must be last !!!!!!!!!!!!!!!!!!!!
         //Otherwise requests from the other node will not be processed.
         preprocProcessor.addProcessor ( new EnqueueRequestProcessor ( this ) );
@@ -210,6 +211,15 @@ public class ConnectionThread implements Runnable
         this.length = length;
     }
 
+    public void poke()
+    {
+        if ( outproc != null )
+        {
+            outproc.go();
+        }
+
+    }
+
     public void setLoadFile ( boolean loadFile )
     {
         this.loadFile = loadFile;
@@ -231,6 +241,7 @@ public class ConnectionThread implements Runnable
         catch ( Exception e )
         {
             e.printStackTrace();
+            stop();
         }
 
     }
@@ -255,7 +266,7 @@ public class ConnectionThread implements Runnable
             {
                 try
                 {
-                    wait ( 5000 );
+                    wait ( 60000 );
                 }
 
                 catch ( InterruptedException e )
@@ -288,11 +299,6 @@ public class ConnectionThread implements Runnable
             {
                 Object r = sendData.next ( dest.getIdentity().getId(),
                                            endDestination.getId() );
-
-                if ( r != null )
-                {
-                    lastMyRequest = System.currentTimeMillis();
-                }
 
                 return r;
             }
@@ -361,6 +367,7 @@ public class ConnectionThread implements Runnable
             if ( lastMyRequest < cuttime )
             {
                 stop();
+
             }
 
         }
@@ -387,6 +394,38 @@ public class ConnectionThread implements Runnable
                         if ( o instanceof CObj )
                         {
                             CObj c = ( CObj ) o;
+
+                            if ( log.getLevel() == Level.INFO )
+                            {
+                                StringBuilder dbmsg = new StringBuilder();
+                                dbmsg.append ( "CONTHREAD: Sending: " );
+                                dbmsg.append ( c.getType() );
+
+                                if ( dest.getIdentity() != null )
+                                {
+                                    dbmsg.append ( " from: " );
+                                    dbmsg.append ( dest.getIdentity().getDisplayName() );
+                                }
+
+                                else
+                                {
+                                    dbmsg.append ( " from: null??" );
+                                }
+
+                                if ( endDestination != null )
+                                {
+                                    dbmsg.append ( " to: " );
+                                    dbmsg.append ( endDestination.getDisplayName() );
+                                }
+
+                                else
+                                {
+                                    dbmsg.append ( " to: ?? " );
+                                }
+
+                                log.info ( dbmsg.toString() );
+                            }
+
                             sendCObj ( c );
 
                             if ( CObj.FILEF.equals ( c.getType() ) )
@@ -511,6 +550,9 @@ public class ConnectionThread implements Runnable
             String dstr = Utils.toString ( expdig );
             processFragment ( dstr, tmpf );
             loadFile = false;
+            lastMyRequest = System.currentTimeMillis();
+            outproc.go(); //it holds off on local requests until the file is read.
+            //now we have it, tell outproc to go again.
         }
 
     }
@@ -626,7 +668,6 @@ public class ConnectionThread implements Runnable
                                     hf.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
                                     hf.pushPrivate ( CObj.LOCALFILE, rf.getLocalFile() );
                                     hf.pushPrivate ( CObj.UPGRADEFLAG, rf.isUpgrade() ? "true" : "false" );
-                                    log.info ( "File download completed. 2  Upgrade flag: " + rf.isUpgrade() );
                                     hfc.createHasFile ( hf );
                                     hfc.updateFileInfo ( hf );
                                     guicallback.update ( hf );
@@ -708,8 +749,6 @@ public class ConnectionThread implements Runnable
 
     public static long LONGESTLIST = 100000000;
 
-    private long listStartTime;
-
     @Override
     public void run()
     {
@@ -733,9 +772,6 @@ public class ConnectionThread implements Runnable
                         long lc = r.getNumber ( CObj.COUNT );
 
                         if ( lc > LONGESTLIST ) { stop(); }
-
-                        listStartTime = System.currentTimeMillis();
-                        log.info ( "STARTING LIST: List count: " + lc + "  time: " + listStartTime );
 
                         listCount = ( int ) lc;
                     }
@@ -763,9 +799,6 @@ public class ConnectionThread implements Runnable
                             currentList.add ( r );
                             listCount--;
 
-                            long ct = System.currentTimeMillis();
-                            long diff = ( ct - listStartTime ) / 1000L;
-                            log.info ( "LIST COUNT DOWN: " + listCount + " time: " + diff + " seconds." );
                         }
 
                         else
@@ -793,6 +826,7 @@ public class ConnectionThread implements Runnable
                             {
                                 //Make sure we can debug processing bugs
                                 e.printStackTrace();
+                                stop();
                             }
 
                         }
@@ -808,6 +842,7 @@ public class ConnectionThread implements Runnable
                             {
                                 //Make sure we can debug processing bugs
                                 e.printStackTrace();
+                                stop();
                             }
 
                             currentList = null;
@@ -838,6 +873,13 @@ public class ConnectionThread implements Runnable
     public long getLastMyRequest()
     {
         return lastMyRequest;
+    }
+
+    @Override
+    public void update ( Object o )
+    {
+        guicallback.update ( o );
+        lastMyRequest = System.currentTimeMillis();
     }
 
 }

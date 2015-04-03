@@ -31,15 +31,22 @@ public class TestNode
 
         public synchronized void update ( Object o )
         {
-        	if (o instanceof CObj) {
-        		CObj co = (CObj)o;
-        		if (co.getType() != null && co.getString(CObj.ERROR) == null) {
+            if ( o instanceof CObj )
+            {
+                CObj co = ( CObj ) o;
+
+                if ( co.getType() != null && co.getString ( CObj.ERROR ) == null )
+                {
                     oqueue.add ( o );
-        		}
-        	}
-        	else {
+                }
+
+            }
+
+            else
+            {
                 oqueue.add ( o );
-        	}
+            }
+
             notifyAll();
         }
 
@@ -92,6 +99,7 @@ public class TestNode
         nn.setType ( CObj.IDENTITY );
         nn.pushString ( CObj.NAME, name );
         n.enqueue ( nn );
+        n.sendRequestsNow();
         return nn;
     }
 
@@ -103,6 +111,7 @@ public class TestNode
         log.setLevel ( Level.WARNING );
 
         ConnectionManager.MIN_TIME_BETWEEN_CONNECTIONS = 2L * 1000L;
+        ConnectionManager.DECODE_DELAY = 1000L;
 
         CallbackIntr cb0 = new CallbackIntr();
         CallbackIntr cb1 = new CallbackIntr();
@@ -206,6 +215,9 @@ public class TestNode
             cb1.oqueue.clear();
             n0seed.setType ( CObj.USR_SEED );
             n1.enqueue ( n0seed );
+
+            n1.sendRequestsNow();
+
             cb1.waitForUpdate();
 
             try
@@ -221,6 +233,9 @@ public class TestNode
             cb2.oqueue.clear();
             n0seed.setType ( CObj.USR_SEED );
             n2.enqueue ( n0seed );
+
+            n2.sendRequestsNow();
+
             cb2.waitForUpdate();
 
             try
@@ -236,6 +251,9 @@ public class TestNode
             cb3.oqueue.clear();
             n0seed.setType ( CObj.USR_SEED );
             n3.enqueue ( n0seed );
+
+            n3.sendRequestsNow();
+
             cb3.waitForUpdate();
 
             try
@@ -257,6 +275,10 @@ public class TestNode
             n2.enqueue ( updateIdent );
             n3.enqueue ( updateIdent );
 
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
+
             try
             {
                 Thread.sleep ( 10L * 1000L );
@@ -268,6 +290,8 @@ public class TestNode
             }
 
             n0.enqueue ( updateIdent );
+
+            n0.sendRequestsNow();
 
             try
             {
@@ -287,6 +311,10 @@ public class TestNode
             n2.enqueue ( updateIdent );
             n3.enqueue ( updateIdent );
 
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
+
             try
             {
                 Thread.sleep ( 10L * 1000L );
@@ -301,6 +329,11 @@ public class TestNode
             n1.enqueue ( updateIdent );
             n2.enqueue ( updateIdent );
             n3.enqueue ( updateIdent );
+
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -380,6 +413,10 @@ public class TestNode
             n2.enqueue ( comupdate );
             n3.enqueue ( comupdate );
 
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
+
             try
             {
                 Thread.sleep ( 10L * 1000L );
@@ -393,6 +430,10 @@ public class TestNode
             n1.enqueue ( comupdate );
             n2.enqueue ( comupdate );
             n3.enqueue ( comupdate );
+
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -444,6 +485,8 @@ public class TestNode
             mem0.pushPrivateNumber ( CObj.AUTHORITY, CObj.MEMBER_CAN_GRANT );
             n0.enqueue ( mem0 );
 
+            n0.sendRequestsNow();
+
             try
             {
                 Thread.sleep ( 1000L );
@@ -460,6 +503,10 @@ public class TestNode
             n1.enqueue ( memupdate );
             n2.enqueue ( memupdate );
             n3.enqueue ( memupdate );
+
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -518,6 +565,8 @@ public class TestNode
             sub0.pushString ( CObj.SUBSCRIBED, "true" );
             n0.enqueue ( sub0 );
 
+            n0.sendRequestsNow();
+
             cb0.waitForUpdate();
             co = n0.getIndex().getSubscription ( com0n0.getDig(), n0seed.getId() );
             assertNotNull ( co );
@@ -531,6 +580,10 @@ public class TestNode
             n1.enqueue ( updatesubs );
             n2.enqueue ( updatesubs );
             n3.enqueue ( updatesubs );
+
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -550,6 +603,10 @@ public class TestNode
             n1.enqueue ( updatesubs );
             n2.enqueue ( updatesubs );
             n3.enqueue ( updatesubs );
+
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -586,6 +643,8 @@ public class TestNode
             mem2.pushPrivateNumber ( CObj.AUTHORITY, CObj.MEMBER_SIMPLE );
             n2.enqueue ( mem2 );
 
+            n2.sendRequestsNow();
+
             cb2.waitForUpdate();
             Object o = cb2.oqueue.poll();
             co = ( CObj ) o;
@@ -610,6 +669,11 @@ public class TestNode
             n2.enqueue ( memupdate );
             n3.enqueue ( memupdate );
 
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
+
             try
             {
                 Thread.sleep ( 10L * 1000L );
@@ -625,6 +689,11 @@ public class TestNode
             n1.enqueue ( memupdate );
             n2.enqueue ( memupdate );
             n3.enqueue ( memupdate );
+
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -728,6 +797,10 @@ public class TestNode
             n2.enqueue ( updatesubs );
             n3.enqueue ( updatesubs );
 
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
+
             try
             {
                 Thread.sleep ( 10000 );
@@ -765,6 +838,8 @@ public class TestNode
             sub3.pushString ( CObj.SUBSCRIBED, "true" );
             n3.enqueue ( sub3 );
 
+            n3.sendRequestsNow();
+
             cb3.waitForUpdate();
             co = n3.getIndex().getSubscription ( com0n0.getDig(), node3b.getId() );
             assertNotNull ( co );
@@ -780,6 +855,11 @@ public class TestNode
             n2.enqueue ( updatesubs );
             n3.enqueue ( updatesubs );
 
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
+
             try
             {
                 Thread.sleep ( 10000 );
@@ -794,6 +874,11 @@ public class TestNode
             n1.enqueue ( updatesubs );
             n2.enqueue ( updatesubs );
             n3.enqueue ( updatesubs );
+
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -858,6 +943,8 @@ public class TestNode
             hf0.pushPrivate ( CObj.LOCALFILE, nf.getPath() );
             n3.enqueue ( hf0 );
 
+            n3.sendRequestsNow();
+
             cb3.waitForUpdate();
             o = cb3.oqueue.poll();
             hf0 = ( CObj ) o;
@@ -873,6 +960,11 @@ public class TestNode
             n1.enqueue ( hfupdate );
             n2.enqueue ( hfupdate );
             n3.enqueue ( hfupdate );
+
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -893,6 +985,11 @@ public class TestNode
             n1.enqueue ( hfupdate );
             n2.enqueue ( hfupdate );
             n3.enqueue ( hfupdate );
+
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -929,6 +1026,8 @@ public class TestNode
             post.pushString ( CObj.PAYLOAD, "This is a post." );
             n0.enqueue ( post );
 
+            n0.sendRequestsNow();
+
             cb0.waitForUpdate();
             o = cb0.oqueue.poll();
             post = ( CObj ) o;
@@ -942,6 +1041,11 @@ public class TestNode
             n1.enqueue ( pupdate );
             n2.enqueue ( pupdate );
             n3.enqueue ( pupdate );
+
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -957,6 +1061,11 @@ public class TestNode
             n1.enqueue ( pupdate );
             n2.enqueue ( pupdate );
             n3.enqueue ( pupdate );
+
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {
@@ -991,6 +1100,8 @@ public class TestNode
             hf0.pushPrivate ( CObj.LOCALFILE, nlf.getPath() );
             n0.enqueue ( hf0 );
 
+            n0.sendRequestsNow();
+
             try
             {
                 Thread.sleep ( 180000 );
@@ -1011,6 +1122,11 @@ public class TestNode
             n2.enqueue ( hfupdate );
             n3.enqueue ( hfupdate );
 
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
+
             try
             {
                 Thread.sleep ( 20000 );
@@ -1026,6 +1142,11 @@ public class TestNode
             n1.enqueue ( hfupdate );
             n2.enqueue ( hfupdate );
             n3.enqueue ( hfupdate );
+
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
 
             try
             {

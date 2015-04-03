@@ -25,9 +25,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.jboss.logging.Logger;
 
 public class ConnectionManager implements GetSendData, DestinationListener, PushInterface, Runnable
 {
@@ -46,7 +46,10 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
     public static int MAX_CONNECTIONS = 10;
     public static long MIN_TIME_BETWEEN_CONNECTIONS = 5L * 60L * 1000L;
-    public static long MAX_TIME_WITH_NO_REQUESTS = 120L * 60L * 1000L;
+    //Max data is 512K.  If we haven't gotten it in 15 minutes maybe try a different
+    //connection
+    public static long MAX_TIME_WITH_NO_REQUESTS = 15L * 60L * 1000L;
+    public static long DECODE_DELAY = 5L * 60L * 1000L;
 
     public ConnectionManager ( HH2Session s, Index i, RequestFileHandler r, IdentityManager id,
                                GuiCallback cb )
@@ -115,6 +118,23 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             }
 
+        }
+
+    }
+
+    public void sendRequestsNow()
+    {
+
+        List<DestinationThread> dlst = new LinkedList<DestinationThread>();
+
+        synchronized ( destinations )
+        {
+            dlst.addAll ( destinations.values() );
+        }
+
+        for ( DestinationThread dt : dlst )
+        {
+            dt.poke();
         }
 
     }
@@ -332,7 +352,6 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     private void attemptOneConnection ( DestinationThread dt, List<String> idlst, Map<String, CObj> myids )
     {
         IdentityData idat = null;
-        int checks = 100;
         long curtime = ( new Date() ).getTime();
         long soonest = curtime - MIN_TIME_BETWEEN_CONNECTIONS;
         //Remove my ids from the list
@@ -344,30 +363,37 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             if ( myids.get ( id ) != null )
             {
-                log.info ( "remove id that is mine from connect list." );
+                log.info ( "CONMAN: remove id that is mine from connect list." );
                 i.remove();
             }
 
-        }
-
-        while ( checks > 0 && idat == null && idlst.size() > 0 )
-        {
-            String pid = idlst.get ( Utils.Random.nextInt ( idlst.size() ) );
-            IdentityData tid = identManager.getIdentity ( pid );
-
-            if ( tid != null )
+            else
             {
-                if ( tid.getLastConnectionAttempt() < soonest )
+                IdentityData tid = identManager.getIdentity ( id );
+
+                if ( tid != null )
                 {
-                    idat = tid;
+                    if ( tid.getLastConnectionAttempt() > soonest )
+                    {
+                        log.info ( "CONMAN: we tried too soon ago. " + id );
+                        i.remove();
+                    }
+
                 }
 
             }
 
-            checks--;
         }
 
-        log.info ( "selected node for new connection: " + idat );
+        log.info ( "CONMAN: Number left to pick from: " + idlst.size() );
+
+        if ( idlst.size() > 0 )
+        {
+            String pid = idlst.get ( Utils.Random.nextInt ( idlst.size() ) );
+            idat = identManager.getIdentity ( pid );
+        }
+
+        log.info ( "CONMAN: selected node for new connection: " + idat );
 
         if ( idat != null )
         {
@@ -376,7 +402,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
             if ( tid != null )
             {
                 identManager.connectionAttempted ( idat.getId() );
-                log.info ( "attempt new connection." );
+                log.info ( "CONMAN: attempt new connection " + tid.getDisplayName() );
                 dt.connect ( tid.getString ( CObj.DEST ) );
             }
 
@@ -416,13 +442,17 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                     cr = co.getString ( CObj.CREATOR );
                 }
 
-                log.info ( "attempt connection add node: " + cr );
-                idlst.add ( cr );
+                log.info ( "CONMAN: attempt connection add node: " + cr );
 
                 if ( dt.isConnected ( cr ) )
                 {
-                    log.info ( "   alrady connected." );
+                    log.info ( "CONMAN: alrady connected." );
                     connected++;
+                }
+
+                else
+                {
+                    idlst.add ( cr );
                 }
 
             }
@@ -435,9 +465,9 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         }
 
         hlst.close();
-        log.info ( " existing connections valid for request: " + connected );
+        log.info ( "CONMAN existing connections valid for request: " + connected  + " number to pick from: " + idlst.size() );
 
-        if ( connected == 0 )
+        if ( connected < MAX_CONNECTIONS && idlst.size() > 0 )
         {
             attemptOneConnection ( dt, idlst, myids );
         }
@@ -449,9 +479,12 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         Map<String, CObj> mymap = getMyIdMap();
         //Find the current file requests we have
         List<RequestFile> rl = fileHandler.listRequestFilesNE ( RequestFile.COMPLETE, 5 );
+        log.info ( "CONMAN: Found files to request: " + rl.size() );
 
         for ( RequestFile rf : rl )
         {
+
+            log.info ( "CONMAN: Check for file: " + rf.getLocalFile() );
             //Get the DestinationThread that matches the requesting id.
             DestinationThread dt = null;
 
@@ -460,12 +493,29 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 dt = destinations.get ( mymap.get ( rf.getRequestId() ).getString ( CObj.DEST ) );
             }
 
+            log.info ( "CONMAN: Found destination " + dt );
+
             if ( dt != null )
             {
+                CObj did = dt.getIdentity();
+
+                if ( did != null )
+                {
+                    log.info ( "CONMAN: Dest id : " + did.getDisplayName() );
+                }
+
+                else
+                {
+                    log.info ( "CONMAN: Dest identity is null" );
+                }
+
+                log.info ( "CONMAN: connections: " + dt.numberConnection() );
+
                 if ( dt.numberConnection() < MAX_CONNECTIONS )
                 {
                     CObjList hlst = index.getHasFiles ( rf.getCommunityId(),
                                                         rf.getWholeDigest(), rf.getFragmentDigest() );
+                    log.info ( "CONMAN: number has file: " + hlst.size() );
                     attemptDestinationConnection ( hlst, dt, mymap );
                 }
 
@@ -1057,39 +1107,125 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
     }
 
-    private void deleteOldRequests()
+    //private void deleteOldRequests()
+    //{
+    //hardcode 10 days?
+    //    fileHandler.deleteOldRequests ( 10L * 24L * 60L * 60L * 1000L );
+    //}
+
+    private void resetupLastUpdateToForceDecode()
     {
-        //hardcode 10 days?
-        fileHandler.deleteOldRequests ( 10L * 24L * 60L * 60L * 1000L );
+        try
+        {
+            long curtime = System.currentTimeMillis();
+            CObjList unlst = index.getUnDecodedMemberships ( 0 );
+
+            for ( int c = 0; c < unlst.size(); c++ )
+            {
+                CObj co = unlst.get ( c );
+                co.pushPrivateNumber ( CObj.LASTUPDATE, curtime );
+                index.index ( co );
+            }
+
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+        }
+
     }
 
     private void decodeMemberships()
     {
         //Find my memberships
-        boolean newdecoded = false;
-        List<CommunityMyMember> mycoms = identManager.getMyMemberships();
-
-        for ( CommunityMyMember c : mycoms )
+        try
         {
-            long lastdecode = c.getLastDecode();
-            long newtime = System.currentTimeMillis();
-            //Find all membership records we've received after this time.
-            KeyParameter kp = new KeyParameter ( c.getKey() );
-            CObjList unlst = index.getUnDecodedMemberships ( lastdecode );
-            boolean decoded = false;
+            List<CommunityMyMember> mycoms = identManager.getMyMemberships();
 
-            for ( int cnt = 0; cnt < unlst.size() && !decoded; cnt++ )
+            for ( CommunityMyMember c : mycoms )
             {
-                try
+                long lastdecode = c.getLastDecode();
+                long newtime = System.currentTimeMillis();
+                //Find all membership records we've received after this time.
+                KeyParameter kp = new KeyParameter ( c.getKey() );
+                CObjList unlst = index.getUnDecodedMemberships ( lastdecode );
+
+                for ( int cnt = 0; cnt < unlst.size(); cnt++ )
                 {
                     CObj um = unlst.get ( cnt );
 
                     if ( symdec.decode ( um, kp ) )
                     {
-                        decoded = true;
-                        newdecoded = true;
                         um.pushPrivate ( CObj.DECODED, "true" );
                         index.index ( um );
+                    }
+
+                }
+
+                unlst.close();
+
+                //See if we've validated our own membership yet.
+                //it could be we got a new membership, but we didn't decode
+                //any.  we still want to attempt to validate it.
+
+                c.setLastDecode ( newtime );
+                identManager.saveMyMembership ( c ); //if we get one after we start we'll try again
+            }
+
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+        }
+
+        //Search for all decoded, invalid memberships, and check if valid
+        //keep checking until no more validated.
+        int lastdec = 0;
+        CObjList invliddeclist = index.getInvalidMemberships();
+
+        while ( invliddeclist.size() != lastdec )
+        {
+            lastdec = invliddeclist.size();
+
+            for ( int c = 0; c < invliddeclist.size(); c++ )
+            {
+                try
+                {
+                    CObj m = invliddeclist.get ( c );
+                    String creator = m.getString ( CObj.CREATOR );
+                    String comid = m.getPrivate ( CObj.COMMUNITYID );
+                    String memid = m.getPrivate ( CObj.MEMBERID );
+                    Long auth = m.getPrivateNumber ( CObj.AUTHORITY );
+
+                    if ( creator != null && comid != null && auth != null )
+                    {
+                        CObj com = memvalid.canGrantMemebership ( comid, creator, auth );
+                        CObj member = index.getIdentity ( memid );
+
+                        if ( com != null )
+                        {
+                            m.pushPrivate ( CObj.VALIDMEMBER, "true" );
+                            m.pushPrivate ( CObj.NAME, com.getPrivate ( CObj.NAME ) );
+                            m.pushPrivate ( CObj.DESCRIPTION, com.getPrivate ( CObj.DESCRIPTION ) );
+
+                            if ( "true".equals ( member.getPrivate ( CObj.MINE ) ) )
+                            {
+                                m.pushPrivate ( CObj.MINE, "true" );
+                                com.pushPrivate ( memid, "true" );
+                                index.index ( com );
+                            }
+
+                            index.index ( m );
+
+                            if ( callback != null )
+                            {
+                                callback.update ( m );
+                            }
+
+                        }
+
                     }
 
                 }
@@ -1101,87 +1237,11 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             }
 
-            unlst.close();
-
-            //See if we've validated our own membership yet.
-            //it could be we got a new membership, but we didn't decode
-            //any.  we still want to attempt to validate it.
-            if ( !newdecoded )
-            {
-                CObjList mymem = index.getInvalidMembership ( c.getCommunityId(), c.getMemberId() );
-                newdecoded = mymem.size() > 0;
-                mymem.close();
-            }
-
-            c.setLastDecode ( newtime );
-            identManager.saveMyMembership ( c ); //if we get one after we start we'll try again
-        }
-
-        if ( newdecoded )
-        {
-            //Search for all decoded, invalid memberships, and check if valid
-            //keep checking until no more validated.
-            int lastdec = 0;
-            CObjList invliddeclist = index.getInvalidMemberships();
-
-            while ( invliddeclist.size() != lastdec )
-            {
-                lastdec = invliddeclist.size();
-
-                for ( int c = 0; c < invliddeclist.size(); c++ )
-                {
-                    try
-                    {
-                        CObj m = invliddeclist.get ( c );
-                        String creator = m.getString ( CObj.CREATOR );
-                        String comid = m.getPrivate ( CObj.COMMUNITYID );
-                        String memid = m.getPrivate ( CObj.MEMBERID );
-                        Long auth = m.getPrivateNumber ( CObj.AUTHORITY );
-
-                        if ( creator != null && comid != null && auth != null )
-                        {
-                            CObj com = memvalid.canGrantMemebership ( comid, creator, auth );
-                            CObj member = index.getIdentity ( memid );
-
-                            if ( com != null )
-                            {
-                                m.pushPrivate ( CObj.VALIDMEMBER, "true" );
-                                m.pushPrivate ( CObj.NAME, com.getPrivate ( CObj.NAME ) );
-                                m.pushPrivate ( CObj.DESCRIPTION, com.getPrivate ( CObj.DESCRIPTION ) );
-
-                                if ( "true".equals ( member.getPrivate ( CObj.MINE ) ) )
-                                {
-                                    m.pushPrivate ( CObj.MINE, "true" );
-                                    com.pushPrivate ( memid, "true" );
-                                    index.index ( com );
-                                }
-
-                                index.index ( m );
-
-                                if ( callback != null )
-                                {
-                                    callback.update ( m );
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                    catch ( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                invliddeclist.close();
-                invliddeclist = index.getInvalidMemberships();
-            }
-
             invliddeclist.close();
+            invliddeclist = index.getInvalidMemberships();
         }
+
+        invliddeclist.close();
 
     }
 
@@ -1201,11 +1261,17 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         notifyAll();
     }
 
+    public synchronized void kickConnections()
+    {
+        notifyAll();
+    }
+
+
     private synchronized void delay()
     {
         try
         {
-            wait ( 1L * 1000L ); //one minute
+            wait ( DECODE_DELAY ); //5 minutes
         }
 
         catch ( InterruptedException e )
@@ -1218,6 +1284,8 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     @Override
     public void run()
     {
+        resetupLastUpdateToForceDecode();
+
         while ( !stop )
         {
             delay();
@@ -1226,7 +1294,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
             {
                 checkConnections();
                 decodeMemberships();
-                deleteOldRequests();
+                //deleteOldRequests();
             }
 
         }

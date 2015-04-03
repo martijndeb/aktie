@@ -119,6 +119,7 @@ public class ConnectionValidatorProcessor extends GenericProcessor
                     con.setEndDestination ( endDest );
                     dest.addEstablishedConnection ( con );
                     IdentProcessor.process ( endDest );
+                    con.poke();
                 }
 
             }

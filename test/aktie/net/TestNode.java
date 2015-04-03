@@ -87,15 +87,23 @@ public class TestNode implements GuiCallback, ConnectionListener, DestinationLis
     public void update ( Object o )
     {
         System.out.println ( "UPDATE: " + o );
-        if (o instanceof CObj) {
-        	CObj co = (CObj) o;
-        	if (co.getType() != null && co.getString(CObj.ERROR) == null) {
+
+        if ( o instanceof CObj )
+        {
+            CObj co = ( CObj ) o;
+
+            if ( co.getType() != null && co.getString ( CObj.ERROR ) == null )
+            {
                 updateQueue.add ( o );
-        	}
+            }
+
         }
-        else {
-        	updateQueue.add ( o );
+
+        else
+        {
+            updateQueue.add ( o );
         }
+
     }
 
     public Object pollGuiQueue()
