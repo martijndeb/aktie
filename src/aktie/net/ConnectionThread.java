@@ -65,6 +65,7 @@ public class ConnectionThread implements Runnable, GuiCallback
     private ConnectionThread This;
     private IdentityManager IdentManager;
     private long lastMyRequest;
+    private long startTime;
 
     public ConnectionThread ( DestinationThread d, HH2Session s, Index i, Connection c, GetSendData sd, GuiCallback cb, ConnectionListener cl, RequestFileHandler rf )
     {
@@ -78,6 +79,7 @@ public class ConnectionThread implements Runnable, GuiCallback
         session = s;
         fileHandler = rf;
         lastMyRequest = System.currentTimeMillis();
+        startTime = lastMyRequest;
         IdentManager = new IdentityManager ( session, index );
         hfc = new HasFileCreator ( session, index );
         outqueue = new ConcurrentLinkedQueue<Object>();
@@ -368,6 +370,13 @@ public class ConnectionThread implements Runnable, GuiCallback
             {
                 stop();
 
+            }
+
+            long maxtime = curtime - ConnectionManager.MAX_CONNECTION_TIME;
+
+            if ( startTime < maxtime )
+            {
+                stop();
             }
 
         }

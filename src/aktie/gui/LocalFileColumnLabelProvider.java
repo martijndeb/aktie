@@ -1,12 +1,15 @@
 package aktie.gui;
 
-import org.eclipse.jface.viewers.ColumnLabelProvider;
+import org.eclipse.jface.viewers.StyledCellLabelProvider;
+import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 
 import aktie.data.CObj;
 import aktie.index.CObjList;
 import aktie.index.Index;
 
-public class LocalFileColumnLabelProvider extends ColumnLabelProvider
+public class LocalFileColumnLabelProvider extends  StyledCellLabelProvider
 {
 
     private Index index;
@@ -22,9 +25,9 @@ public class LocalFileColumnLabelProvider extends ColumnLabelProvider
     }
 
     @Override
-    public String getText ( Object element )
+    public void update ( ViewerCell cell )
     {
-        CObjListGetter o = ( CObjListGetter ) element;
+        CObjListGetter o = ( CObjListGetter ) cell.getElement();
 
         CObj pst = o.getCObj();
 
@@ -55,7 +58,7 @@ public class LocalFileColumnLabelProvider extends ColumnLabelProvider
                             if ( lf != null )
                             {
                                 pst.pushPrivate ( CObj.LOCALFILE, lf );
-                                return lf;
+                                cell.setText ( lf );
                             }
 
                         }
@@ -74,12 +77,27 @@ public class LocalFileColumnLabelProvider extends ColumnLabelProvider
 
             else
             {
-                return lf;
+                cell.setText ( lf );
+            }
+
+            Long nv = pst.getPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS );
+
+            if ( nv != null && 1L == nv )
+            {
+                cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_BLUE ) );
+            }
+
+            else
+            {
+                cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_WIDGET_FOREGROUND ) );
             }
 
         }
 
-        return "";
+        else
+        {
+            cell.setText ( "" );
+        }
 
     }
 

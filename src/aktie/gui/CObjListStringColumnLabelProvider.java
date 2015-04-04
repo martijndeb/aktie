@@ -32,6 +32,7 @@ public class CObjListStringColumnLabelProvider extends  StyledCellLabelProvider
             }
 
             cell.setText ( r );
+
             Long nv = co.getPrivateNumber ( CObj.PRV_TEMP_NEWPOSTS );
 
             if ( nv != null && 1L == nv )
@@ -41,7 +42,7 @@ public class CObjListStringColumnLabelProvider extends  StyledCellLabelProvider
 
             else
             {
-                cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_LIST_FOREGROUND ) );
+                cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_WIDGET_FOREGROUND ) );
             }
 
         }

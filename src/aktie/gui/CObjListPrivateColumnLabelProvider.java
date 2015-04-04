@@ -42,7 +42,7 @@ public class CObjListPrivateColumnLabelProvider extends StyledCellLabelProvider
 
             else
             {
-                cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_LIST_FOREGROUND ) );
+                cell.setForeground ( Display.getDefault().getSystemColor ( SWT.COLOR_WIDGET_FOREGROUND ) );
             }
 
         }

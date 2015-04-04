@@ -46,9 +46,11 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
     public static int MAX_CONNECTIONS = 10;
     public static long MIN_TIME_BETWEEN_CONNECTIONS = 5L * 60L * 1000L;
-    //Max data is 512K.  If we haven't gotten it in 15 minutes maybe try a different
-    //connection
-    public static long MAX_TIME_WITH_NO_REQUESTS = 15L * 60L * 1000L;
+    //This value must be longer than the update period so we keep connections open
+    //long enough to make requests.
+    //!!!!!!!!!! DO NOT MAKE LESS THAN 10 MINUTES OR YOU BROKE THE UPDATE PERIOD NEGATIVE
+    public static long MAX_TIME_WITH_NO_REQUESTS = 30L * 60L * 1000L;
+    public static long MAX_CONNECTION_TIME  = 2L * 60L * 60L * 1000L; //Only keep connections for 2 hours
     public static long DECODE_DELAY = 5L * 60L * 1000L;
 
     public ConnectionManager ( HH2Session s, Index i, RequestFileHandler r, IdentityManager id,
@@ -1284,18 +1286,19 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     @Override
     public void run()
     {
+        log.info ( "CONMAN: START!" );
         resetupLastUpdateToForceDecode();
 
         while ( !stop )
         {
-            delay();
-
             if ( !stop )
             {
                 checkConnections();
                 decodeMemberships();
                 //deleteOldRequests();
             }
+
+            delay();
 
         }
 

@@ -29,6 +29,7 @@ import aktie.gui.IdentitySubTreeProvider.TreeSubscription;
 import aktie.i2p.I2PNet;
 import aktie.index.CObjList;
 import aktie.net.ConnectionListener;
+import aktie.net.ConnectionManager;
 import aktie.net.ConnectionThread;
 //import aktie.net.RawNet;
 import aktie.user.RequestFileHandler;
@@ -1305,7 +1306,13 @@ public class SWTApp
 
     public void setVerbose()
     {
+        System.out.println ( "SETTING VERBOSE-!-" );
         log.setLevel ( Level.INFO );
+    }
+
+    public void setSevere()
+    {
+        log.setLevel ( Level.SEVERE );
     }
 
     /**
@@ -1360,6 +1367,11 @@ public class SWTApp
                 window.setVerbose();
             }
 
+            else
+            {
+                window.setSevere();
+            }
+
             window.open();
         }
 
@@ -1408,9 +1420,6 @@ public class SWTApp
 
     private void startNode()
     {
-
-
-        log.setLevel ( Level.SEVERE );
 
         try
         {
@@ -1563,7 +1572,7 @@ public class SWTApp
 
             }
 
-        }, 0, 20L * 60L * 1000L );
+        }, 0, ConnectionManager.MAX_TIME_WITH_NO_REQUESTS - ( 10L * 60L * 1000L ) );
 
     }
 
