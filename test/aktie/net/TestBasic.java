@@ -380,6 +380,43 @@ public class TestBasic
         assertNotNull ( hf0.getString ( CObj.FRAGDIGEST ) );
 
         //----------------------------------------------------
+        //Test file rename
+        File nf = null;
+
+        try
+        {
+            nf = File.createTempFile ( "newfile", ".dat" );
+            assertTrue ( tf.renameTo ( nf ) );
+        }
+
+        catch ( IOException e1 )
+        {
+            e1.printStackTrace();
+            fail();
+        }
+
+        hf0 = new CObj();
+        hf0.setType ( CObj.HASFILE );
+        hf0.pushString ( CObj.CREATOR, n0.getId() );
+        hf0.pushString ( CObj.COMMUNITYID, com0.getDig() );
+        hf0.pushPrivate ( CObj.LOCALFILE, nf.getPath() );
+
+        Tn0.newUserData ( hf0 );
+        o0 = pollForData ( Tn0 );
+        assertNotNull ( o0 );
+        assertTrue ( o0 instanceof CObj );
+        hf0 = ( CObj ) o0;
+        assertEquals ( CObj.HASFILE, hf0.getType() );
+        assertNotNull ( hf0.getDig() );
+        assertNotNull ( hf0.getString ( CObj.FILEDIGEST ) );
+        assertNotNull ( hf0.getString ( CObj.FRAGDIGEST ) );
+
+        CObjList numf = Tn0.getIndex().getHasFiles ( com0.getDig(), hf0.getString ( CObj.FILEDIGEST ),
+                        hf0.getString ( CObj.FRAGDIGEST ) );
+        assertEquals ( 1, numf.size() );
+        numf.close();
+
+        //----------------------------------------------------
         //Request HasFile
         System.out.println ( " ========================== REQUEST HAS FILE ==============================" );
         CObj rhf1 = new CObj();
@@ -470,12 +507,12 @@ public class TestBasic
             System.out.println ( "DF: " + df0.getFragsComplete() + " from: " + df0.getFragsTotal() );
         }
 
-        assertNotEquals ( df0.getLocalFile(), tf );
-        System.out.println ( "DF0: " + df0.getLocalFile() + " Exp: " + tf );
+        assertNotEquals ( df0.getLocalFile(), nf );
+        System.out.println ( "DF0: " + df0.getLocalFile() + " Exp: " + nf );
 
         try
         {
-            assertTrue ( FUtils.diff ( new File ( df0.getLocalFile() ), tf ) );
+            assertTrue ( FUtils.diff ( new File ( df0.getLocalFile() ), nf ) );
         }
 
         catch ( IOException e )

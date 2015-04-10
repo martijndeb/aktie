@@ -75,6 +75,7 @@ public class UsrStartDestinationProcessor extends GenericProcessor
                 {
                     CObj updatemsg = new CObj();
                     updatemsg.pushString ( CObj.ERROR, "Starting destination: " + o.getDisplayName() );
+                    updatemsg.pushPrivate ( CObj.PRV_CLEAR_ERR, "false" );
                     guicallback.update ( updatemsg );
 
                     File f = new File ( destfile );

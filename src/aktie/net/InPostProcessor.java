@@ -77,6 +77,8 @@ public class InPostProcessor extends GenericProcessor
                             if ( m.getLastPostNumber() + 1 == ( long ) seqnum )
                             {
                                 m.setLastPostNumber ( seqnum );
+                                m.setNextClosestPostNumber ( seqnum );
+                                m.setNumClosestPostNumber ( 1 );
                                 s.merge ( m );
                             }
 

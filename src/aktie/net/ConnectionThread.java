@@ -119,6 +119,11 @@ public class ConnectionThread implements Runnable, GuiCallback
         t.start();
     }
 
+    public long getStartTime()
+    {
+        return startTime;
+    }
+
     public long getInBytes()
     {
         return inBytes;
@@ -187,12 +192,16 @@ public class ConnectionThread implements Runnable, GuiCallback
 
     public boolean enqueue ( Object o )
     {
+        log.info ( "CONTHREAD: enqueue: size: " + outqueue.size() );
+
         if ( outqueue.size() < MAXQUEUESIZE )
         {
             outqueue.add ( o );
             outproc.go();
             return true;
         }
+
+        log.info ( "CONTHREAD: DROPPED! " + o );
 
         if ( o instanceof CObjList )
         {
@@ -295,12 +304,38 @@ public class ConnectionThread implements Runnable, GuiCallback
             return r;
         }
 
+        public synchronized void incrFileRequests()
+        {
+            pendingFileRequests++;
+        }
+
+        public synchronized void decrFileRequests()
+        {
+            pendingFileRequests--;
+        }
+
         private Object getLocalRequests()
         {
-            if ( dest != null && endDestination != null && !loadFile )
+            if ( dest != null && endDestination != null && !loadFile &&
+                    pendingFileRequests < MAX_PENDING_FILES )
             {
                 Object r = sendData.next ( dest.getIdentity().getId(),
                                            endDestination.getId() );
+
+                if ( r != null )
+                {
+                    if ( r instanceof CObj )
+                    {
+                        CObj co = ( CObj ) r;
+
+                        if ( CObj.CON_REQ_FRAG.equals ( co.getType() ) )
+                        {
+                            incrFileRequests();
+                        }
+
+                    }
+
+                }
 
                 return r;
             }
@@ -364,6 +399,7 @@ public class ConnectionThread implements Runnable, GuiCallback
         private void seeIfUseless()
         {
             long curtime = System.currentTimeMillis();
+
             long cuttime = curtime - ConnectionManager.MAX_TIME_WITH_NO_REQUESTS;
 
             if ( lastMyRequest < cuttime )
@@ -518,6 +554,8 @@ public class ConnectionThread implements Runnable, GuiCallback
 
     }
 
+    public static int MAX_PENDING_FILES = 2;
+    private int pendingFileRequests = 0;
     private boolean loadFile;
     private int length;
 
@@ -525,6 +563,7 @@ public class ConnectionThread implements Runnable, GuiCallback
     {
         if ( loadFile )
         {
+            log.info ( "CONTHREAD: READING FILE" );
             byte buf[] = new byte[1024];
 
             RIPEMD256Digest fdig = new RIPEMD256Digest();
@@ -557,10 +596,14 @@ public class ConnectionThread implements Runnable, GuiCallback
             byte expdig[] = new byte[fdig.getDigestSize()];
             fdig.doFinal ( expdig, 0 );
             String dstr = Utils.toString ( expdig );
-            processFragment ( dstr, tmpf );
+
+            outproc.decrFileRequests();
             loadFile = false;
             lastMyRequest = System.currentTimeMillis();
             outproc.go(); //it holds off on local requests until the file is read.
+
+            log.info ( "CONTHREAD: File read dig: " + dstr );
+            processFragment ( dstr, tmpf );
             //now we have it, tell outproc to go again.
         }
 
@@ -571,6 +614,7 @@ public class ConnectionThread implements Runnable, GuiCallback
     {
         byte buf[] = new byte[1024];
         CObjList flist = index.getFragments ( dig );
+        log.info ( "CONTHREAD: Matching fragments found: " + flist.size() );
 
         for ( int c = 0; c < flist.size(); c++ )
         {
@@ -578,11 +622,15 @@ public class ConnectionThread implements Runnable, GuiCallback
             FileInputStream fis = null;
             Session s = null;
             CObj fg = flist.get ( c );
+
+
             String wdig = fg.getString ( CObj.FILEDIGEST );
             String fdig = fg.getString ( CObj.FRAGDIGEST );
             Long fidx = fg.getNumber ( CObj.FRAGOFFSET );
             Long flen = fg.getNumber ( CObj.FRAGSIZE );
             String cplt = fg.getString ( CObj.COMPLETE );
+
+            log.info ( "CONTHREAD: " + fg.getPrivate ( CObj.LOCALFILE ) + " offset: " + fidx + " state: " + fg.getPrivate ( CObj.COMPLETE ) );
 
             if ( wdig != null && fdig != null && fidx != null &&
                     flen != null && ( !"true".equals ( cplt ) ) )
@@ -751,6 +799,11 @@ public class ConnectionThread implements Runnable, GuiCallback
 
             }
 
+        }
+
+        if ( flist.size() == 0 )
+        {
+            stop();
         }
 
         flist.close();

@@ -55,6 +55,9 @@ public class InHasFileProcessor extends GenericProcessor
                 if ( comid != null && creatorid != null && wdig != null && ddig != null && seqnum != null )
                 {
                     String id = Utils.mergeIds ( creatorid, comid );
+                    //String hasfileid = Utils.mergeIds ( id, ddig, wdig );
+                    //TODO: Do we want to validate the id or not   if (hasfileid.equals())
+
                     CObj mysubid = subvalid.isMyUserSubscribed ( comid, destIdent.getId() );
                     CObj sid = subvalid.isUserSubscribed ( comid, creatorid );
 
@@ -81,6 +84,8 @@ public class InHasFileProcessor extends GenericProcessor
                             if ( m.getLastFileNumber() + 1 == ( long ) seqnum )
                             {
                                 m.setLastFileNumber ( seqnum );
+                                m.setNextClosestFileNumber ( seqnum );
+                                m.setNumClosestFileNumber ( 1 );
                                 s.merge ( m );
                             }
 

@@ -152,6 +152,8 @@ public class InMemProcessor extends GenericProcessor
                             if ( seqnum == ( id.getLastMembershipNumber() + 1 ) )
                             {
                                 id.setLastMembershipNumber ( seqnum );
+                                id.setNextClosestMembershipNumber ( seqnum );
+                                id.setNumClosestMembershipNumber ( 1 );
                                 s.merge ( id );
                             }
 

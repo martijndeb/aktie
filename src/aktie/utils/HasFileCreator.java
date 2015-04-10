@@ -1,5 +1,6 @@
 package aktie.utils;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.hibernate.Session;
@@ -60,9 +61,9 @@ public class HasFileCreator
         //Create FILE type CObj.  only index if new
         String comid = f.getString ( CObj.COMMUNITYID );
         Long filesize = f.getNumber ( CObj.FILESIZE );
-        String digofdigs = f.getString ( CObj.FRAGDIGEST );
         Long fragsize = f.getNumber ( CObj.FRAGSIZE );
         Long fragnumber = f.getNumber ( CObj.FRAGNUMBER );
+        String digofdigs = f.getString ( CObj.FRAGDIGEST );
         String wholedig = f.getString ( CObj.FILEDIGEST );
         String name = f.getString ( CObj.NAME );
         String localfile = f.getPrivate ( CObj.LOCALFILE );
@@ -207,10 +208,18 @@ public class HasFileCreator
         //Set File sequence number for the community/creator
         String creator = o.getString ( CObj.CREATOR );
         String comid = o.getString ( CObj.COMMUNITYID );
+
+        String digofdigs = o.getString ( CObj.FRAGDIGEST );
+        String wholedig = o.getString ( CObj.FILEDIGEST );
+
         CObj myid = validator.isMyUserSubscribed ( comid, creator );
-        String id = Utils.mergeIds ( creator, comid );
 
         if ( myid == null ) { return false; }
+
+        String id = Utils.mergeIds ( creator, comid );
+        String hasfileid = Utils.mergeIds ( id, digofdigs, wholedig );
+
+        o.setId ( hasfileid ); //only 1 has file per user per community per file digest
 
         Session s = null;
 
@@ -274,6 +283,25 @@ public class HasFileCreator
             return false;
         }
 
+        //Make the path absolute to help with queries based on the file
+        //name later.
+        String lf = o.getPrivate ( CObj.LOCALFILE );
+        File f = new File ( lf );
+
+        if ( f.exists() )
+        {
+            try
+            {
+                o.pushPrivate ( CObj.LOCALFILE, f.getCanonicalPath() );
+            }
+
+            catch ( IOException e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
         //Set the created on time
         o.pushNumber ( CObj.CREATEDON, System.currentTimeMillis() );
         //Sign it.
@@ -287,7 +315,7 @@ public class HasFileCreator
         catch ( Exception e )
         {
             e.printStackTrace();
-            o.pushString ( CObj.ERROR, "Subscription could not be indexed" );
+            o.pushString ( CObj.ERROR, "File record could not be indexed" );
             return false;
         }
 

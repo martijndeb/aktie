@@ -127,6 +127,20 @@ public class SWTApp
 
     }
 
+    class ConnectionColumnTime extends ColumnLabelProvider
+    {
+        @Override
+        public String getText ( Object element )
+        {
+            long curtime = System.currentTimeMillis();
+            ConnectionThread ct = ( ConnectionThread ) element;
+            long tm = curtime - ct.getStartTime();
+            tm = tm / ( 1000L );
+            return Long.toString ( tm );
+        }
+
+    }
+
     class ConnectionColumnUpload extends ColumnLabelProvider
     {
         @Override
@@ -207,6 +221,11 @@ public class SWTApp
                 }
 
                 if ( column == 2 )
+                {
+                    labprov = new ConnectionColumnDownload();
+                }
+
+                if ( column == 3 )
                 {
                     labprov = new ConnectionColumnDownload();
                 }
@@ -450,12 +469,21 @@ public class SWTApp
         @Override
         public void update ( ConnectionThread ct )
         {
-            synchronized ( connections )
+            if ( !ct.isStopped() )
             {
-                connections.add ( ct );
+                synchronized ( connections )
+                {
+                    connections.add ( ct );
+                }
+
+                updateDisplay ( false );
             }
 
-            updateDisplay ( false );
+            else
+            {
+                closed ( ct );
+            }
+
         }
 
         @Override
@@ -778,7 +806,15 @@ public class SWTApp
 
                     if ( co.getString ( CObj.ERROR ) != null )
                     {
-                        setErrorMessage ( co.getString ( CObj.ERROR ) );
+                        boolean clear = true;
+                        String dclear = co.getPrivate ( CObj.PRV_CLEAR_ERR );
+
+                        if ( "false".equals ( dclear ) )
+                        {
+                            clear = false;
+                        }
+
+                        setErrorMessage ( co.getString ( CObj.ERROR ), clear );
                     }
 
                     else
@@ -903,12 +939,20 @@ public class SWTApp
 
                 if ( co.getString ( CObj.ERROR ) != null )
                 {
-                    setErrorMessage ( co.getString ( CObj.ERROR ) );
+                    boolean clear = true;
+                    String dclear = co.getPrivate ( CObj.PRV_CLEAR_ERR );
+
+                    if ( "false".equals ( dclear ) )
+                    {
+                        clear = false;
+                    }
+
+                    setErrorMessage ( co.getString ( CObj.ERROR ), clear );
                 }
 
                 else
                 {
-                    setErrorMessage ( "" );
+                    setErrorMessage ( "", false );
                     String comid = co.getString ( CObj.COMMUNITYID );
 
                     if ( CObj.IDENTITY.equals ( co.getType() ) )
@@ -1048,7 +1092,7 @@ public class SWTApp
             FileDialog fd = new FileDialog ( shell, SWT.SAVE );
             fd.setText ( "Save" );
             //fd.setFilterPath();
-            String[] filterExt = { "*.*" };
+            String[] filterExt = { "*" };
 
             fd.setFilterExtensions ( filterExt );
             String selected = fd.open();
@@ -1124,7 +1168,7 @@ public class SWTApp
                 //fd.setFilterPath();
                 String[] filterExt =
                 {
-                    "*.*",
+                    "*",
                     "*.txt",
                     "*.pdf",
                     "*.exe",
@@ -1380,6 +1424,8 @@ public class SWTApp
             e.printStackTrace();
         }
 
+        System.exit ( 0 );
+
     }
 
     private void startI2P()
@@ -1509,7 +1555,7 @@ public class SWTApp
 
     private boolean pendingClear = false;
 
-    private void setErrorMessage ( final String msg )
+    private void setErrorMessage ( final String msg, final boolean clear )
     {
         Display.getDefault().asyncExec ( new Runnable()
         {
@@ -1519,7 +1565,7 @@ public class SWTApp
                 lblError.setText ( msg );
                 composite_header.layout();
 
-                if ( !pendingClear )
+                if ( !pendingClear && clear )
                 {
                     pendingClear = true;
                     Timer t = new Timer ( "Error message clear", true );
@@ -4012,6 +4058,28 @@ public class SWTApp
         concol2.getColumn().setText ( "Download" );
         concol2.getColumn().setWidth ( 200 );
         concol2.setLabelProvider ( new ConnectionColumnDownload() );
+
+        concol2.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                ConnectionSorter srt = ( ConnectionSorter ) connectionTableViewer.getSorter();
+                srt.doSort ( 2 );
+                connectionTableViewer.refresh();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        TableViewerColumn concol3 = new TableViewerColumn ( connectionTableViewer, SWT.NONE );
+        concol3.getColumn().setText ( "Time" );
+        concol3.getColumn().setWidth ( 200 );
+        concol3.setLabelProvider ( new ConnectionColumnTime() );
 
         concol2.getColumn().addSelectionListener ( new SelectionListener()
         {

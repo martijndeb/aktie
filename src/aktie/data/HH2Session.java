@@ -48,6 +48,7 @@ public class HH2Session
             configuration.addAnnotatedClass ( CommunityMember.class );
             configuration.addAnnotatedClass ( CommunityMyMember.class );
             configuration.addAnnotatedClass ( FileInfo.class );
+            configuration.addAnnotatedClass ( DirectoryShare.class );
             configuration.buildMapping();
 
             StandardServiceRegistryBuilder builder = new StandardServiceRegistryBuilder().

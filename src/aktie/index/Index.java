@@ -853,6 +853,24 @@ public class Index
         return search ( bq, Integer.MAX_VALUE );
     }
 
+    public CObjList getLocalHasFiles ( String comid, String memid, String localfile )
+    {
+        BooleanQuery bq = new BooleanQuery();
+        Term typterm = new Term ( CObj.PARAM_TYPE, CObj.HASFILE );
+        bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
+
+        Term comterm = new Term ( CObj.docString ( CObj.COMMUNITYID ), comid );
+        bq.add ( new TermQuery ( comterm ), BooleanClause.Occur.MUST );
+
+        Term memterm = new Term ( CObj.docString ( CObj.CREATOR ), memid );
+        bq.add ( new TermQuery ( memterm ), BooleanClause.Occur.MUST );
+
+        Term lfterm = new Term ( CObj.docPrivate ( CObj.LOCALFILE ), localfile );
+        bq.add ( new TermQuery ( lfterm ), BooleanClause.Occur.MUST );
+
+        return search ( bq, Integer.MAX_VALUE );
+    }
+
     public CObj getIdentHasFile ( String comid, String uid, String wdig, String pdig )
     {
         BooleanQuery bq = new BooleanQuery();

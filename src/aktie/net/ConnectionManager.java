@@ -652,7 +652,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         if ( rdy == 0 )
         {
             List<RequestFile> rflst = fileHandler.findFileListFrags ( localdest, 10L * 60L * 1000L );
-            log.info ( "Requests for fragment list: " + rflst.size() );
+            log.info ( "CONMAN: Requests for fragment list: " + rflst.size() );
             Iterator<RequestFile> it = rflst.iterator();
 
             while ( it.hasNext() && r == null )
@@ -682,6 +682,9 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 //First find the highest priority file we're tryiing to get
                 //from the communities this node is subscribed to.
                 List<RequestFile> rlst = fileHandler.findFileToGetFrags ( localdest );
+
+                log.info ( "CONMAN: files to request frag: " + rlst.size() );
+
                 it = rlst.iterator();
 
                 while ( it.hasNext() && r == null )
@@ -697,6 +700,8 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                         CObjList cl = index.getFragmentsToRequest ( rf.getCommunityId(),
                                       rf.getWholeDigest(), rf.getFragmentDigest() );
 
+                        log.info ( "CONMAN: fragments to request: " + cl.size() + " file: " + rf.getLocalFile() );
+
                         if ( cl.size() == 0 )
                         {
                             //If there are no fragments that have not be requested yet,
@@ -706,6 +711,8 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                             cl.close();
                             cl = index.getFragmentsToReset ( rf.getCommunityId(),
                                                              rf.getWholeDigest(), rf.getFragmentDigest() );
+
+                            log.info ( "CONMAN: resetting fragments: " + cl.size() + " file: " + rf.getLocalFile() );
 
                             for ( int c = 0; c < cl.size(); c++ )
                             {
@@ -729,6 +736,8 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                             //Get the new list of fragments to request after resetting
                             cl = index.getFragmentsToRequest ( rf.getCommunityId(),
                                                                rf.getWholeDigest(), rf.getFragmentDigest() );
+
+                            log.info ( "CONMAN: fragments to request2: " + cl.size() + " file: " + rf.getLocalFile() );
 
                             if ( cl.size() == 0 )
                             {
@@ -767,6 +776,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                             try
                             {
                                 CObj co = cl.get ( idx );
+                                log.info ( "CONMAN: request fragment: offset " + co.getNumber ( CObj.FRAGOFFSET ) + " file: " + rf.getLocalFile() );
                                 co.pushPrivate ( CObj.COMPLETE, "req" );
                                 index.index ( co );
                                 CObj sr = new CObj();

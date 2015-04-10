@@ -68,6 +68,8 @@ public class InComProcessor extends GenericProcessor
                             if ( seqnum == ( id.getLastCommunityNumber() + 1 ) )
                             {
                                 id.setLastCommunityNumber ( seqnum );
+                                id.setNextClosestCommunityNumber ( seqnum );
+                                id.setNumClosestCommunityNumber ( 1 );
                                 s.merge ( id );
                             }
 

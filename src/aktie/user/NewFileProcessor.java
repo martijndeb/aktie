@@ -107,6 +107,7 @@ public class NewFileProcessor extends GenericProcessor
             {
                 CObj updatemsg = new CObj();
                 updatemsg.pushString ( CObj.ERROR, "Adding new file: " + f.getName() );
+                updatemsg.pushPrivate ( CObj.PRV_CLEAR_ERR, "false" );
                 guicallback.update ( updatemsg );
 
                 List<byte[]> fragdiglst = new LinkedList<byte[]>();
@@ -160,16 +161,6 @@ public class NewFileProcessor extends GenericProcessor
                 o.pushString ( CObj.FILEDIGEST, fulldigs );
                 o.pushString ( CObj.FRAGDIGEST, digdigs );
                 o.pushNumber ( CObj.FRAGNUMBER, fragdiglst.size() );
-
-                //Check if we already have it
-                CObj existhf = index.getIdentHasFile ( comid, creator, digdigs, fulldigs );
-
-                if ( existhf != null && "true".equals ( existhf.getString ( CObj.STILLHASFILE ) ) )
-                {
-                    o.pushString ( CObj.ERROR, "Already added file " + wfs );
-                    guicallback.update ( o );
-                    return true;
-                }
 
                 //Create the actual fragment objects
                 idx = 0;

@@ -1,6 +1,7 @@
 package aktie.data;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 @Entity
@@ -8,7 +9,8 @@ public class DirectoryShare
 {
 
     @Id
-    private String id;
+    @GeneratedValue
+    private long id;
     private String communityId;
     private String memberId;
 
@@ -18,12 +20,12 @@ public class DirectoryShare
     private long numberFiles;
     private long numberSubFolders;
 
-    public String getId()
+    public long getId()
     {
         return id;
     }
 
-    public void setId ( String id )
+    public void setId ( long id )
     {
         this.id = id;
     }

@@ -1,11 +1,14 @@
 package aktie.net;
 
+import java.util.logging.Logger;
+
 import aktie.GenericProcessor;
 import aktie.data.CObj;
 import aktie.index.Index;
 
 public class ReqFragProcessor extends GenericProcessor
 {
+    Logger log = Logger.getLogger ( "aktie" );
 
     private Index index;
     private ConnectionThread connection;
@@ -29,9 +32,13 @@ public class ReqFragProcessor extends GenericProcessor
             String fdig = b.getString ( CObj.FRAGDIG );
             String conid = connection.getEndDestination().getId();
 
+            log.info ( "REQFRAG: REQ_FRAG: comid: " + comid + " wdig: " + wdig + " from id: " + conid );
+
             if ( comid != null && wdig != null && pdig != null && conid != null )
             {
                 CObj sub = index.getSubscription ( comid, conid );
+
+                log.info ( "REQFRAG: sub: " + sub );
 
                 if ( sub != null && "true".equals ( sub.getString ( CObj.SUBSCRIBED ) ) )
                 {
@@ -42,6 +49,8 @@ public class ReqFragProcessor extends GenericProcessor
                                                       wdig, pdig );
                     //String wdig, String ddig, String dig
                     CObj fg = index.getFragment ( comid, wdig, pdig, fdig );
+
+                    log.info ( "REQFRAG: fg: " + fg + " hf: " + hf );
 
                     if ( hf != null && fg != null )
                     {
