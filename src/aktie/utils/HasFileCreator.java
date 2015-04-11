@@ -91,6 +91,7 @@ public class HasFileCreator
             fi.pushNumber ( CObj.FRAGNUMBER, fragnumber );
             fi.pushText ( CObj.TXTNAME, txtname );
 
+            
             try
             {
                 if ( localfile != null )
