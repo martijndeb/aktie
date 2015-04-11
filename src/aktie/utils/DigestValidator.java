@@ -47,6 +47,25 @@ public class DigestValidator
                             return true;
                         }
 
+                        else
+                        {
+                            //Because we are nice and do not want to reset the network
+                            //because we added id to has file, so that we only save
+                            //one hasfile record per node per community per file.
+                            if ( CObj.HASFILE.equals ( b.getType() ) )
+                            {
+                                CObj chk = b.clone();
+                                chk.setId ( null );
+
+                                if ( chk.checkSignature ( pubk ) )
+                                {
+                                    return true;
+                                }
+
+                            }
+
+                        }
+
                     }
 
                 }

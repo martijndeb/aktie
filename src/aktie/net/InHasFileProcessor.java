@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.hibernate.Session;
 
 import aktie.GenericProcessor;
-import aktie.crypto.Utils;
 import aktie.data.CObj;
 import aktie.data.CommunityMember;
 import aktie.data.HH2Session;
@@ -54,9 +53,19 @@ public class InHasFileProcessor extends GenericProcessor
 
                 if ( comid != null && creatorid != null && wdig != null && ddig != null && seqnum != null )
                 {
-                    String id = Utils.mergeIds ( creatorid, comid );
-                    //String hasfileid = Utils.mergeIds ( id, ddig, wdig );
+                    String id = HasFileCreator.getCommunityMemberId ( creatorid, comid );
+
+                    //Hasfileid is an upgrade.  We just set it here to what it is supposed to
+                    //be.  If the signature does not match with the id value set.  DigestValidator
+                    //has been upgraded to check the signature with a null id value for
+                    //hasfile records. All new hasfile records should have the proper id value
+                    //set so this does nothing.
+                    String hasfileid = HasFileCreator.getHasFileId ( id, ddig, wdig );
+                    b.setId ( hasfileid );
+
                     //TODO: Do we want to validate the id or not   if (hasfileid.equals())
+                    //Nice if we could set it, but then when we pass on to others
+                    //it won't validate properly.
 
                     CObj mysubid = subvalid.isMyUserSubscribed ( comid, destIdent.getId() );
                     CObj sid = subvalid.isUserSubscribed ( comid, creatorid );

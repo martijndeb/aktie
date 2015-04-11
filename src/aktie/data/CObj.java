@@ -72,7 +72,6 @@ public class CObj
     public static String PRV_FILEDIGEST  = "prv_filedig";
     public static String PRV_DEST_OPEN   = "prv_dest_open";
     public static String PRV_CLEAR_ERR   = "prv_clear_err";
-    public static String PRV_NUMBER_HAS  = "prv_numhas";
 
     public static String PRV_TEMP_NEWPOSTS = "newposts";
 
@@ -96,6 +95,7 @@ public class CObj
     public static String ENCKEY = "enckey";
     public static String SUBSCRIBED = "subscribed";
     public static String LOCALFILE = "localfile";
+    public static String NUMBER_HAS  = "prv_numhas";
     public static String FRAGSIZE = "fragsize";
     public static String FILESIZE = "filesize";
     public static String SCOPE_PRIVATE = "private";

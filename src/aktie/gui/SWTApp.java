@@ -1311,6 +1311,7 @@ public class SWTApp
     private Table postTable;
     private TableViewer postTableViewer;
     private CObjListContentProvider postContentProvider;
+    private CObjListContentProvider fileContentProvider;
     private CObj displayedPost;
     private StyledText postText;
     private Table connectionTable;
@@ -2116,8 +2117,6 @@ public class SWTApp
         membersDialog.create();
         privComDialog = new ShowPrivComDialog ( shell, this );
         privComDialog.create();
-        FileListContentProvider fc = ( FileListContentProvider ) fileTableViewer.getContentProvider();
-        fc.setHH2Session ( getNode().getSession() );
         localFileColumnProvider.setIndex ( node.getIndex() );
         updateMembership();
     }
@@ -3534,9 +3533,10 @@ public class SWTApp
 
         } );
 
+        fileContentProvider = new CObjListContentProvider();
         fileTableViewer = new TableViewer ( composite_4, SWT.BORDER | SWT.FULL_SELECTION |
                                             SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI );
-        fileTableViewer.setContentProvider ( new FileListContentProvider() );
+        fileTableViewer.setContentProvider ( fileContentProvider );
         fileTable = fileTableViewer.getTable();
         fileTable.setHeaderVisible ( true );
         fileTable.setLinesVisible ( true );
@@ -3686,7 +3686,7 @@ public class SWTApp
         TableViewerColumn fcol4 = new TableViewerColumn ( fileTableViewer, SWT.NONE );
         fcol4.getColumn().setText ( "Number Has" );
         fcol4.getColumn().setWidth ( 50 );
-        fcol4.setLabelProvider ( new FileListColumnHasLabelProvider() );
+        fcol4.setLabelProvider ( new CObjListLongColumnLabelProvider ( CObj.NUMBER_HAS ) );
 
         Menu menu_3 = new Menu ( fileTable );
         fileTable.setMenu ( menu_3 );

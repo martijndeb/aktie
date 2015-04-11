@@ -8,7 +8,6 @@ import org.hibernate.Session;
 import aktie.crypto.Utils;
 import aktie.data.CObj;
 import aktie.data.CommunityMember;
-import aktie.data.FileInfo;
 import aktie.data.HH2Session;
 import aktie.index.CObjList;
 import aktie.index.Index;
@@ -25,21 +24,6 @@ public class HasFileCreator
         index = i;
         session = s;
         validator = new SubscriptionValidator ( index );
-    }
-
-    public FileInfo getFileInfo ( CObj f )
-    {
-        return null;
-    }
-
-    public FileInfo getFileInfo ( String wholedig, String fragdig )
-    {
-        return null;
-    }
-
-    public FileInfo getFileInfo ( String id )
-    {
-        return null;
     }
 
     public void updateDownloadRequested ( CObj hasfile )
@@ -78,6 +62,10 @@ public class HasFileCreator
         if ( digofdigs != null && wholedig != null && name != null && comid != null && filesize != null &&
                 fragsize != null && fragnumber != null )
         {
+            CObjList wl = index.getHasFiles ( comid, wholedig, digofdigs );
+            int numberhasfile = wl.size();
+            wl.close();
+
             String id = Utils.mergeIds ( comid, digofdigs, wholedig );
             CObj fi = new CObj();
             fi.setId ( id );
@@ -89,9 +77,10 @@ public class HasFileCreator
             fi.pushNumber ( CObj.FILESIZE, filesize );
             fi.pushNumber ( CObj.FRAGSIZE, fragsize );
             fi.pushNumber ( CObj.FRAGNUMBER, fragnumber );
+            fi.pushNumber ( CObj.NUMBER_HAS, numberhasfile );
             fi.pushText ( CObj.TXTNAME, txtname );
 
-            
+
             try
             {
                 if ( localfile != null )
@@ -102,13 +91,9 @@ public class HasFileCreator
                     }
 
                     fi.pushString ( CObj.LOCALFILE, localfile );
-                    index.index ( fi );
                 }
 
-                else
-                {
-                    index.index ( fi, true );
-                }
+                index.index ( fi );
 
             }
 
@@ -117,91 +102,26 @@ public class HasFileCreator
                 e.printStackTrace();
             }
 
-            //Count the hasfiles there are, and see if we have the file.
-            CObjList wl = index.getHasFiles ( comid, wholedig, digofdigs );
-            int numberhasfile = wl.size();
-            boolean mine = false;
-
-            for ( int c = 0; c < numberhasfile; c++ )
-            {
-                try
-                {
-                    CObj mhf = wl.get ( c );
-
-                    if ( mhf.getPrivate ( CObj.LOCALFILE ) != null )
-                    {
-                        mine = true;
-                    }
-
-                }
-
-                catch ( IOException e )
-                {
-                    e.printStackTrace();
-                }
-
-            }
-
-            wl.close();
-            //Save the FileInfo object
-            Session s = null;
-
-            try
-            {
-                s = session.getSession();
-                s.getTransaction().begin();
-                FileInfo info = ( FileInfo ) s.get ( FileInfo.class, id );
-
-                if ( info == null )
-                {
-                    info = new FileInfo();
-                    info.setId ( id );
-                    info.setCommunityId ( comid );
-                    info.setFragmentDigest ( digofdigs );
-                    info.setWholeDigest ( wholedig );
-                }
-
-                info.setHasLocal ( mine );
-                info.setNumberHasFile ( numberhasfile );
-                s.merge ( info );
-                s.getTransaction().commit();
-                s.close();
-            }
-
-            catch ( Exception e )
-            {
-                e.printStackTrace();
-
-                if ( s != null )
-                {
-                    try
-                    {
-                        if ( s.getTransaction().isActive() )
-                        {
-                            s.getTransaction().rollback();
-                        }
-
-                    }
-
-                    catch ( Exception e2 )
-                    {
-                    }
-
-                    try
-                    {
-                        s.close();
-                    }
-
-                    catch ( Exception e2 )
-                    {
-                    }
-
-                }
-
-            }
 
         }
 
+    }
+
+    public static String getCommunityMemberId ( String creator, String comid )
+    {
+        return Utils.mergeIds ( creator, comid );
+    }
+
+    public static String getHasFileId ( String commemid, String digofdigs, String wholedig )
+    {
+        String hasfileid = Utils.mergeIds ( commemid, digofdigs, wholedig );
+        return hasfileid;
+    }
+
+    public static String getHasFileId ( String creator, String comid, String digofdigs, String wholedig )
+    {
+        String id = getCommunityMemberId ( creator, comid );
+        return getHasFileId ( id, digofdigs, wholedig );
     }
 
     public boolean createHasFile ( CObj o )
@@ -217,10 +137,12 @@ public class HasFileCreator
 
         if ( myid == null ) { return false; }
 
-        String id = Utils.mergeIds ( creator, comid );
-        String hasfileid = Utils.mergeIds ( id, digofdigs, wholedig );
+        String id = getCommunityMemberId ( creator, comid );
+        String hasfileid = getHasFileId ( id, digofdigs, wholedig );
 
         o.setId ( hasfileid ); //only 1 has file per user per community per file digest
+        //This is an upgrade.  We have to make adjustments for this
+        //to be null when validating signatures for old hasfile records
 
         Session s = null;
 
@@ -287,18 +209,23 @@ public class HasFileCreator
         //Make the path absolute to help with queries based on the file
         //name later.
         String lf = o.getPrivate ( CObj.LOCALFILE );
-        File f = new File ( lf );
 
-        if ( f.exists() )
+        if ( lf != null )
         {
-            try
-            {
-                o.pushPrivate ( CObj.LOCALFILE, f.getCanonicalPath() );
-            }
+            File f = new File ( lf );
 
-            catch ( IOException e )
+            if ( f.exists() )
             {
-                e.printStackTrace();
+                try
+                {
+                    o.pushPrivate ( CObj.LOCALFILE, f.getCanonicalPath() );
+                }
+
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                }
+
             }
 
         }

@@ -868,6 +868,9 @@ public class Index
         Term lfterm = new Term ( CObj.docPrivate ( CObj.LOCALFILE ), localfile );
         bq.add ( new TermQuery ( lfterm ), BooleanClause.Occur.MUST );
 
+        Term shterm = new Term ( CObj.docString ( CObj.STILLHASFILE ), "true" );
+        bq.add ( new TermQuery ( shterm ), BooleanClause.Occur.MUST );
+
         return search ( bq, Integer.MAX_VALUE );
     }
 
@@ -888,6 +891,9 @@ public class Index
 
         Term cidterm = new Term ( CObj.docString ( CObj.CREATOR ), uid );
         bq.add ( new TermQuery ( cidterm ), BooleanClause.Occur.MUST );
+
+        Term shterm = new Term ( CObj.docString ( CObj.STILLHASFILE ), "true" );
+        bq.add ( new TermQuery ( shterm ), BooleanClause.Occur.MUST );
 
         CObj r = null;
         CObjList cl = search ( bq, Integer.MAX_VALUE );
