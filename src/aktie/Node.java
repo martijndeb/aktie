@@ -20,6 +20,7 @@ import aktie.user.NewPostProcessor;
 import aktie.user.NewPushProcessor;
 import aktie.user.NewSubscriptionProcessor;
 import aktie.user.RequestFileHandler;
+import aktie.user.ShareManager;
 import aktie.user.UsrReqComProcessor;
 import aktie.user.UsrReqFileProcessor;
 import aktie.user.UsrReqHasFileProcessor;
@@ -30,6 +31,7 @@ import aktie.user.UsrReqSubProcessor;
 import aktie.user.UsrSeed;
 import aktie.user.UsrSeedCommunity;
 import aktie.user.UsrStartDestinationProcessor;
+import aktie.utils.HasFileCreator;
 
 public class Node
 {
@@ -44,6 +46,7 @@ public class Node
     private ConnectionListener conCallback;
     private ConnectionManager conMan;
     private RequestFileHandler requestHandler;
+    private ShareManager shareManager;
     private Settings settings;
 
 
@@ -86,6 +89,10 @@ public class Node
         userQueue.addProcessor ( new UsrSeedCommunity ( session, index, netCallback ) );
         userQueue.addProcessor ( new NewPushProcessor ( index, conMan ) );
 
+        //HH2Session s, Index i, HasFileCreator h, ProcessQueue pq
+        shareManager = new ShareManager ( session, index,
+                                          new HasFileCreator ( session, index ), userQueue );
+
         doUpdate();
     }
 
@@ -126,6 +133,7 @@ public class Node
 
     public void close()
     {
+        shareManager.stop();
         conMan.stop();
         userQueue.stop();
         index.close();
@@ -149,6 +157,11 @@ public class Node
     public RequestFileHandler getFileHandler()
     {
         return requestHandler;
+    }
+
+    public ShareManager getShareManager()
+    {
+        return shareManager;
     }
 
     public void closeDestinationConnections ( CObj id )

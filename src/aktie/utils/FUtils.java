@@ -13,9 +13,20 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 public class FUtils
 {
 
-    public static File createTestFile ( long size ) throws IOException
+    public static File createTestFile ( File dir, long size ) throws IOException
     {
-        File f = File.createTempFile ( "junkfile", ".dat" );
+        File f = null;
+
+        if ( dir != null )
+        {
+            f = File.createTempFile ( "junkfile", ".dat", dir );
+        }
+
+        else
+        {
+            f = File.createTempFile ( "junkfile", ".dat" );
+        }
+
         FileOutputStream fos = new FileOutputStream ( f );
         byte tb[] = new byte[1024];
 

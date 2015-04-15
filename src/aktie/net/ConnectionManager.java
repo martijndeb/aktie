@@ -49,7 +49,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     //This value must be longer than the update period so we keep connections open
     //long enough to make requests.
     //!!!!!!!!!! DO NOT MAKE LESS THAN 10 MINUTES OR YOU BROKE THE UPDATE PERIOD NEGATIVE
-    public static long MAX_TIME_WITH_NO_REQUESTS = 30L * 60L * 1000L;
+    public static long MAX_TIME_WITH_NO_REQUESTS = 60L * 60L * 1000L;
     public static long MAX_CONNECTION_TIME  = 2L * 60L * 60L * 1000L; //Only keep connections for 2 hours
     public static long DECODE_DELAY = 5L * 60L * 1000L;
 
@@ -65,6 +65,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         memvalid = new MembershipValidator ( index );
         hfc = new HasFileCreator ( s, index );
         Thread t = new Thread ( this );
+        t.setDaemon ( true );
         t.start();
     }
 

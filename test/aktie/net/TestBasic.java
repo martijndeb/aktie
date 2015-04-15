@@ -354,7 +354,7 @@ public class TestBasic
 
         try
         {
-            tf = FUtils.createTestFile ( 5L * 1024L * 1024L + 1024L );
+            tf = FUtils.createTestFile ( null, 5L * 1024L * 1024L + 1024L );
         }
 
         catch ( IOException e )

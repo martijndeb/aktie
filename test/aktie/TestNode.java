@@ -4,11 +4,13 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import aktie.data.CObj;
+import aktie.data.DirectoryShare;
 import aktie.gui.GuiCallback;
 import aktie.index.CObjList;
 import aktie.net.ConnectionListener;
@@ -935,19 +937,38 @@ public class TestNode
 
             System.out.println ( "CREATE FILE...................................." );
             cb3.oqueue.clear();
-            File nf = FUtils.createTestFile ( 10L * 1024L * 1024L + 263L );
-            CObj hf0 = new CObj();
-            hf0.setType ( CObj.HASFILE );
-            hf0.pushString ( CObj.CREATOR, node3b.getId() );
-            hf0.pushString ( CObj.COMMUNITYID, com0n0.getDig() );
-            hf0.pushPrivate ( CObj.LOCALFILE, nf.getPath() );
-            n3.enqueue ( hf0 );
+
+            File tmp = new File ( "testshare" );
+            FUtils.deleteDir ( tmp );
+            tmp.mkdirs();
+
+            File nf = FUtils.createTestFile ( tmp, 10L * 1024L * 1024L + 263L );
+
+            n3.getShareManager().addShare ( com0n0.getDig(), node3b.getId(),
+                                            "testshare", tmp.getPath() );
+
+            List<DirectoryShare> slst = n3.getShareManager().listShares ( com0n0.getDig(), node3b.getId() );
+
+            for ( int c = 0; c < slst.size(); c++ )
+            {
+                DirectoryShare ds = slst.get ( 0 );
+                System.out.println ( "DS name: " + ds.getShareName() );
+            }
+
+            assertEquals ( 1, slst.size() );
+
+            //CObj hf0 = new CObj();
+            //hf0.setType ( CObj.HASFILE );
+            //hf0.pushString ( CObj.CREATOR, node3b.getId() );
+            //hf0.pushString ( CObj.COMMUNITYID, com0n0.getDig() );
+            //hf0.pushPrivate ( CObj.LOCALFILE, nf.getPath() );
+            //n3.enqueue ( hf0 );
 
             n3.sendRequestsNow();
 
             cb3.waitForUpdate();
             o = cb3.oqueue.poll();
-            hf0 = ( CObj ) o;
+            CObj hf0 = ( CObj ) o;
             assertNotNull ( hf0 );
             assertNull ( hf0.getString ( CObj.ERROR ) );
 

@@ -62,24 +62,30 @@ public class HasFileCreator
         if ( digofdigs != null && wholedig != null && name != null && comid != null && filesize != null &&
                 fragsize != null && fragnumber != null )
         {
+
             CObjList wl = index.getHasFiles ( comid, wholedig, digofdigs );
             int numberhasfile = wl.size();
             wl.close();
 
             String id = Utils.mergeIds ( comid, digofdigs, wholedig );
-            CObj fi = new CObj();
-            fi.setId ( id );
-            fi.setType ( CObj.FILE );
-            fi.pushString ( CObj.COMMUNITYID, comid );
-            fi.pushString ( CObj.FILEDIGEST, wholedig );
-            fi.pushString ( CObj.FRAGDIGEST, digofdigs );
-            fi.pushString ( CObj.NAME, name );
-            fi.pushNumber ( CObj.FILESIZE, filesize );
-            fi.pushNumber ( CObj.FRAGSIZE, fragsize );
-            fi.pushNumber ( CObj.FRAGNUMBER, fragnumber );
-            fi.pushNumber ( CObj.NUMBER_HAS, numberhasfile );
-            fi.pushText ( CObj.TXTNAME, txtname );
+            CObj fi = index.getFileInfo ( id );
 
+            if ( fi == null )
+            {
+                fi = new CObj();
+                fi.setId ( id );
+                fi.setType ( CObj.FILE );
+                fi.pushString ( CObj.COMMUNITYID, comid );
+                fi.pushString ( CObj.FILEDIGEST, wholedig );
+                fi.pushString ( CObj.FRAGDIGEST, digofdigs );
+                fi.pushString ( CObj.NAME, name );
+                fi.pushNumber ( CObj.FILESIZE, filesize );
+                fi.pushNumber ( CObj.FRAGSIZE, fragsize );
+                fi.pushNumber ( CObj.FRAGNUMBER, fragnumber );
+                fi.pushText ( CObj.TXTNAME, txtname );
+            }
+
+            fi.pushNumber ( CObj.NUMBER_HAS, numberhasfile );
 
             try
             {

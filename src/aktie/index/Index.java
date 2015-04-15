@@ -508,6 +508,37 @@ public class Index
 
     }
 
+    public CObj getFileInfo ( String id )
+    {
+        BooleanQuery query = new BooleanQuery();
+
+        Term pstterm = new Term ( CObj.PARAM_TYPE, CObj.FILE );
+        query.add ( new TermQuery ( pstterm ), BooleanClause.Occur.MUST );
+
+        Term idterm = new Term ( CObj.PARAM_ID, id );
+        query.add ( new TermQuery ( idterm ), BooleanClause.Occur.MUST );
+
+        CObj r = null;
+        CObjList l = search ( query, 1 );
+
+        if ( l.size() > 0 )
+        {
+            try
+            {
+                r = l.get ( 0 );
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        l.close();
+        return r;
+    }
+
     public CObjList searchFiles ( String comid, String qstr, Sort srt )
     {
         BooleanQuery query = new BooleanQuery();
@@ -822,6 +853,21 @@ public class Index
 
         Term pdigterm = new Term ( CObj.docString ( CObj.FRAGDIGEST ), pdig );
         bq.add ( new TermQuery ( pdigterm ), BooleanClause.Occur.MUST );
+
+        Term shterm = new Term ( CObj.docString ( CObj.STILLHASFILE ), "true" );
+        bq.add ( new TermQuery ( shterm ), BooleanClause.Occur.MUST );
+
+        Term myterm = new Term ( CObj.docPrivate ( CObj.MINE ), "true" );
+        bq.add ( new TermQuery ( myterm ), BooleanClause.Occur.MUST );
+
+        return search ( bq, Integer.MAX_VALUE );
+    }
+
+    public CObjList getAllMyHasFiles ( )
+    {
+        BooleanQuery bq = new BooleanQuery();
+        Term typterm = new Term ( CObj.PARAM_TYPE, CObj.HASFILE );
+        bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
 
         Term shterm = new Term ( CObj.docString ( CObj.STILLHASFILE ), "true" );
         bq.add ( new TermQuery ( shterm ), BooleanClause.Occur.MUST );

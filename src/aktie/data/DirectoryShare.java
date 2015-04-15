@@ -11,6 +11,7 @@ public class DirectoryShare
     @Id
     @GeneratedValue
     private long id;
+    private String shareName;
     private String communityId;
     private String memberId;
 
@@ -19,6 +20,8 @@ public class DirectoryShare
     private long lastCrawl;
     private long numberFiles;
     private long numberSubFolders;
+    private String message;
+
 
     public long getId()
     {
@@ -88,6 +91,26 @@ public class DirectoryShare
     public void setNumberSubFolders ( long numberSubFolders )
     {
         this.numberSubFolders = numberSubFolders;
+    }
+
+    public String getMessage()
+    {
+        return message;
+    }
+
+    public void setMessage ( String message )
+    {
+        this.message = message;
+    }
+
+    public String getShareName()
+    {
+        return shareName;
+    }
+
+    public void setShareName ( String shareName )
+    {
+        this.shareName = shareName;
     }
 
 }

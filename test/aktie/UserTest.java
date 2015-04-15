@@ -217,7 +217,7 @@ public class UserTest implements GuiCallback, GetSendData, ConnectionListener, D
             f0.setType ( CObj.HASFILE );
             f0.pushString ( CObj.COMMUNITYID, c0.getDig() );
             f0.pushString ( CObj.CREATOR, id0 );
-            File tf = FUtils.createTestFile ( 5L * 1024L * 1024L + 1024L );
+            File tf = FUtils.createTestFile ( null, 5L * 1024L * 1024L + 1024L );
             System.out.println ( "TF: " + tf.getPath() );
             f0.pushPrivate ( CObj.LOCALFILE, tf.getPath() );
             lastupdate = null;
