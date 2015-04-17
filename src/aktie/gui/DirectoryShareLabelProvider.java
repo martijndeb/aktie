@@ -1,19 +1,17 @@
 package aktie.gui;
 
-import org.eclipse.jface.viewers.StyledCellLabelProvider;
-import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.jface.viewers.LabelProvider;
 
 import aktie.data.DirectoryShare;
 
-public class DirectoryShareLabelProvider extends  StyledCellLabelProvider
+public class DirectoryShareLabelProvider extends LabelProvider
 {
 
     @Override
-    public void update ( ViewerCell cell )
+    public String getText ( Object element )
     {
-        DirectoryShare ds = ( DirectoryShare ) cell.getElement();
-        cell.setText ( ds.getShareName() );
-
+        DirectoryShare ds = ( DirectoryShare ) element;
+        return ds.getShareName();
     }
 
 }

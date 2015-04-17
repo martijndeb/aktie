@@ -63,6 +63,7 @@ import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
@@ -614,8 +615,9 @@ public class SWTApp
                 String update = co.getString ( CObj.UPGRADEFLAG );
                 String fname = co.getString ( CObj.NAME );
                 String comid = co.getString ( CObj.COMMUNITYID );
+                String stillhasfile = co.getString ( CObj.STILLHASFILE );
 
-                if ( "true".equals ( update ) )
+                if ( "true".equals ( update ) && "true".equals ( stillhasfile ) )
                 {
                     if ( doUpgrade )
                     {
@@ -712,8 +714,9 @@ public class SWTApp
         // *Private* UPGRADEFLAG is set for our own HASFILE once
         //we complete the download.
         String upf = co.getPrivate ( CObj.UPGRADEFLAG );
+        String shf = co.getString ( CObj.STILLHASFILE );
 
-        if ( "true".equals ( upf ) )
+        if ( "true".equals ( upf ) && "true".equals ( shf ) )
         {
             log.info ( "Upgrade download completed." );
             File df = new File ( co.getPrivate ( CObj.LOCALFILE ) );
@@ -1072,6 +1075,7 @@ public class SWTApp
                                 public void run()
                                 {
                                     filesSearch();
+                                    updateShareCount();
                                 }
 
                             } );
@@ -1855,6 +1859,38 @@ public class SWTApp
     {
         List<DirectoryShare> lst = getNode().getShareManager().listShares ( comid, memid );
         shareComboViewer.setInput ( lst );
+        textShareName.setText ( "" );
+        textSharePath.setText ( "" );
+        textNumberSubDirs.setText ( "" );
+        textNumberFiles.setText ( "" );
+        selectedShare = null;
+        ISelection isel = shareComboViewer.getSelection();
+
+        if ( isel.isEmpty() )
+        {
+            if ( lst.size() > 0 )
+            {
+                selectedShare = lst.get ( 0 );
+                StructuredSelection ss = new StructuredSelection ( selectedShare );
+                shareComboViewer.setSelection ( ss );
+            }
+
+        }
+
+        updateShareCount();
+    }
+
+    private void updateShareCount()
+    {
+        if ( selectedShare != null )
+        {
+            DirectoryShare ds = getNode().getShareManager().getShare ( selectedShare.getId() );
+            textNumberFiles.setText ( Long.toString ( ds.getNumberFiles() ) );
+            textNumberSubDirs.setText ( Long.toString ( ds.getNumberSubFolders() ) );
+            textShareName.setText ( ds.getShareName() );
+            textSharePath.setText ( ds.getDirectory() );
+        }
+
     }
 
     private String sortFileField1;
@@ -2200,6 +2236,7 @@ public class SWTApp
     private Text textNumberFiles;
     private Combo shareCombo;
     private ComboViewer shareComboViewer;
+    private DirectoryShare selectedShare;
 
     private boolean doDownloadLrg ( CObj c )
     {
@@ -3878,10 +3915,8 @@ public class SWTApp
                 if ( i.hasNext() )
                 {
                     DirectoryShare sh = ( DirectoryShare ) i.next();
-                    textShareName.setText ( sh.getShareName() );
-                    textSharePath.setText ( sh.getDirectory() );
-                    textNumberSubDirs.setText ( Long.toString ( sh.getNumberSubFolders() ) );
-                    textNumberFiles.setText ( Long.toString ( sh.getNumberFiles() ) );
+                    selectedShare = sh;
+                    updateShareCount();
                 }
 
             }
@@ -3928,102 +3963,31 @@ public class SWTApp
 
         Button btnDelete = new Button ( composite_14, SWT.NONE );
         btnDelete.setText ( "Delete" );
-        btnShare.addSelectionListener ( new AddFile() );
+        btnDelete.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                if ( selectedShare != null )
+                {
+                    getNode().getShareManager().deleteShare ( selectedShare.getCommunityId(),
+                            selectedShare.getMemberId(), selectedShare.getShareName() );
 
+                    if ( selectedCommunity != null && selectedIdentity != null )
+                    {
+                        setShares ( selectedCommunity.getDig(), selectedIdentity.getId() );
+                    }
 
-        //        fileContentProvider = new CObjListContentProvider();
-        //        fileTableViewer = new TableViewer ( composite_4, SWT.BORDER | SWT.FULL_SELECTION |
-        //                                            SWT.H_SCROLL | SWT.V_SCROLL | SWT.MULTI );
-        //        fileTableViewer.setContentProvider ( fileContentProvider );
-        //        fileTable = fileTableViewer.getTable();
-        //        fileTable.setHeaderVisible ( true );
-        //        fileTable.setLinesVisible ( true );
-        //        fileTable.setLayoutData ( BorderLayout.CENTER );
-        //        sashForm.setWeights ( new int[] {1, 4} );
+                }
 
-        //
-        //        TableViewerColumn fcol0 = new TableViewerColumn ( fileTableViewer, SWT.NONE );
-        //        fcol0.getColumn().setText ( "File" );
-        //        fcol0.getColumn().setWidth ( 100 );
-        //        fcol0.setLabelProvider ( new CObjListStringColumnLabelProvider ( CObj.NAME ) );
-        //        fcol0.getColumn().addSelectionListener ( new SelectionListener()
-        //        {
-        //            @Override
-        //            public void widgetSelected ( SelectionEvent e )
-        //            {
-        //                String ns = CObj.docString ( CObj.NAME );
-        //
-        //                if ( ns.equals ( sortFileField1 ) )
-        //                {
-        //                    sortFileReverse = !sortFileReverse;
-        //                }
+            }
 
-        //
-        //                else
-        //                {
-        //                    sortFileField1 = ns;
-        //                    sortFileReverse = false;
-        //                    sortFileType1 = SortField.Type.STRING;
-        //                    sortFileField2 = null;
-        //                    sortFileType2 = null;
-        //                }
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
 
-        //
-        //                filesSearch();
-        //            }
-
-        //
-        //            @Override
-        //            public void widgetDefaultSelected ( SelectionEvent e )
-        //            {
-        //            }
-
-        //
-        //        } );
-
-        //
-        //        TableViewerColumn fcol1 = new TableViewerColumn ( fileTableViewer, SWT.NONE );
-        //        fcol1.getColumn().setText ( "Size" );
-        //        fcol1.getColumn().setWidth ( 100 );
-        //        fcol1.setLabelProvider ( new CObjListLongColumnLabelProvider ( CObj.FILESIZE ) );
-        //        fcol1.getColumn().addSelectionListener ( new SelectionListener()
-        //        {
-        //            @Override
-        //            public void widgetSelected ( SelectionEvent e )
-        //            {
-        //                String ns = CObj.docNumber ( CObj.FILESIZE );
-        //
-        //                if ( ns.equals ( sortFileField1 ) )
-        //                {
-        //                    sortFileReverse = !sortFileReverse;
-        //                }
-
-        //
-        //                else
-        //                {
-        //                    sortFileField1 = ns;
-        //                    sortFileReverse = false;
-        //                    sortFileType1 = SortField.Type.LONG;
-        //                    sortFileField2 = null;
-        //                    sortFileType2 = null;
-        //                }
-
-        //
-        //                filesSearch();
-        //            }
-
-        //
-        //            @Override
-        //            public void widgetDefaultSelected ( SelectionEvent e )
-        //            {
-        //            }
-
-        //
-        //        } );
-
-        //============================================================================================
-
-
+        } );
 
 
         TabItem tbtmDownloadds = new TabItem ( tabFolder, SWT.NONE );

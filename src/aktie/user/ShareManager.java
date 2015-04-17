@@ -24,6 +24,7 @@ public class ShareManager implements Runnable
     private HasFileCreator hfc;
     private ProcessQueue userQueue;
     private HH2Session session;
+    private RequestFileHandler rfh;
 
     public ShareManager ( HH2Session s, Index i, HasFileCreator h, ProcessQueue pq )
     {
@@ -61,14 +62,24 @@ public class ShareManager implements Runnable
             e.printStackTrace();
         }
 
-        CObjList mlst = index.getLocalHasFiles ( s.getCommunityId(), s.getMemberId(), fp );
-
-        if ( mlst.size() == 0 )
+        if ( !!fp.endsWith ( ".aktiepart" ) )
         {
-            addFile ( s, f );
+
+            if ( null == rfh.findFileByName ( fp ) )
+            {
+
+                CObjList mlst = index.getLocalHasFiles ( s.getCommunityId(), s.getMemberId(), fp );
+
+                if ( mlst.size() == 0 )
+                {
+                    addFile ( s, f );
+                }
+
+                mlst.close();
+            }
+
         }
 
-        mlst.close();
     }
 
     /*
@@ -275,6 +286,39 @@ public class ShareManager implements Runnable
 
     }
 
+    public DirectoryShare getShare ( long id )
+    {
+        DirectoryShare r = null;
+        Session s = null;
+
+        try
+        {
+            s = session.getSession();
+            r = ( DirectoryShare ) s.get ( DirectoryShare.class, id );
+            s.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+
+            if ( s != null )
+            {
+                try
+                {
+                    s.close();
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+            }
+
+        }
+
+        return r;
+    }
 
     @SuppressWarnings ( "unchecked" )
     public List<DirectoryShare> listShares ( String comid, String memid )

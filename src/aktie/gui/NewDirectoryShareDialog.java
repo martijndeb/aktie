@@ -38,6 +38,7 @@ public class NewDirectoryShareDialog extends Dialog
     public NewDirectoryShareDialog ( Shell parentShell, SWTApp p )
     {
         super ( parentShell );
+        setShellStyle ( getShellStyle() | SWT.RESIZE );
         app = p;
         This = this;
     }
@@ -47,14 +48,19 @@ public class NewDirectoryShareDialog extends Dialog
         comId = comid;
         memId = memid;
 
-        if ( lblMemberid != null && !lblMemberid.isDisposed() )
+        if ( comId != null && memId != null )
         {
-            lblMemberid.setText ( memId.getDisplayName() );
-        }
 
-        if ( lblComid != null && !lblComid.isDisposed() )
-        {
-            lblComid.setText ( comId.getPrivateDisplayName() );
+            if ( lblMemberid != null && !lblMemberid.isDisposed() )
+            {
+                lblMemberid.setText ( memId.getDisplayName() );
+            }
+
+            if ( lblComid != null && !lblComid.isDisposed() )
+            {
+                lblComid.setText ( comId.getPrivateDisplayName() );
+            }
+
         }
 
     }
@@ -80,6 +86,7 @@ public class NewDirectoryShareDialog extends Dialog
         lblIdentity.setText ( "Identity" );
 
         lblMemberid = new Label ( container, SWT.NONE );
+        lblMemberid.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
         lblMemberid.setText ( "id" );
         new Label ( container, SWT.NONE );
 
@@ -88,6 +95,7 @@ public class NewDirectoryShareDialog extends Dialog
         lblCommunity.setText ( "Community" );
 
         lblComid = new Label ( container, SWT.NONE );
+        lblComid.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
         lblComid.setText ( "com" );
         new Label ( container, SWT.NONE );
 
@@ -114,6 +122,10 @@ public class NewDirectoryShareDialog extends Dialog
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
+                System.out.println ( "Details: " + e.detail );
+                System.out.println ( "Doit   : " + e.doit );
+                System.out.println ( "Data:    " + e.data );
+                Thread.dumpStack();
                 DirectoryDialog dialog = new DirectoryDialog ( This.getShell() );
                 String sharedir = dialog.open();
 

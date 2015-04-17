@@ -22,6 +22,28 @@ public class DirectoryShare
     private long numberSubFolders;
     private String message;
 
+    @Override
+    public int hashCode()
+    {
+        return ( int ) id;
+    }
+
+    @Override
+    public boolean equals ( Object o )
+    {
+        if ( o instanceof DirectoryShare )
+        {
+            DirectoryShare ds = ( DirectoryShare ) o;
+
+            if ( ds != null )
+            {
+                return ds.getId() == getId();
+            }
+
+        }
+
+        return false;
+    }
 
     public long getId()
     {

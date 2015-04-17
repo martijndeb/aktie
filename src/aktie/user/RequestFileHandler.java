@@ -238,7 +238,52 @@ public class RequestFileHandler
 
         }
 
-        return null;
+        return new LinkedList<RequestFile>();
+    }
+
+    @SuppressWarnings ( "unchecked" )
+    public RequestFile findFileByName ( String name )
+    {
+        RequestFile r = null;
+        Session s = null;
+
+        try
+        {
+            s = session.getSession();
+            Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE "
+                                      + "x.localFile = :fname" );
+            q.setParameter ( "fname", name );
+            q.setMaxResults ( 1 );
+            List<RequestFile> l = q.list();//LOCKED HERE
+
+            if ( l.size() > 0 )
+            {
+                r = l.get ( 0 );
+            }
+
+            s.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+
+            if ( s != null )
+            {
+                try
+                {
+                    s.close();
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+            }
+
+        }
+
+        return r;
     }
 
     public boolean claimFileListClaim ( RequestFile rf )
@@ -416,7 +461,7 @@ public class RequestFileHandler
 
         }
 
-        return null;
+        return new LinkedList<RequestFile>();
     }
 
     @SuppressWarnings ( "unchecked" )
@@ -591,7 +636,7 @@ public class RequestFileHandler
             rf.setWholeDigest ( hasfile.getString ( CObj.FILEDIGEST ) );
             rf.setRequestId ( hasfile.getString ( CObj.CREATOR ) );
             rf.setPriority ( priority );
-            rf.setLocalFile ( lf.getPath() );
+            rf.setLocalFile ( lf.getCanonicalPath() );
             rf.setState ( state );
             rf.setFragsComplete ( comp );
             s = session.getSession();
@@ -817,7 +862,7 @@ public class RequestFileHandler
                             try
                             {
                                 FUtils.copy ( s, t );
-                                localpath = t.getPath();
+                                localpath = t.getCanonicalPath();
                             }
 
                             catch ( IOException e )
