@@ -26,12 +26,14 @@ public class ShareManager implements Runnable
     private HH2Session session;
     private RequestFileHandler rfh;
 
-    public ShareManager ( HH2Session s, Index i, HasFileCreator h, ProcessQueue pq )
+    public ShareManager ( HH2Session s, RequestFileHandler rf, Index i, HasFileCreator h, ProcessQueue pq )
     {
         session = s;
         index = i;
         hfc = h;
         userQueue = pq;
+        rfh = rf;
+        rfh.setShareMan ( this );
         Thread t = new Thread ( this );
         t.setDaemon ( true );
         t.start();
@@ -45,6 +47,7 @@ public class ShareManager implements Runnable
         hf.pushString ( CObj.COMMUNITYID, s.getCommunityId() );
         hf.pushString ( CObj.SHARE_NAME, s.getShareName() );
         hf.pushPrivate ( CObj.LOCALFILE, f.getPath() ); //Canonical name gotten during processing
+        System.out.println ( "ADDING FILE!!! " );
         userQueue.enqueue ( hf );
     }
 
@@ -62,13 +65,17 @@ public class ShareManager implements Runnable
             e.printStackTrace();
         }
 
-        if ( !!fp.endsWith ( ".aktiepart" ) )
+        System.out.println ( "CHECKING FILE:::: " + fp );
+
+        if ( !fp.endsWith ( ".aktiepart" ) && !fp.endsWith ( ".aktiebackup" ) )
         {
 
             if ( null == rfh.findFileByName ( fp ) )
             {
 
                 CObjList mlst = index.getLocalHasFiles ( s.getCommunityId(), s.getMemberId(), fp );
+
+                System.out.println ( "CHECKING FILE:::: mlst " + mlst.size() );
 
                 if ( mlst.size() == 0 )
                 {
@@ -283,6 +290,55 @@ public class ShareManager implements Runnable
             }
 
         }
+
+    }
+
+    @SuppressWarnings ( "unchecked" )
+    public DirectoryShare getShare ( String comid, String memid, String name )
+    {
+        DirectoryShare r = null;
+        Session s = null;
+
+        try
+        {
+            s = session.getSession();
+            Query q = s.createQuery ( "SELECT x FROM DirectoryShare x WHERE "
+                                      + "x.shareName = :name AND "
+                                      + "x.communityId = :comid AND "
+                                      + "x.memberId = :memid" );
+            q.setParameter ( "name", name );
+            q.setParameter ( "comid", comid );
+            q.setParameter ( "memid", memid );
+            List<DirectoryShare> dlst = q.list();
+
+            if ( dlst.size() > 0 )
+            {
+                r = dlst.get ( 0 );
+            }
+
+            s.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+
+            if ( s != null )
+            {
+                try
+                {
+                    s.close();
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+            }
+
+        }
+
+        return r;
 
     }
 

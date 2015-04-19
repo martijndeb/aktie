@@ -12,6 +12,7 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 
 import aktie.data.CObj;
+import aktie.data.DirectoryShare;
 import aktie.data.HH2Session;
 import aktie.data.RequestFile;
 import aktie.index.CObjList;
@@ -22,11 +23,13 @@ public class RequestFileHandler
 {
     Logger log = Logger.getLogger ( "aktie" );
 
+    public static String AKTIEPART = ".aktiepart";
+
     private HH2Session session;
     private Index index;
     private File downloadDir;
     private NewFileProcessor nfp;
-
+    private ShareManager shareMan;
 
     public RequestFileHandler ( HH2Session s, String downdir, NewFileProcessor n, Index i )
     {
@@ -150,11 +153,10 @@ public class RequestFileHandler
         {
             s = session.getSession();
             s.getTransaction().begin();
-            Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.requestedOn < :old AND "
-                                      + " ( x.state = :st OR  x.state = :sts ) " );
+            Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.requestedOn < :old OR "
+                                      + " x.state = :st " );
             q.setParameter ( "old", System.currentTimeMillis() - oldest );
-            q.setParameter ( "st", RequestFile.REQUEST_FRAG_LIST );
-            q.setParameter ( "sts", RequestFile.REQUEST_FRAG_LIST_SNT );
+            q.setParameter ( "st", RequestFile.COMPLETE );
             List<RequestFile> l = q.list();
 
             for ( RequestFile rf : l )
@@ -635,6 +637,7 @@ public class RequestFileHandler
             rf.setFragsTotal ( hasfile.getNumber ( CObj.FRAGNUMBER ) );
             rf.setWholeDigest ( hasfile.getString ( CObj.FILEDIGEST ) );
             rf.setRequestId ( hasfile.getString ( CObj.CREATOR ) );
+            rf.setShareName ( hasfile.getString ( CObj.SHARE_NAME ) );
             rf.setPriority ( priority );
             rf.setLocalFile ( lf.getCanonicalPath() );
             rf.setState ( state );
@@ -644,6 +647,24 @@ public class RequestFileHandler
             s.merge ( rf );
             s.getTransaction().commit();
             s.close();
+
+            //NOTE: Make sure you create the RequestFile record first, so that we
+            //don't create the file and have it added to a share prematurely before
+            //the part values are checked.
+            try
+            {
+                if ( !lf.exists() )
+                {
+                    lf = new File ( lf.getPath() + AKTIEPART );
+                    lf.createNewFile();
+                }
+
+            }
+
+            catch ( Exception e )
+            {
+            }
+
             return rf;
         }
 
@@ -739,18 +760,134 @@ public class RequestFileHandler
         return already;
     }
 
+    private File makeSureNewFile ( File lf )
+    {
+        String fname = lf.getPath();
+
+        int idx = 0;
+        String ext = "";
+        Matcher m = Pattern.compile ( "(.+)\\.(\\w+)$" ).matcher ( fname );
+
+        if ( m.find() )
+        {
+            fname = m.group ( 1 );
+            ext = "." + m.group ( 2 );
+        }
+
+        log.info ( "File name: " + fname + " ext: " + ext );
+
+        File pf = new File ( lf.getPath() + AKTIEPART );
+
+        while ( lf.exists() || pf.exists() )
+        {
+            lf = new File ( fname + "." + idx + ext );
+            pf = new File ( lf.getPath() + AKTIEPART );
+            log.info ( "Check file: " + lf );
+            idx++;
+        }
+
+        return lf;
+    }
+
+    private DirectoryShare findShareForFile ( String comid, String memid, File f )
+    {
+        DirectoryShare r = null;
+
+        try
+        {
+            String conn = f.getCanonicalPath();
+            List<DirectoryShare> lst = shareMan.listShares ( comid, memid );
+
+            for ( DirectoryShare d : lst )
+            {
+                if ( conn.startsWith ( d.getDirectory() ) )
+                {
+                    r = d;
+                    break;
+                }
+
+            }
+
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+        }
+
+        return r;
+    }
+
+    /*
+        First it check if we have a hasfile that matches the digests, community, and creator of the request
+            - if one is found then we don't do anything
+        If a matching file is found, but it's for the wrong, community/creator, localpath is set to the file
+        Check the localfile set in the request.  If it points to an existing file, we check if the digest
+            matches the requested digest.  If so we set localpath to the requested file.  If not,
+            we backup the file localfile because it will be overwriten by the requested data.
+        If localpath is set then we have a copy already of the file.  If the localfile value in the request
+            is set, copy the localpath to the localfile (unless they are the same file, FUtils won't copy)
+            If the localfile value is not set in the request
+            then simply point localfile value to the existing file we already have.
+            Then we simply process it as if we're adding a new file to the community.
+
+    */
     public RequestFile createRequestFile ( CObj hasfile )
     {
         if ( CObj.USR_DOWNLOAD_FILE.equals ( hasfile.getType() ) )
         {
 
             String comid = hasfile.getString ( CObj.COMMUNITYID ) ;
+            String creator = hasfile.getString ( CObj.CREATOR ) ;
             String pdig = hasfile.getString ( CObj.FRAGDIGEST ) ;
             String wdig = hasfile.getString ( CObj.FILEDIGEST ) ;
-            String creator = hasfile.getString ( CObj.CREATOR ) ;
+            String share = hasfile.getString ( CObj.SHARE_NAME );
+            String lfs = hasfile.getPrivate ( CObj.LOCALFILE );
+            String filename = hasfile.getString ( CObj.NAME );
+
+            //If share and localfile are both set make sure the localfile
+            //is in the share path or else don't do it!
+            if ( share != null && lfs != null )
+            {
+                //System.out.println()
+                DirectoryShare s = shareMan.getShare ( comid, creator, share );
+
+                if ( s == null )
+                {
+                    hasfile.pushString ( CObj.SHARE_NAME, null );
+                    share = null;
+                    log.info ( "Clear the share as we don't have matching" );
+                }
+
+                else
+                {
+                    try
+                    {
+                        File tlf = new File ( lfs );
+                        String conn = tlf.getCanonicalPath();
+
+                        if ( !conn.startsWith ( s.getDirectory() ) )
+                        {
+                            log.info ( "Do not download.  The specified share does not match specified file location" );
+                            return null;
+                        }
+
+                    }
+
+                    catch ( Exception e )
+                    {
+                        //e.printStackTrace();
+                        log.info ( "Bad problem: " + e.getMessage() );
+                        return null;
+                    }
+
+                }
+
+            }
 
             if ( alreadyRequested ( comid, wdig, pdig, creator ) )
             {
+                log.info ( "We already have the file downloading" );
                 return null;
             }
 
@@ -806,7 +943,6 @@ public class RequestFileHandler
                 //check if for some reason the existing localfile is actually
                 //the correct file, if not and it exists anyway rename the current
                 //file to backup.
-                String lfs = hasfile.getPrivate ( CObj.LOCALFILE );
                 log.info ( "Existing localfile: " + lfs );
 
                 if ( lfs != null )
@@ -823,22 +959,12 @@ public class RequestFileHandler
                     else
                     {
                         //Make a back-up file of the existing
-                        File back = new File ( lfs + ".backup" );
+                        File back = new File ( lfs + ".aktiebackup" );
                         File lf = new File ( lfs );
 
                         if ( lf.exists() )
                         {
                             lf.renameTo ( back );
-                        }
-
-                        try
-                        {
-                            lf.createNewFile();
-                        }
-
-                        catch ( IOException e )
-                        {
-                            e.printStackTrace();
                         }
 
                     }
@@ -851,39 +977,72 @@ public class RequestFileHandler
 
                     if ( nfp != null )
                     {
+                        File lf = null;
+
                         //If localfile is set then we should copy the existing file. :(
                         //when localfile is set it means the user wants it saved to this
                         //specific file
                         if ( lfs != null )
                         {
-                            File t = new File ( lfs );
-                            File s = new File ( localpath );
+                            lf = new File ( lfs );
+                        }
 
-                            try
+                        else
+                        {
+                            //We have it in another group.  Create a new hasfile for this
+                            if ( share != null )
                             {
-                                FUtils.copy ( s, t );
-                                localpath = t.getCanonicalPath();
+                                DirectoryShare ds = shareMan.getShare ( comid, creator, share );
+
+                                if ( ds != null )
+                                {
+                                    lf = new File ( ds.getDirectory() + File.separator + filename );
+                                }
+
                             }
 
-                            catch ( IOException e )
+                            else
                             {
-                                e.printStackTrace();
+                                lf = new File ( localpath );
                             }
 
                         }
 
-                        //We have it in another group.  Create a new hasfile for this
-                        CObj nhf = new CObj();
-                        nhf.setType ( CObj.HASFILE );
-                        nhf.pushString ( CObj.COMMUNITYID, comid );
-                        nhf.pushString ( CObj.CREATOR, creator );
-                        nhf.pushPrivate ( CObj.LOCALFILE, localpath );
-                        nfp.process ( nhf );
+                        if ( share == null )
+                        {
+                            DirectoryShare shr = findShareForFile ( comid, creator, lf );
 
-                        File lf = new File ( localpath );
-                        long fn = hasfile.getNumber ( CObj.FRAGNUMBER );
-                        log.info ( "SAVE requestfile: " + fn );
-                        return createRF ( hasfile, lf, RequestFile.COMPLETE, ( int ) fn );
+                            if ( shr != null )
+                            {
+                                share = shr.getShareName();
+                                hasfile.pushString ( CObj.SHARE_NAME, share );
+                            }
+
+                        }
+
+                        try
+                        {
+                            File s = new File ( localpath );
+                            FUtils.copy ( s, lf );
+
+                            CObj nhf = new CObj();
+                            nhf.setType ( CObj.HASFILE );
+                            nhf.pushString ( CObj.COMMUNITYID, comid );
+                            nhf.pushString ( CObj.CREATOR, creator );
+                            nhf.pushPrivate ( CObj.LOCALFILE, lf.getCanonicalPath() );
+                            nhf.pushString ( CObj.SHARE_NAME, share );
+                            nfp.process ( nhf );
+
+                            long fn = hasfile.getNumber ( CObj.FRAGNUMBER );
+                            log.info ( "SAVE requestfile: " + fn );
+                            return createRF ( hasfile, lf, RequestFile.COMPLETE, ( int ) fn );
+                        }
+
+                        catch ( IOException e )
+                        {
+                            e.printStackTrace();
+                        }
+
                     }
 
                 }
@@ -897,45 +1056,42 @@ public class RequestFileHandler
                     if ( lfs != null )
                     {
                         lf = new File ( lfs );
+
+                        if ( share == null )
+                        {
+                            DirectoryShare shr = findShareForFile ( comid, creator, lf );
+
+                            if ( shr != null )
+                            {
+                                share = shr.getShareName();
+                                hasfile.pushString ( CObj.SHARE_NAME, share );
+                            }
+
+                        }
+
                     }
 
                     log.info ( "LF: " + lf );
 
                     if ( lf == null )
                     {
-                        String filename = hasfile.getString ( CObj.NAME );
-                        lf = new File ( downloadDir.getPath() + File.separator + filename );
-
-                        int idx = 0;
-                        String fname = filename;
-                        String ext = "";
-                        Matcher m = Pattern.compile ( "(.+)\\.(\\w+)$" ).matcher ( filename );
-
-                        if ( m.find() )
+                        if ( share != null )
                         {
-                            fname = m.group ( 1 );
-                            ext = m.group ( 2 );
+                            DirectoryShare ds = shareMan.getShare ( comid, creator, share );
+
+                            if ( ds != null )
+                            {
+                                lf = new File ( ds.getDirectory() + File.separator + filename );
+                            }
+
                         }
 
-                        log.info ( "File name: " + fname + " ext: " + ext );
-
-                        while ( lf.exists() )
+                        else
                         {
-                            lf = new File ( downloadDir.getPath() + File.separator + fname + "." + idx +
-                                            "." + ext );
-                            log.info ( "Check file: " + lf );
-                            idx++;
+                            lf = new File ( downloadDir.getPath() + File.separator + filename );
                         }
 
-                        try
-                        {
-                            lf.createNewFile();
-                        }
-
-                        catch ( IOException e )
-                        {
-                            e.printStackTrace();
-                        }
+                        lf = makeSureNewFile ( lf );
 
                     }
 
@@ -947,6 +1103,11 @@ public class RequestFileHandler
         }
 
         return null;
+    }
+
+    public void setShareMan ( ShareManager shareMan )
+    {
+        this.shareMan = shareMan;
     }
 
 }

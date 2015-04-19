@@ -53,6 +53,7 @@ public class HasFileCreator
         String localfile = f.getPrivate ( CObj.LOCALFILE );
         String txtname = f.getString ( CObj.TXTNAME );
         String stillhas = f.getString ( CObj.STILLHASFILE );
+        String share = f.getString ( CObj.SHARE_NAME );
 
         if ( txtname == null )
         {
@@ -97,6 +98,7 @@ public class HasFileCreator
                     }
 
                     fi.pushString ( CObj.LOCALFILE, localfile );
+                    fi.pushString ( CObj.SHARE_NAME, share );
                 }
 
                 index.index ( fi );

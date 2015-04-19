@@ -645,41 +645,67 @@ public class ConnectionThread implements Runnable, GuiCallback
                     List<RequestFile> lrf = q.list();
                     String lf = null;
 
+                    log.info ( "CONTHREAD: matches RequestFiles found: " + lrf.size() );
+
                     for ( RequestFile rf : lrf )
                     {
-                        s.getTransaction().begin();
-                        rf = ( RequestFile ) s.get ( RequestFile.class, rf.getId() );
-                        rf.setFragsComplete ( rf.getFragsComplete() + 1 );
-                        s.merge ( rf );
-                        //Copy the fragment to the whole file.
-                        raf = new RandomAccessFile ( rf.getLocalFile(), "rw" );
-                        fis = new FileInputStream ( fpart );
-                        raf.seek ( fidx );
-                        int ridx = 0;
+                        boolean exists = false;
+                        lf = rf.getLocalFile();
 
-                        while ( ridx < flen )
+                        log.info ( "CONTHREAD: lf: " + lf );
+
+                        if ( lf != null )
                         {
-                            int len = fis.read ( buf, 0, Math.min ( buf.length, ( int ) ( flen - ridx ) ) );
-
-                            if ( len < 0 )
-                            {
-                                fis.close();
-                                raf.close();
-                                throw new IOException ( "Oops." );
-                            }
-
-                            if ( len > 0 )
-                            {
-                                raf.write ( buf, 0, len );
-                                ridx += len;
-                            }
-
+                            File f = new File ( lf + RequestFileHandler.AKTIEPART );
+                            log.info ( "CONTHREAD: Check part file: " + f.getPath() + " exists " + f.exists() );
+                            exists = f.exists();
                         }
 
-                        raf.close();
-                        fis.close();
-                        s.getTransaction().commit();
-                        lf = rf.getLocalFile();
+                        if ( !exists )
+                        {
+                            lf = null;
+                            s.getTransaction().begin();
+                            RequestFile rrf = ( RequestFile ) s.get ( RequestFile.class, rf.getId() );
+                            s.delete ( rrf );
+                            s.getTransaction().commit();
+                        }
+
+                        else
+                        {
+                            s.getTransaction().begin();
+                            rf = ( RequestFile ) s.get ( RequestFile.class, rf.getId() );
+                            rf.setFragsComplete ( rf.getFragsComplete() + 1 );
+                            s.merge ( rf );
+                            //Copy the fragment to the whole file.
+                            raf = new RandomAccessFile ( rf.getLocalFile() + RequestFileHandler.AKTIEPART, "rw" );
+                            fis = new FileInputStream ( fpart );
+                            raf.seek ( fidx );
+                            int ridx = 0;
+
+                            while ( ridx < flen )
+                            {
+                                int len = fis.read ( buf, 0, Math.min ( buf.length, ( int ) ( flen - ridx ) ) );
+
+                                if ( len < 0 )
+                                {
+                                    fis.close();
+                                    raf.close();
+                                    throw new IOException ( "Oops." );
+                                }
+
+                                if ( len > 0 )
+                                {
+                                    raf.write ( buf, 0, len );
+                                    ridx += len;
+                                }
+
+                            }
+
+                            raf.close();
+                            fis.close();
+                            s.getTransaction().commit();
+                        }
+
                         //If we're done, then create a new HasFile for us!
                     }
 
@@ -689,6 +715,13 @@ public class ConnectionThread implements Runnable, GuiCallback
                         fg.pushPrivate ( CObj.LOCALFILE, lf );
                         index.index ( fg );
                     }
+
+                    //Refresh the list of RequestFiles in case we deleted any.
+                    q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.wholeDigest = :wdig "
+                                        + "AND x.fragmentDigest = :fdig" );
+                    q.setParameter ( "wdig", wdig );
+                    q.setParameter ( "fdig", fdig );
+                    lrf = q.list();
 
                     //Commit the transaction
                     //Ok now count how many fragments of each is done.
@@ -711,6 +744,20 @@ public class ConnectionThread implements Runnable, GuiCallback
                             {
                                 if ( fileHandler.claimFileComplete ( rf ) )
                                 {
+                                    //rename the aktiepart file to the real file name
+                                    File lff = new File ( rf.getLocalFile() );
+                                    File rlp = new File ( rf.getLocalFile() + RequestFileHandler.AKTIEPART );
+
+                                    if ( lff.exists() )
+                                    {
+                                        lff.delete();
+                                    }
+
+                                    if ( rlp.exists() )
+                                    {
+                                        rlp.renameTo ( lff );
+                                    }
+
                                     CObj hf = new CObj();
                                     hf.setType ( CObj.HASFILE );
                                     hf.pushString ( CObj.CREATOR, rf.getRequestId() );
@@ -725,6 +772,7 @@ public class ConnectionThread implements Runnable, GuiCallback
                                     hf.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
                                     hf.pushPrivate ( CObj.LOCALFILE, rf.getLocalFile() );
                                     hf.pushPrivate ( CObj.UPGRADEFLAG, rf.isUpgrade() ? "true" : "false" );
+                                    hf.pushString ( CObj.SHARE_NAME, rf.getShareName() );
                                     hfc.createHasFile ( hf );
                                     hfc.updateFileInfo ( hf );
                                     guicallback.update ( hf );

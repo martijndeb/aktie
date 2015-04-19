@@ -37,6 +37,7 @@ public class RequestFile
     @Column ( columnDefinition = "BIGINT(19) default 0" )
     private long requestedOn;
     private boolean isUpgrade;
+    private String shareName;
 
     public RequestFile()
     {
@@ -190,6 +191,16 @@ public class RequestFile
     public void setRequestedOn ( long requestedOn )
     {
         this.requestedOn = requestedOn;
+    }
+
+    public String getShareName()
+    {
+        return shareName;
+    }
+
+    public void setShareName ( String shareName )
+    {
+        this.shareName = shareName;
     }
 
 }

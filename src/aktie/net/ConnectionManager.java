@@ -760,6 +760,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                     hf.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
                                     hf.pushPrivate ( CObj.LOCALFILE, rf.getLocalFile() );
                                     hf.pushPrivate ( CObj.UPGRADEFLAG, rf.isUpgrade() ? "true" : "false" );
+                                    hf.pushString ( CObj.SHARE_NAME, rf.getShareName() );
                                     log.info ( "File download completed. 1  Upgrade flag: " + rf.isUpgrade() );
                                     hfc.createHasFile ( hf );
                                     hfc.updateFileInfo ( hf );

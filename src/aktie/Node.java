@@ -90,8 +90,9 @@ public class Node
         userQueue.addProcessor ( new NewPushProcessor ( index, conMan ) );
 
         //HH2Session s, Index i, HasFileCreator h, ProcessQueue pq
-        shareManager = new ShareManager ( session, index,
+        shareManager = new ShareManager ( session, requestHandler, index,
                                           new HasFileCreator ( session, index ), userQueue );
+
 
         doUpdate();
     }
