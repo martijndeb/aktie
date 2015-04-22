@@ -30,11 +30,13 @@
 
  	<target name="dist" depends="aktieapp"
         	description="generate the distribution" >
-    	<jar jarfile="aktie.jar" basedir="." includes="${lib},${swt},${aktie_node},${bin}/aktie/gui/Wrapper.class,${bin}/aktie/crypto/Utils.class,${bin}/aktie/utils/FUtils.class">
-    		<fileset dir="${lib}"/>
+    	<jar jarfile="aktie.jar" >
+    		<fileset dir="." includes="lib/**, swt/**, aktie_node/**"/>
+    		
+    		<!-- fileset dir="${lib}"/>
     		<fileset dir="${swt}"/>
-    		<fileset dir="${aktie_node}"/>
-    		<fileset dir="${bin}" includes="$aktie/gui/Wrapper.class,aktie/crypto/Utils.class,aktie/utils/FUtils.class"/>
+    		<fileset dir="${aktie_node}"/ -->
+    		<fileset dir="${bin}" includes="aktie/gui/Wrapper.class,aktie/crypto/Utils.class,aktie/utils/FUtils.class"/>
     	    <manifest>
     	      <attribute name="Main-Class"
     	            value="aktie.gui.Wrapper"/>
@@ -45,6 +47,6 @@
  	<target name="clean"
         description="clean up" >
     	<!-- Delete the ${build} and ${dist} directory trees -->
-    	<delete dir="${build}"/>
+    	<delete dir="${bin}"/>
   	</target>
 </project>

@@ -888,6 +888,7 @@ public class SWTApp
                                     public void run()
                                     {
                                         filesSearch();
+                                        updateShareCount();
                                     }
 
                                 } );
@@ -1308,6 +1309,7 @@ public class SWTApp
     private ShowPrivComDialog privComDialog;
     private ShowMembersDialog membersDialog;
     private NewDirectoryShareDialog shareDialog;
+    private DownloadToShareDialog downloadToShareDialog;
     private IdentitySubTreeModel identSubTreeModel;
 
     private Node node;
@@ -1858,13 +1860,24 @@ public class SWTApp
     private void setShares ( String comid, String memid )
     {
         List<DirectoryShare> lst = getNode().getShareManager().listShares ( comid, memid );
+        downloadToShareDialog.setShares(lst);
+        List<DirectoryShare> plst = new LinkedList<DirectoryShare>();
+        DirectoryShare alls = new DirectoryShare();
+        alls.setId(-1);
+        alls.setShareName("All");
+        plst.add(alls);
+        plst.addAll(lst);
+        comboShareNameViewer.setInput ( plst );
         shareComboViewer.setInput ( lst );
         textShareName.setText ( "" );
         textSharePath.setText ( "" );
         textNumberSubDirs.setText ( "" );
         textNumberFiles.setText ( "" );
+        btnDefaultDownloadLocation.setSelection(false);
         selectedShare = null;
+        selectedShareFiles = null;
         ISelection isel = shareComboViewer.getSelection();
+        ISelection isel2 = comboShareNameViewer.getSelection();
 
         if ( isel.isEmpty() )
         {
@@ -1877,6 +1890,15 @@ public class SWTApp
 
         }
 
+        if (isel2.isEmpty()) {
+            if ( plst.size() > 0 )
+            {
+                selectedShareFiles = plst.get ( 0 );
+                StructuredSelection ss = new StructuredSelection ( selectedShareFiles );
+                comboShareNameViewer.setSelection ( ss );
+            }
+        }
+        
         updateShareCount();
     }
 
@@ -1889,6 +1911,7 @@ public class SWTApp
             textNumberSubDirs.setText ( Long.toString ( ds.getNumberSubFolders() ) );
             textShareName.setText ( ds.getShareName() );
             textSharePath.setText ( ds.getDirectory() );
+            btnDefaultDownloadLocation.setSelection(ds.isDefaultDownload());
         }
 
     }
@@ -1927,7 +1950,11 @@ public class SWTApp
                 s.setSort ( new SortField ( CObj.docString ( CObj.NAME ), SortField.Type.STRING, false ) );
             }
 
-            CObjList clst = getNode().getIndex().searchFiles ( selectedCommunity.getDig(), srch, s );
+            String fshare = null;
+            if (selectedShareFiles != null && selectedShareFiles.getId() != -1) {
+            	fshare = selectedShareFiles.getShareName();
+            }
+            CObjList clst = getNode().getIndex().searchFiles ( selectedCommunity.getDig(), fshare, srch, s );
             fileTableViewer.setInput ( clst );
 
             if ( oldlst != null )
@@ -2167,6 +2194,8 @@ public class SWTApp
         privComDialog.create();
         shareDialog = new NewDirectoryShareDialog ( shell, this );
         shareDialog.create();
+        downloadToShareDialog = new DownloadToShareDialog(shell, this);
+        downloadToShareDialog.create();
         localFileColumnProvider.setIndex ( node.getIndex() );
         updateMembership();
     }
@@ -2237,6 +2266,10 @@ public class SWTApp
     private Combo shareCombo;
     private ComboViewer shareComboViewer;
     private DirectoryShare selectedShare;
+    private DirectoryShare selectedShareFiles;
+    private Combo comboShareName;
+    private ComboViewer comboShareNameViewer;
+    private Button btnDefaultDownloadLocation;
 
     private boolean doDownloadLrg ( CObj c )
     {
@@ -2284,7 +2317,7 @@ public class SWTApp
         return false;
     }
 
-    private void downloadLargeFile ( CObj c )
+    protected void downloadLargeFile ( CObj c )
     {
         if ( !doDownloadLrg ( c ) )
         {
@@ -2293,7 +2326,7 @@ public class SWTApp
 
     }
 
-    private void downloadPreview ( CObj c )
+    protected void downloadPreview ( CObj c )
     {
         if ( !doDownloadPrv ( c ) )
         {
@@ -3387,6 +3420,52 @@ public class SWTApp
 
         } );
 
+        MenuItem mntmDownloadFile22 = new MenuItem ( menu_5, SWT.NONE );
+        mntmDownloadFile22.setText ( "Download File(s) to Share.." );
+        mntmDownloadFile22.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                if ( selectedIdentity != null )
+                {
+                    IStructuredSelection sel = ( IStructuredSelection ) postTableViewer.getSelection();
+
+                    downloadToShareDialog.open(sel, false);
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        MenuItem mntmDownloadPrv2 = new MenuItem ( menu_5, SWT.NONE );
+        mntmDownloadPrv2.setText ( "Download Preview(s) to Share.." );
+        mntmDownloadPrv2.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                if ( selectedIdentity != null )
+                {
+                    IStructuredSelection sel = ( IStructuredSelection ) postTableViewer.getSelection();
+
+                    downloadToShareDialog.open(sel, true);
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
         MenuItem mntmReply = new MenuItem ( menu_5, SWT.NONE );
         mntmReply.setText ( "Reply" );
         mntmReply.addSelectionListener ( new SelectionListener()
@@ -3566,9 +3645,29 @@ public class SWTApp
         gd_label_1.heightHint = 25;
         label_1.setLayoutData ( gd_label_1 );
 
-        ComboViewer comboViewer_1 = new ComboViewer ( composite_9, SWT.NONE );
-        Combo comboShareName = comboViewer_1.getCombo();
+        comboShareNameViewer = new ComboViewer ( composite_9, SWT.NONE );
+        comboShareNameViewer.setContentProvider ( new DirectoryShareContentProvider() );
+        comboShareNameViewer.setLabelProvider ( new DirectoryShareLabelProvider() );
+        comboShareName = comboShareNameViewer.getCombo();
         comboShareName.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
+        comboShareName.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+                IStructuredSelection sel = ( IStructuredSelection ) comboShareNameViewer.getSelection();
+                @SuppressWarnings ( "rawtypes" )
+                Iterator i = sel.iterator();
+
+                if ( i.hasNext() )
+                {
+                    DirectoryShare sh = ( DirectoryShare ) i.next();
+                    selectedShareFiles = sh;
+                    filesSearch();
+                }
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+        });
 
         fileSearch = new Text ( composite_9, SWT.BORDER );
         fileSearch.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
@@ -3709,6 +3808,41 @@ public class SWTApp
 
         } );
 
+        TableViewerColumn fcol2a = new TableViewerColumn ( fileTableViewer, SWT.NONE );
+        fcol2a.getColumn().setText ( "Status" );
+        fcol2a.getColumn().setWidth ( 70 );
+        fcol2a.setLabelProvider ( new CObjListStringColumnLabelProvider ( CObj.STATUS ) );
+        fcol2a.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                String ns = CObj.docString ( CObj.STATUS );
+
+                if ( ns.equals ( sortFileField1 ) )
+                {
+                    sortFileReverse = !sortFileReverse;
+                }
+
+                else
+                {
+                    sortFileField1 = ns;
+                    sortFileReverse = false;
+                    sortFileType1 = SortField.Type.STRING;
+                    sortFileField2 = null;
+                    sortFileType2 = null;
+                }
+
+                filesSearch();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
         TableViewerColumn fcol3 = new TableViewerColumn ( fileTableViewer, SWT.NONE );
         fcol3.getColumn().setText ( "Local File" );
         fcol3.getColumn().setWidth ( 100 );
@@ -3781,6 +3915,29 @@ public class SWTApp
 
                     }
 
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        MenuItem mntmDownloadFile3 = new MenuItem ( menu_3, SWT.NONE );
+        mntmDownloadFile3.setText ( "Download File to share.." );
+        mntmDownloadFile3.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                if ( selectedIdentity != null )
+                {
+                    IStructuredSelection sel = ( IStructuredSelection ) fileTableViewer.getSelection();
+
+                    downloadToShareDialog.open(sel, true);
                 }
 
             }
@@ -3961,8 +4118,33 @@ public class SWTApp
         textNumberFiles.setEditable ( false );
         new Label ( composite_14, SWT.NONE );
 
+        new Label(composite_14, SWT.NONE);
+        
+        btnDefaultDownloadLocation = new Button(composite_14, SWT.CHECK);
+        btnDefaultDownloadLocation.setText("Default Download Location");
+        btnDefaultDownloadLocation.addSelectionListener(new SelectionListener() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+                if ( selectedShare != null )
+                {
+                    getNode().getShareManager().addShare( 
+                    		selectedShare.getCommunityId(),
+                            selectedShare.getMemberId(), 
+                            selectedShare.getShareName(), 
+                            selectedShare.getDirectory(), 
+                            btnDefaultDownloadLocation.getSelection() );
+
+                }				
+			}
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+			}
+        });
+        
         Button btnDelete = new Button ( composite_14, SWT.NONE );
         btnDelete.setText ( "Delete" );
+        
+        new Label(composite_14, SWT.NONE);
         btnDelete.addSelectionListener ( new SelectionListener()
         {
             @Override
@@ -4382,4 +4564,13 @@ public class SWTApp
         return shareComboViewer;
     }
 
+	public Combo getComboShareName() {
+		return comboShareName;
+	}
+	public ComboViewer getComboShareNameViewer() {
+		return comboShareNameViewer;
+	}
+	public Button getBtnDefaultDownloadLocation() {
+		return btnDefaultDownloadLocation;
+	}
 }

@@ -539,7 +539,7 @@ public class Index
         return r;
     }
 
-    public CObjList searchFiles ( String comid, String qstr, Sort srt )
+    public CObjList searchFiles ( String comid, String share, String qstr, Sort srt )
     {
         BooleanQuery query = new BooleanQuery();
 
@@ -548,6 +548,11 @@ public class Index
 
         Term comterm = new Term ( CObj.docString ( CObj.COMMUNITYID ), comid );
         query.add ( new TermQuery ( comterm ), BooleanClause.Occur.MUST );
+        
+        if (share != null) {
+            Term shareterm = new Term ( CObj.docString ( CObj.SHARE_NAME ), share );
+            query.add ( new TermQuery ( shareterm ), BooleanClause.Occur.MUST );
+        }
 
         Matcher m = Pattern.compile ( "\\S+" ).matcher ( qstr );
 

@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import org.hibernate.Query;
 import org.hibernate.Session;
 
+import aktie.crypto.Utils;
 import aktie.data.CObj;
 import aktie.data.DirectoryShare;
 import aktie.data.HH2Session;
@@ -653,6 +654,14 @@ public class RequestFileHandler
             //the part values are checked.
             try
             {
+                String id = Utils.mergeIds ( rf.getCommunityId(), 
+                			rf.getFragmentDigest(), rf.getWholeDigest() );
+                CObj fi = index.getFileInfo ( id );
+                if (fi != null) {
+                	fi.pushString(CObj.STATUS, "dnld");
+                	index.index(fi);
+                }
+                
                 if ( !lf.exists() )
                 {
                     lf = new File ( lf.getPath() + AKTIEPART );
@@ -844,6 +853,8 @@ public class RequestFileHandler
             String share = hasfile.getString ( CObj.SHARE_NAME );
             String lfs = hasfile.getPrivate ( CObj.LOCALFILE );
             String filename = hasfile.getString ( CObj.NAME );
+            
+            log.info("USR_DOWNLOAD_FILE: " + comid + " " + creator + " " + pdig + " " + wdig + " " + share + " " + lfs + " " + filename);
 
             //If share and localfile are both set make sure the localfile
             //is in the share path or else don't do it!
@@ -852,6 +863,8 @@ public class RequestFileHandler
                 //System.out.println()
                 DirectoryShare s = shareMan.getShare ( comid, creator, share );
 
+                log.info("SHARE: " + s);
+                
                 if ( s == null )
                 {
                     hasfile.pushString ( CObj.SHARE_NAME, null );
@@ -953,6 +966,8 @@ public class RequestFileHandler
                     {
                         //We already have the file defined in the localfile.  set localpath to
                         //the locafile value.  It won't copy over itself bellow.
+                    	//Note we would have found as a hasfile if the system knew about it
+                    	//keep going and simply add the file to the database.
                         localpath = lfs;
                     }
 
@@ -1008,6 +1023,8 @@ public class RequestFileHandler
 
                         }
 
+                        //See if the destination file is in a share, and set the share name
+                        //if it is.
                         if ( share == null )
                         {
                             DirectoryShare shr = findShareForFile ( comid, creator, lf );
@@ -1046,9 +1063,11 @@ public class RequestFileHandler
                     }
 
                 }
-
+                
                 else
                 {
+                	//We do not have a local copy of the file already, so actually create 
+                	//a request for the file
 
                     File lf = null;
 
@@ -1088,7 +1107,13 @@ public class RequestFileHandler
 
                         else
                         {
-                            lf = new File ( downloadDir.getPath() + File.separator + filename );
+                        	DirectoryShare ds = shareMan.getDefaultShare(comid, creator);
+                        	if (ds != null) {
+                        		lf = new File (ds.getDirectory() + File.separator + filename);
+                        	}
+                        	else {
+                                lf = new File ( downloadDir.getPath() + File.separator + filename );
+                        	}
                         }
 
                         lf = makeSureNewFile ( lf );

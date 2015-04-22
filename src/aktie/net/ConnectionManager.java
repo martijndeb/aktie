@@ -1121,11 +1121,11 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
     }
 
-    //private void deleteOldRequests()
-    //{
-    //hardcode 10 days?
-    //    fileHandler.deleteOldRequests ( 10L * 24L * 60L * 60L * 1000L );
-    //}
+    private void deleteOldRequests()
+    {
+    	//hardcode 10 days?
+        fileHandler.deleteOldRequests ( 60L * 24L * 60L * 60L * 1000L );
+    }
 
     private void resetupLastUpdateToForceDecode()
     {
@@ -1307,7 +1307,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
             {
                 checkConnections();
                 decodeMemberships();
-                //deleteOldRequests();
+                deleteOldRequests();
             }
 
             delay();

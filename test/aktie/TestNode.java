@@ -208,6 +208,7 @@ public class TestNode
 
             assertEquals ( 2, clist.size() );
             CObj n0seed = clist.get ( 0 );
+            CObj n0seedb = clist.get(1);
             clist.close();
 
             System.out.println ( "SEED NODES.............................." );
@@ -945,7 +946,7 @@ public class TestNode
             File nf = FUtils.createTestFile ( tmp, 10L * 1024L * 1024L + 263L );
 
             n3.getShareManager().addShare ( com0n0.getDig(), node3b.getId(),
-                                            "testshare", tmp.getPath() );
+                                            "testshare", tmp.getPath(), false );
 
             List<DirectoryShare> slst = n3.getShareManager().listShares ( com0n0.getDig(), node3b.getId() );
 
@@ -1195,6 +1196,81 @@ public class TestNode
             assertEquals ( 1, clst.size() );
             clst.close();
 
+            //subscribe wtih seed0b
+            CObj sub0b = new CObj();
+            sub0b.setType ( CObj.SUBSCRIPTION );
+            sub0b.pushString ( CObj.CREATOR, n0seedb.getId() );
+            sub0b.pushString ( CObj.COMMUNITYID, com0n0.getDig() );
+            sub0b.pushString ( CObj.SUBSCRIBED, "true" );
+            n0.enqueue ( sub0b );
+
+            try
+            {
+                Thread.sleep ( 2000 );
+            }
+
+            catch ( InterruptedException e )
+            {
+                e.printStackTrace();
+            }
+
+            n0.sendRequestsNow();
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
+
+            try
+            {
+                Thread.sleep ( 10000 );
+            }
+
+            catch ( InterruptedException e )
+            {
+                e.printStackTrace();
+            }
+
+            //Download a localfile to make sure it's just copied over and not really downloaded.
+            File tmp2 = new File ( "testshare2" );
+            FUtils.deleteDir ( tmp2 );
+            tmp2.mkdirs();
+
+            n0.getShareManager().addShare ( com0n0.getDig(), n0seedb.getId(),
+                                            "testshare2", tmp2.getPath(), false );
+
+            slst = n0.getShareManager().listShares ( com0n0.getDig(), n0seedb.getId() );
+
+            for ( int c = 0; c < slst.size(); c++ )
+            {
+                DirectoryShare ds = slst.get ( 0 );
+                System.out.println ( "DS name: " + ds.getShareName() );
+            }
+
+            assertEquals ( 1, slst.size() );
+
+            log.setLevel ( Level.INFO );
+
+            hf0.setType ( CObj.USR_DOWNLOAD_FILE );
+            hf0.pushString ( CObj.CREATOR, n0seedb.getId() );
+            hf0.pushString(CObj.SHARE_NAME, "testshare2");
+            hf0.getPrivatedata().remove(CObj.LOCALFILE);
+            n0.enqueue ( hf0 );
+           
+            try
+            {
+                Thread.sleep ( 10000 );
+            }
+
+            catch ( InterruptedException e )
+            {
+                e.printStackTrace();
+            }
+
+            File tf = new File("testshare2" + File.separator + nf.getName());
+            assertTrue(tf.exists());
+            
+            assertTrue ( FUtils.diff ( nf, tf ) );
+           
+            
             n0.close();
             n1.close();
             n2.close();

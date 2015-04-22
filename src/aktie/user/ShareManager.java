@@ -342,6 +342,55 @@ public class ShareManager implements Runnable
 
     }
 
+    @SuppressWarnings ( "unchecked" )
+    public DirectoryShare getDefaultShare ( String comid, String memid )
+    {
+        DirectoryShare r = null;
+        Session s = null;
+
+        try
+        {
+            s = session.getSession();
+            Query q = s.createQuery ( "SELECT x FROM DirectoryShare x WHERE "
+                                      + "x.defaultDownload = :def AND "
+                                      + "x.communityId = :comid AND "
+                                      + "x.memberId = :memid" );
+            q.setParameter ( "def", true );
+            q.setParameter("comid", comid);
+            q.setParameter("memid", memid);
+            List<DirectoryShare> dlst = q.list();
+
+            if ( dlst.size() > 0 )
+            {
+                r = dlst.get ( 0 );
+            }
+
+            s.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+
+            if ( s != null )
+            {
+                try
+                {
+                    s.close();
+                }
+
+                catch ( Exception e2 )
+                {
+                }
+
+            }
+
+        }
+
+        return r;
+
+    }
+
     public DirectoryShare getShare ( long id )
     {
         DirectoryShare r = null;
@@ -494,7 +543,7 @@ public class ShareManager implements Runnable
     }
 
     @SuppressWarnings ( "unchecked" )
-    public void addShare ( String comid, String memid, String name, String dir )
+    public void addShare ( String comid, String memid, String name, String dir, boolean def )
     {
         String conn = null;
         File sd = new File ( dir );
@@ -542,10 +591,25 @@ public class ShareManager implements Runnable
                     d = new DirectoryShare();
                 }
 
+                if (def) {
+                    q = s.createQuery ( "SELECT x FROM DirectoryShare x WHERE "
+                            + "x.defaultDownload = :def AND "
+                            + "x.communityId = :comid AND x.memberId = :memid" );
+                    q.setParameter ( "def", true );
+                    q.setParameter ( "comid", comid );
+                    q.setParameter ( "memid", memid );
+                    sl = q.list();
+                    for (DirectoryShare ds : sl) {
+                    	ds.setDefaultDownload(false);
+                    	s.merge(ds);
+                    }
+                	
+                }
                 d.setCommunityId ( comid );
                 d.setDirectory ( conn );
                 d.setMemberId ( memid );
                 d.setShareName ( name );
+                d.setDefaultDownload(def);
 
                 s.merge ( d );
 
@@ -606,7 +670,7 @@ public class ShareManager implements Runnable
         notifyAll();
     }
 
-    public static long SHARE_DELAY = 1L * 60L * 60L * 1000L;
+    public static long SHARE_DELAY = 60L * 1000L;
 
     public synchronized void delay()
     {

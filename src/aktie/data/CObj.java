@@ -119,6 +119,7 @@ public class CObj
     public static String FILENAME = "fname";
     public static String UPGRADEFLAG = "upgrade";
     public static String SHARE_NAME = "sharename";
+    public static String STATUS = "fstatus";
 
     public static String PARAM_ID = "id";
     public static String PARAM_TYPE = "type";

@@ -262,6 +262,7 @@ public class Wrapper
         cmd.add ( "-Xmx128m" );
         cmd.add ( "-cp" );
         StringBuilder sb = new StringBuilder();
+        System.out.println("LIST LIBS: " + libd.getPath());
         File ll[] = libd.listFiles();
 
         if ( ll.length > 0 )
@@ -426,18 +427,21 @@ public class Wrapper
 
                 //create all non exists folders
                 //else you will hit FileNotFoundException for compressed folder
-                new File ( newFile.getParent() ).mkdirs();
+                File pd = new File ( newFile.getParent() );
+               	pd.mkdirs();
+                if (pd.isDirectory() && !ze.isDirectory()) {
 
-                FileOutputStream fos = new FileOutputStream ( newFile );
+                	FileOutputStream fos = new FileOutputStream ( newFile );
 
-                int len;
+                	int len;
 
-                while ( ( len = zis.read ( buffer ) ) > 0 )
-                {
-                    fos.write ( buffer, 0, len );
+                	while ( ( len = zis.read ( buffer ) ) > 0 )
+                	{
+                		fos.write ( buffer, 0, len );
+                	}
+
+                	fos.close();
                 }
-
-                fos.close();
                 ze = zis.getNextEntry();
             }
 

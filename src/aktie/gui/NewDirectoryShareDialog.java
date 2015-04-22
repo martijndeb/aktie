@@ -30,6 +30,7 @@ public class NewDirectoryShareDialog extends Dialog
     private CObj memId;
     private CObj comId;
     private NewDirectoryShareDialog This;
+    private Button btnDefaultDownloadLocation;
 
     /**
         Create the dialog.
@@ -116,6 +117,11 @@ public class NewDirectoryShareDialog extends Dialog
 
         Button btnBrowse = new Button ( container, SWT.NONE );
         btnBrowse.setText ( "Browse" );
+        new Label(container, SWT.NONE);
+        
+        btnDefaultDownloadLocation = new Button(container, SWT.CHECK);
+        btnDefaultDownloadLocation.setText("Default Download Location");
+        new Label(container, SWT.NONE);
         new Label ( container, SWT.NONE );
         btnBrowse.addSelectionListener ( new SelectionListener()
         {
@@ -174,7 +180,8 @@ public class NewDirectoryShareDialog extends Dialog
     protected void okPressed()
     {
         app.getNode().getShareManager().addShare ( comId.getDig(),
-                memId.getId(), textShareName.getText(), textSharePath.getText() );
+                memId.getId(), textShareName.getText(), textSharePath.getText(), 
+                btnDefaultDownloadLocation.getSelection() );
         super.okPressed();
     }
 
@@ -184,7 +191,7 @@ public class NewDirectoryShareDialog extends Dialog
     @Override
     protected Point getInitialSize()
     {
-        return new Point ( 550, 250 );
+        return new Point ( 550, 277 );
     }
 
     public Label getLblMemberid()
@@ -197,4 +204,7 @@ public class NewDirectoryShareDialog extends Dialog
         return lblComid;
     }
 
+	public Button getBtnDefaultDownloadLocation() {
+		return btnDefaultDownloadLocation;
+	}
 }
