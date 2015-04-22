@@ -94,11 +94,13 @@ public class HasFileCreator
                 {
                     if ( "false".equals ( stillhas ) )
                     {
-                        fi.pushString(CObj.STATUS, "");
+                        fi.pushString ( CObj.STATUS, "" );
                         localfile = "";
                     }
-                    else {
-                        fi.pushString(CObj.STATUS, "done");
+
+                    else
+                    {
+                        fi.pushString ( CObj.STATUS, "done" );
                     }
 
                     fi.pushString ( CObj.LOCALFILE, localfile );

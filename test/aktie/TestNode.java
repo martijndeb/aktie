@@ -208,7 +208,7 @@ public class TestNode
 
             assertEquals ( 2, clist.size() );
             CObj n0seed = clist.get ( 0 );
-            CObj n0seedb = clist.get(1);
+            CObj n0seedb = clist.get ( 1 );
             clist.close();
 
             System.out.println ( "SEED NODES.............................." );
@@ -1251,10 +1251,10 @@ public class TestNode
 
             hf0.setType ( CObj.USR_DOWNLOAD_FILE );
             hf0.pushString ( CObj.CREATOR, n0seedb.getId() );
-            hf0.pushString(CObj.SHARE_NAME, "testshare2");
-            hf0.getPrivatedata().remove(CObj.LOCALFILE);
+            hf0.pushString ( CObj.SHARE_NAME, "testshare2" );
+            hf0.getPrivatedata().remove ( CObj.LOCALFILE );
             n0.enqueue ( hf0 );
-           
+
             try
             {
                 Thread.sleep ( 10000 );
@@ -1265,12 +1265,12 @@ public class TestNode
                 e.printStackTrace();
             }
 
-            File tf = new File("testshare2" + File.separator + nf.getName());
-            assertTrue(tf.exists());
-            
+            File tf = new File ( "testshare2" + File.separator + nf.getName() );
+            assertTrue ( tf.exists() );
+
             assertTrue ( FUtils.diff ( nf, tf ) );
-           
-            
+
+
             n0.close();
             n1.close();
             n2.close();

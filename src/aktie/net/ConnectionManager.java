@@ -1123,7 +1123,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
     private void deleteOldRequests()
     {
-    	//hardcode 10 days?
+        //hardcode 10 days?
         fileHandler.deleteOldRequests ( 60L * 24L * 60L * 60L * 1000L );
     }
 

@@ -548,8 +548,9 @@ public class Index
 
         Term comterm = new Term ( CObj.docString ( CObj.COMMUNITYID ), comid );
         query.add ( new TermQuery ( comterm ), BooleanClause.Occur.MUST );
-        
-        if (share != null) {
+
+        if ( share != null )
+        {
             Term shareterm = new Term ( CObj.docString ( CObj.SHARE_NAME ), share );
             query.add ( new TermQuery ( shareterm ), BooleanClause.Occur.MUST );
         }

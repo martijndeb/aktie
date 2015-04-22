@@ -356,8 +356,8 @@ public class ShareManager implements Runnable
                                       + "x.communityId = :comid AND "
                                       + "x.memberId = :memid" );
             q.setParameter ( "def", true );
-            q.setParameter("comid", comid);
-            q.setParameter("memid", memid);
+            q.setParameter ( "comid", comid );
+            q.setParameter ( "memid", memid );
             List<DirectoryShare> dlst = q.list();
 
             if ( dlst.size() > 0 )
@@ -591,25 +591,29 @@ public class ShareManager implements Runnable
                     d = new DirectoryShare();
                 }
 
-                if (def) {
+                if ( def )
+                {
                     q = s.createQuery ( "SELECT x FROM DirectoryShare x WHERE "
-                            + "x.defaultDownload = :def AND "
-                            + "x.communityId = :comid AND x.memberId = :memid" );
+                                        + "x.defaultDownload = :def AND "
+                                        + "x.communityId = :comid AND x.memberId = :memid" );
                     q.setParameter ( "def", true );
                     q.setParameter ( "comid", comid );
                     q.setParameter ( "memid", memid );
                     sl = q.list();
-                    for (DirectoryShare ds : sl) {
-                    	ds.setDefaultDownload(false);
-                    	s.merge(ds);
+
+                    for ( DirectoryShare ds : sl )
+                    {
+                        ds.setDefaultDownload ( false );
+                        s.merge ( ds );
                     }
-                	
+
                 }
+
                 d.setCommunityId ( comid );
                 d.setDirectory ( conn );
                 d.setMemberId ( memid );
                 d.setShareName ( name );
-                d.setDefaultDownload(def);
+                d.setDefaultDownload ( def );
 
                 s.merge ( d );
 

@@ -21,7 +21,7 @@ public class DirectoryShare
     private long numberFiles;
     private long numberSubFolders;
     private String message;
-    
+
     private boolean defaultDownload;
 
     @Override
@@ -137,12 +137,14 @@ public class DirectoryShare
         this.shareName = shareName;
     }
 
-	public boolean isDefaultDownload() {
-		return defaultDownload;
-	}
+    public boolean isDefaultDownload()
+    {
+        return defaultDownload;
+    }
 
-	public void setDefaultDownload(boolean defaultDownload) {
-		this.defaultDownload = defaultDownload;
-	}
+    public void setDefaultDownload ( boolean defaultDownload )
+    {
+        this.defaultDownload = defaultDownload;
+    }
 
 }
