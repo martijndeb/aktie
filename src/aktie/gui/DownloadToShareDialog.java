@@ -92,6 +92,7 @@ public class DownloadToShareDialog extends Dialog
         comboShareViewer.setContentProvider ( new DirectoryShareContentProvider() );
         comboShareViewer.setLabelProvider ( new DirectoryShareLabelProvider() );
         comboShare = comboShareViewer.getCombo();
+        comboShare.setEnabled ( false );
         comboShare.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
 
         setInput ( downloadList, doPreview );

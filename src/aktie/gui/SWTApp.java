@@ -2275,6 +2275,7 @@ public class SWTApp
     private Combo comboShareName;
     private ComboViewer comboShareNameViewer;
     private Button btnDefaultDownloadLocation;
+    private Text txtAShareIs;
 
     private boolean doDownloadLrg ( CObj c )
     {
@@ -3655,6 +3656,7 @@ public class SWTApp
         comboShareNameViewer.setLabelProvider ( new DirectoryShareLabelProvider() );
         comboShareName = comboShareNameViewer.getCombo();
         comboShareName.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
+        comboShareName.setEnabled ( false );
         comboShareName.addSelectionListener ( new SelectionListener()
         {
             @Override
@@ -4070,6 +4072,7 @@ public class SWTApp
         shareComboViewer.setContentProvider ( new DirectoryShareContentProvider() );
         shareComboViewer.setLabelProvider ( new DirectoryShareLabelProvider() );
         shareCombo = shareComboViewer.getCombo();
+        shareCombo.setEnabled ( false );
         shareCombo.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
         shareCombo.addSelectionListener ( new SelectionListener()
         {
@@ -4162,6 +4165,16 @@ public class SWTApp
         btnDelete.setText ( "Delete" );
 
         new Label ( composite_14, SWT.NONE );
+
+        txtAShareIs = new Text ( composite_14, SWT.BORDER );
+        txtAShareIs.setEditable ( false );
+        txtAShareIs.setText ( "A Share is a directory or folder on your system, where all\n"
+                              + "files are automatically shared with the community.\n"
+                              + "Any new files copied to the directory will automatically\n"
+                              + "be shared.  You can move and rename files within a share,\n"
+                              + "and ohters will still be able to download.  You can also\n"
+                              + "do download new files to Share directories." );
+        txtAShareIs.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
         btnDelete.addSelectionListener ( new SelectionListener()
         {
             @Override

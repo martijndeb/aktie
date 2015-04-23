@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -47,7 +49,6 @@ public class ShareManager implements Runnable
         hf.pushString ( CObj.COMMUNITYID, s.getCommunityId() );
         hf.pushString ( CObj.SHARE_NAME, s.getShareName() );
         hf.pushPrivate ( CObj.LOCALFILE, f.getPath() ); //Canonical name gotten during processing
-        System.out.println ( "ADDING FILE!!! " );
         userQueue.enqueue ( hf );
     }
 
@@ -65,8 +66,6 @@ public class ShareManager implements Runnable
             e.printStackTrace();
         }
 
-        System.out.println ( "CHECKING FILE:::: " + fp );
-
         if ( !fp.endsWith ( ".aktiepart" ) && !fp.endsWith ( ".aktiebackup" ) )
         {
 
@@ -75,11 +74,30 @@ public class ShareManager implements Runnable
 
                 CObjList mlst = index.getLocalHasFiles ( s.getCommunityId(), s.getMemberId(), fp );
 
-                System.out.println ( "CHECKING FILE:::: mlst " + mlst.size() );
-
                 if ( mlst.size() == 0 )
                 {
                     addFile ( s, f );
+                }
+
+                else
+                {
+                    try
+                    {
+                        CObj mhf = mlst.get ( 0 );
+                        String shr = mhf.getString ( CObj.SHARE_NAME );
+
+                        if ( !s.getShareName().equals ( shr ) )
+                        {
+                            addFile ( s, f );
+                        }
+
+                    }
+
+                    catch ( IOException e )
+                    {
+                        e.printStackTrace();
+                    }
+
                 }
 
                 mlst.close();
@@ -545,6 +563,19 @@ public class ShareManager implements Runnable
     @SuppressWarnings ( "unchecked" )
     public void addShare ( String comid, String memid, String name, String dir, boolean def )
     {
+        boolean hassometing = false;
+
+        if ( name != null )
+        {
+            Matcher m = Pattern.compile ( "(\\S+)" ).matcher ( name );
+            hassometing = m.find();
+        }
+
+        if ( !hassometing )
+        {
+            return;
+        }
+
         String conn = null;
         File sd = new File ( dir );
 

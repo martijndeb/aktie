@@ -860,7 +860,7 @@ public class RequestFileHandler
 
             //If share and localfile are both set make sure the localfile
             //is in the share path or else don't do it!
-            if ( share != null && lfs != null )
+            if ( share != null && lfs != null && shareMan != null )
             {
                 //System.out.println()
                 DirectoryShare s = shareMan.getShare ( comid, creator, share );
@@ -1007,7 +1007,7 @@ public class RequestFileHandler
                         else
                         {
                             //We have it in another group.  Create a new hasfile for this
-                            if ( share != null )
+                            if ( share != null && shareMan != null )
                             {
                                 DirectoryShare ds = shareMan.getShare ( comid, creator, share );
 
@@ -1096,7 +1096,7 @@ public class RequestFileHandler
 
                     if ( lf == null )
                     {
-                        if ( share != null )
+                        if ( share != null && shareMan != null )
                         {
                             DirectoryShare ds = shareMan.getShare ( comid, creator, share );
 
@@ -1109,11 +1109,17 @@ public class RequestFileHandler
 
                         else
                         {
-                            DirectoryShare ds = shareMan.getDefaultShare ( comid, creator );
+                            DirectoryShare ds = null;
+
+                            if ( shareMan != null )
+                            {
+                                ds = shareMan.getDefaultShare ( comid, creator );
+                            }
 
                             if ( ds != null )
                             {
                                 lf = new File ( ds.getDirectory() + File.separator + filename );
+                                hasfile.pushString ( CObj.SHARE_NAME, ds.getShareName() );
                             }
 
                             else
