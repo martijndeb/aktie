@@ -3651,7 +3651,7 @@ public class SWTApp
         gd_label_1.heightHint = 25;
         label_1.setLayoutData ( gd_label_1 );
 
-        comboShareNameViewer = new ComboViewer ( composite_9, SWT.NONE );
+        comboShareNameViewer = new ComboViewer ( composite_9, SWT.NONE | SWT.READ_ONLY );
         comboShareNameViewer.setContentProvider ( new DirectoryShareContentProvider() );
         comboShareNameViewer.setLabelProvider ( new DirectoryShareLabelProvider() );
         comboShareName = comboShareNameViewer.getCombo();
@@ -4068,7 +4068,7 @@ public class SWTApp
 
         } );
 
-        shareComboViewer = new ComboViewer ( composite_14, SWT.NONE );
+        shareComboViewer = new ComboViewer ( composite_14, SWT.NONE | SWT.READ_ONLY );
         shareComboViewer.setContentProvider ( new DirectoryShareContentProvider() );
         shareComboViewer.setLabelProvider ( new DirectoryShareLabelProvider() );
         shareCombo = shareComboViewer.getCombo();

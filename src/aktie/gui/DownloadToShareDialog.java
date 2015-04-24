@@ -88,11 +88,10 @@ public class DownloadToShareDialog extends Dialog
         lblFilesSelected.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
         lblFilesSelected.setText ( "Files selected: " );
 
-        comboShareViewer = new ComboViewer ( container, SWT.NONE );
+        comboShareViewer = new ComboViewer ( container, SWT.NONE | SWT.READ_ONLY);
         comboShareViewer.setContentProvider ( new DirectoryShareContentProvider() );
         comboShareViewer.setLabelProvider ( new DirectoryShareLabelProvider() );
         comboShare = comboShareViewer.getCombo();
-        comboShare.setEnabled ( false );
         comboShare.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
 
         setInput ( downloadList, doPreview );
