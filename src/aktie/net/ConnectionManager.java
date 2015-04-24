@@ -745,6 +745,58 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                 //We're done, but the RequestFile wasn't updated properly.  do it now.
                                 if ( fileHandler.claimFileComplete ( rf ) )
                                 {
+                                    //rename the aktiepart file to the real file name
+                                    File lff = new File ( rf.getLocalFile() );
+                                    File rlp = new File ( rf.getLocalFile() + RequestFileHandler.AKTIEPART );
+
+                                    int lps = 120;
+
+                                    while ( lff.exists() && lps > 0 )
+                                    {
+                                        lps--;
+
+                                        if ( !lff.delete() )
+                                        {
+                                            log.info ( "Could not delete file: " + lff.getPath() );
+
+                                            try
+                                            {
+                                                Thread.sleep ( 1000L );
+                                            }
+
+                                            catch ( InterruptedException e )
+                                            {
+                                                e.printStackTrace();
+                                            }
+
+                                        }
+
+                                    }
+
+                                    lps = 120;
+
+                                    while ( rlp.exists() && lps > 0 )
+                                    {
+                                        lps--;
+
+                                        if ( !rlp.renameTo ( lff ) )
+                                        {
+                                            log.info ( "Failed to rename: " + rlp.getPath() + " to " + lff.getPath() );
+
+                                            try
+                                            {
+                                                Thread.sleep ( 1000L );
+                                            }
+
+                                            catch ( InterruptedException e )
+                                            {
+                                                e.printStackTrace();
+                                            }
+
+                                        }
+
+                                    }
+
                                     //Generate a HasFileRecord
                                     CObj hf = new CObj();
                                     hf.setType ( CObj.HASFILE );

@@ -207,4 +207,10 @@ public class NewFileProcessor extends GenericProcessor
         return false;
     }
 
+
+    public GuiCallback getGuiCallback()
+    {
+        return guicallback;
+    }
+
 }

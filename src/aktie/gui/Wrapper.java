@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -202,21 +203,49 @@ public class Wrapper
             {
                 String ufn = comp.group ( 1 );
 
-                File bakfile = new File ( bd.getPath() + File.separator + ufn + ".bak" );
+                String hash = getUpdateHash ( ufn );
+                String rhash = FUtils.digWholeFile ( uf.getPath() );
 
-                //delete if bak file already there.
-                if ( bakfile.exists() )
+                if ( hash != null && hash.equals ( rhash ) )
                 {
-                    bakfile.delete();
-                }
 
-                File ef = new File ( libd.getPath() + File.separator + ufn );
 
-                if ( ef.exists() )
-                {
+                    File bakfile = new File ( bd.getPath() + File.separator + ufn + ".bak" );
+
+                    //delete if bak file already there.
+                    if ( bakfile.exists() )
+                    {
+                        bakfile.delete();
+                    }
+
+                    File ef = new File ( libd.getPath() + File.separator + ufn );
+
+                    if ( ef.exists() )
+                    {
+                        try
+                        {
+                            FUtils.copy ( ef, bakfile );
+                        }
+
+                        catch ( IOException e )
+                        {
+                            e.printStackTrace();
+                        }
+
+                    }
+
+                    //Now change upgrade file
+                    System.out.println ( "UPGRADING: " + ef.getPath() );
+
                     try
                     {
-                        FUtils.copy ( ef, bakfile );
+                        FUtils.copy ( uf, ef );
+
+                        if ( !uf.delete() )
+                        {
+                            System.out.println ( "ERROR: Could not delete upgrade file." );
+                        }
+
                     }
 
                     catch ( IOException e )
@@ -226,23 +255,9 @@ public class Wrapper
 
                 }
 
-                //Now change upgrade file
-                System.out.println ( "UPGRADING: " + ef.getPath() );
-
-                try
+                else
                 {
-                    FUtils.copy ( uf, ef );
-
-                    if ( !uf.delete() )
-                    {
-                        System.out.println ( "ERROR: Could not delete upgrade file." );
-                    }
-
-                }
-
-                catch ( IOException e )
-                {
-                    e.printStackTrace();
+                    uf.delete();
                 }
 
             }
@@ -460,6 +475,89 @@ public class Wrapper
             ex.printStackTrace();
         }
 
+    }
+
+    public static Properties loadExistingProps()
+    {
+        Properties p = new Properties();
+        File propfile = new File ( RUNDIR + File.separator + "aktie_node" + File.separator + "aktie.pros" );
+
+        if ( propfile.exists() )
+        {
+            try
+            {
+                FileInputStream fis = new FileInputStream ( propfile );
+                p.load ( fis );
+                fis.close();
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        return p;
+    }
+
+    public static void savePropsFile ( Properties p )
+    {
+        File propfile = new File ( RUNDIR + File.separator + "aktie_node" + File.separator + "aktie.pros" );
+
+        try
+        {
+            FileOutputStream fos = new FileOutputStream ( propfile );
+            p.store ( fos, "Aktie properties" );
+            fos.close();
+        }
+
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static String getLastDevMessage()
+    {
+        String msg = "Developer messages.";
+
+        Properties p = loadExistingProps();
+
+        String m = p.getProperty ( "aktie.developerMessage" );
+
+        if ( m != null )
+        {
+            msg = m;
+        }
+
+        return msg;
+    }
+
+    public static void saveLastDevMessage ( String msg )
+    {
+        Properties p = loadExistingProps();
+
+        p.setProperty ( "aktie.developerMessage", msg );
+
+        savePropsFile ( p );
+    }
+
+    public static String getUpdateHash ( String file )
+    {
+        Properties p = loadExistingProps();
+
+        return p.getProperty ( "hash." + file );
+    }
+
+    public static void saveUpdateHash ( String file, String hash )
+    {
+        Properties p = loadExistingProps();
+
+        p.setProperty ( "hash." + file, hash );
+
+        savePropsFile ( p );
     }
 
 }

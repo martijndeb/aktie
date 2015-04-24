@@ -662,6 +662,12 @@ public class RequestFileHandler
                 {
                     fi.pushString ( CObj.STATUS, "dnld" );
                     index.index ( fi );
+
+                    if ( nfp != null && nfp.getGuiCallback() != null )
+                    {
+                        nfp.getGuiCallback().update ( fi );
+                    }
+
                 }
 
                 if ( !lf.exists() )

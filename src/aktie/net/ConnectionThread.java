@@ -748,14 +748,52 @@ public class ConnectionThread implements Runnable, GuiCallback
                                     File lff = new File ( rf.getLocalFile() );
                                     File rlp = new File ( rf.getLocalFile() + RequestFileHandler.AKTIEPART );
 
-                                    if ( lff.exists() )
+                                    int lps = 120;
+
+                                    while ( lff.exists() && lps > 0 )
                                     {
-                                        lff.delete();
+                                        lps--;
+
+                                        if ( !lff.delete() )
+                                        {
+                                            log.info ( "Could not delete file: " + lff.getPath() );
+
+                                            try
+                                            {
+                                                Thread.sleep ( 1000L );
+                                            }
+
+                                            catch ( InterruptedException e )
+                                            {
+                                                e.printStackTrace();
+                                            }
+
+                                        }
+
                                     }
 
-                                    if ( rlp.exists() )
+                                    lps = 120;
+
+                                    while ( rlp.exists() && lps > 0 )
                                     {
-                                        rlp.renameTo ( lff );
+                                        lps--;
+
+                                        if ( !rlp.renameTo ( lff ) )
+                                        {
+                                            log.info ( "Failed to rename: " + rlp.getPath() + " to " + lff.getPath() );
+
+                                            try
+                                            {
+                                                Thread.sleep ( 1000L );
+                                            }
+
+                                            catch ( InterruptedException e )
+                                            {
+                                                e.printStackTrace();
+                                            }
+
+                                        }
+
                                     }
 
                                     CObj hf = new CObj();

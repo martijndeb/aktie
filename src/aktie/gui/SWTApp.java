@@ -526,75 +526,6 @@ public class SWTApp
 
     private NetCallback netcallback = new NetCallback();
 
-    private String getLastDevMessage()
-    {
-        String msg = "Developer messages.";
-        Properties p = new Properties();
-        File propfile = new File ( nodeDir + File.separator + "aktie.pros" );
-
-        if ( propfile.exists() )
-        {
-            try
-            {
-                FileInputStream fis = new FileInputStream ( propfile );
-                p.load ( fis );
-                fis.close();
-                String m = p.getProperty ( "aktie.developerMessage" );
-
-                if ( m != null )
-                {
-                    msg = m;
-                }
-
-            }
-
-            catch ( Exception e )
-            {
-                e.printStackTrace();
-            }
-
-        }
-
-        return msg;
-    }
-
-    private void saveLastDevMessage ( String msg )
-    {
-        Properties p = new Properties();
-        File propfile = new File ( nodeDir + File.separator + "aktie.pros" );
-
-        if ( propfile.exists() )
-        {
-            try
-            {
-                FileInputStream fis = new FileInputStream ( propfile );
-                p.load ( fis );
-                fis.close();
-            }
-
-            catch ( Exception e )
-            {
-                e.printStackTrace();
-            }
-
-        }
-
-        p.setProperty ( "aktie.developerMessage", msg );
-
-        try
-        {
-            FileOutputStream fos = new FileOutputStream ( propfile );
-            p.store ( fos, "Aktie properties" );
-            fos.close();
-        }
-
-        catch ( Exception e )
-        {
-            e.printStackTrace();
-        }
-
-    }
-
     /*
         ========================================================================
         this dumb  why would you do this here
@@ -632,11 +563,11 @@ public class SWTApp
                         File cf = new File ( libf );
                         //do upgrade if current digest does not match the upgrade file
                         boolean doup = true;
+                        String ndig = co.getString ( CObj.FILEDIGEST );
 
                         if ( cf.exists() )
                         {
                             String wdig = FUtils.digWholeFile ( libf );
-                            String ndig = co.getString ( CObj.FILEDIGEST );
                             doup = !wdig.equals ( ndig );
                         }
 
@@ -645,6 +576,8 @@ public class SWTApp
                             String upfile = parent +
                                             File.separator + "upgrade" +
                                             File.separator + fname;
+
+                            Wrapper.saveUpdateHash ( fname, ndig );
 
                             File f = new File ( upfile );
 
@@ -759,7 +692,7 @@ public class SWTApp
 
             if ( subj != null )
             {
-                saveLastDevMessage ( subj );
+                Wrapper.saveLastDevMessage ( subj );
 
                 Display.getDefault().asyncExec ( new Runnable()
                 {
@@ -961,6 +894,20 @@ public class SWTApp
                 {
                     setErrorMessage ( "", false );
                     String comid = co.getString ( CObj.COMMUNITYID );
+
+                    if ( CObj.FILE.equals ( co.getType() ) )
+                    {
+                        Display.getDefault().asyncExec ( new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                filesSearch();
+                            }
+
+                        } );
+
+                    }
 
                     if ( CObj.IDENTITY.equals ( co.getType() ) )
                     {
@@ -3656,7 +3603,6 @@ public class SWTApp
         comboShareNameViewer.setLabelProvider ( new DirectoryShareLabelProvider() );
         comboShareName = comboShareNameViewer.getCombo();
         comboShareName.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
-        comboShareName.setEnabled ( false );
         comboShareName.addSelectionListener ( new SelectionListener()
         {
             @Override
@@ -4072,7 +4018,6 @@ public class SWTApp
         shareComboViewer.setContentProvider ( new DirectoryShareContentProvider() );
         shareComboViewer.setLabelProvider ( new DirectoryShareLabelProvider() );
         shareCombo = shareComboViewer.getCombo();
-        shareCombo.setEnabled ( false );
         shareCombo.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
         shareCombo.addSelectionListener ( new SelectionListener()
         {
@@ -4505,7 +4450,7 @@ public class SWTApp
         bannerText = new Text ( shell, SWT.BORDER );
         bannerText.setEditable ( false );
         bannerText.setLayoutData ( new GridData ( SWT.FILL, SWT.BOTTOM, true, false, 1, 1 ) );
-        bannerText.setText ( getLastDevMessage() );
+        bannerText.setText ( Wrapper.getLastDevMessage() );
 
     }
 

@@ -706,6 +706,9 @@ public class ShareManager implements Runnable
     }
 
     public static long SHARE_DELAY = 60L * 1000L;
+    public static long CHECKHASFILE_DELAY = 8L * 60L * 60L * 1000L;
+
+    private long nextcheckhasfile = 0;
 
     public synchronized void delay()
     {
@@ -726,11 +729,18 @@ public class ShareManager implements Runnable
         {
             newshare = false;
             processShares();
-            checkAllHasFile();
 
             if ( !newshare )
             {
                 delay();
+            }
+
+            long curtime = System.currentTimeMillis();
+
+            if ( curtime >= nextcheckhasfile )
+            {
+                checkAllHasFile();
+                nextcheckhasfile = curtime + CHECKHASFILE_DELAY;
             }
 
         }
