@@ -564,6 +564,7 @@ public class SWTApp
                         //do upgrade if current digest does not match the upgrade file
                         boolean doup = true;
                         String ndig = co.getString ( CObj.FILEDIGEST );
+                        Long flen = co.getNumber ( CObj.FILESIZE );
 
                         if ( cf.exists() )
                         {
@@ -571,13 +572,13 @@ public class SWTApp
                             doup = !wdig.equals ( ndig );
                         }
 
-                        if ( doup )
+                        if ( doup && flen != null )
                         {
                             String upfile = parent +
                                             File.separator + "upgrade" +
                                             File.separator + fname;
 
-                            Wrapper.saveUpdateHash ( fname, ndig );
+                            Wrapper.saveUpdateLength ( fname, Long.toString ( flen ) );
 
                             File f = new File ( upfile );
 
@@ -652,28 +653,15 @@ public class SWTApp
         if ( "true".equals ( upf ) && "true".equals ( shf ) )
         {
             log.info ( "Upgrade download completed." );
-            File df = new File ( co.getPrivate ( CObj.LOCALFILE ) );
-            File cf = new File ( df.getPath() + ".COMPLETE" );
-
-            try
+            Display.getDefault().asyncExec ( new Runnable()
             {
-                FUtils.copy ( df, cf );
-                Display.getDefault().asyncExec ( new Runnable()
+                @Override
+                public void run()
                 {
-                    @Override
-                    public void run()
-                    {
-                        lblVersion.setText ( Wrapper.VERSION + "   Update downloaded.  Please restart." );
-                    }
+                    lblVersion.setText ( Wrapper.VERSION + "   Update downloaded.  Please restart." );
+                }
 
-                } );
-
-            }
-
-            catch ( IOException e )
-            {
-                e.printStackTrace();
-            }
+            } );
 
         }
 

@@ -190,62 +190,37 @@ public class Wrapper
 
         File libd = new File ( RUNDIR + File.separator + "lib" );
         File uplst[] = updir.listFiles();
-
-        Matcher comp = Pattern.compile ( "(.+)\\.COMPLETE$" ).matcher ( "" );
+        System.out.println ( "Upgrade list: " + uplst.length );
 
         for ( int c = 0; c < uplst.length; c++ )
         {
             File uf = uplst[c];
 
-            comp.reset ( uf.getName() );
+            String ufn = uf.getName();
 
-            if ( comp.find() )
+            String len = getUpdateLength ( ufn );
+            String rlen = Long.toString ( uf.length() );
+
+            System.out.println ( "Checking length: " + ufn + "  " + rlen + " is expected: " + len );
+
+            if ( len != null && len.equals ( rlen ) )
             {
-                String ufn = comp.group ( 1 );
 
-                String hash = getUpdateHash ( ufn );
-                String rhash = FUtils.digWholeFile ( uf.getPath() );
+                File bakfile = new File ( bd.getPath() + File.separator + ufn + ".bak" );
 
-                if ( hash != null && hash.equals ( rhash ) )
+                //delete if bak file already there.
+                if ( bakfile.exists() )
                 {
+                    bakfile.delete();
+                }
 
+                File ef = new File ( libd.getPath() + File.separator + ufn );
 
-                    File bakfile = new File ( bd.getPath() + File.separator + ufn + ".bak" );
-
-                    //delete if bak file already there.
-                    if ( bakfile.exists() )
-                    {
-                        bakfile.delete();
-                    }
-
-                    File ef = new File ( libd.getPath() + File.separator + ufn );
-
-                    if ( ef.exists() )
-                    {
-                        try
-                        {
-                            FUtils.copy ( ef, bakfile );
-                        }
-
-                        catch ( IOException e )
-                        {
-                            e.printStackTrace();
-                        }
-
-                    }
-
-                    //Now change upgrade file
-                    System.out.println ( "UPGRADING: " + ef.getPath() );
-
+                if ( ef.exists() )
+                {
                     try
                     {
-                        FUtils.copy ( uf, ef );
-
-                        if ( !uf.delete() )
-                        {
-                            System.out.println ( "ERROR: Could not delete upgrade file." );
-                        }
-
+                        FUtils.copy ( ef, bakfile );
                     }
 
                     catch ( IOException e )
@@ -255,11 +230,30 @@ public class Wrapper
 
                 }
 
-                else
+                //Now change upgrade file
+                System.out.println ( "UPGRADING: " + ef.getPath() );
+
+                try
                 {
-                    uf.delete();
+                    FUtils.copy ( uf, ef );
+
+                    if ( !uf.delete() )
+                    {
+                        System.out.println ( "ERROR: Could not delete upgrade file." );
+                    }
+
                 }
 
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                }
+
+            }
+
+            else
+            {
+                uf.delete();
             }
 
         }
@@ -544,18 +538,18 @@ public class Wrapper
         savePropsFile ( p );
     }
 
-    public static String getUpdateHash ( String file )
+    public static String getUpdateLength ( String file )
     {
         Properties p = loadExistingProps();
 
-        return p.getProperty ( "hash." + file );
+        return p.getProperty ( "length." + file );
     }
 
-    public static void saveUpdateHash ( String file, String hash )
+    public static void saveUpdateLength ( String file, String hash )
     {
         Properties p = loadExistingProps();
 
-        p.setProperty ( "hash." + file, hash );
+        p.setProperty ( "length." + file, hash );
 
         savePropsFile ( p );
     }
