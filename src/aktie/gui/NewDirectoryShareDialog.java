@@ -128,10 +128,6 @@ public class NewDirectoryShareDialog extends Dialog
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
-                System.out.println ( "Details: " + e.detail );
-                System.out.println ( "Doit   : " + e.doit );
-                System.out.println ( "Data:    " + e.data );
-                Thread.dumpStack();
                 DirectoryDialog dialog = new DirectoryDialog ( This.getShell() );
                 String sharedir = dialog.open();
 

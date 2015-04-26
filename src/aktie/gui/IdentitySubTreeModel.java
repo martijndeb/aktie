@@ -101,6 +101,7 @@ public class IdentitySubTreeModel
 
     public void update ( CObj c )
     {
+
         if ( CObj.POST.equals ( c.getType() ) )
         {
             //loop through subCommunities to look for community

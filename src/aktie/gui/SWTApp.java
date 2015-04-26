@@ -2455,12 +2455,25 @@ public class SWTApp
 
                     }
 
+                    if ( selo instanceof TreeIdentity )
+                    {
+                        TreeIdentity ti = ( TreeIdentity ) selo;
+                        id = ti.identity;
+                    }
+
                 }
 
-                if ( id != null && com != null )
+                if ( id != null )
                 {
-                    setSelected ( id, com, sel );
+                    selectedIdentity = id;
+
+                    if ( com != null )
+                    {
+                        setSelected ( id, com, sel );
+                    }
+
                 }
+
 
             }
 
