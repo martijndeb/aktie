@@ -48,6 +48,7 @@ public class Node
     private RequestFileHandler requestHandler;
     private ShareManager shareManager;
     private Settings settings;
+    private HasFileCreator hasFileCreator;
 
 
     public Node ( String nodedir, Net net, GuiCallback uc,
@@ -89,12 +90,18 @@ public class Node
         userQueue.addProcessor ( new UsrSeedCommunity ( session, index, netCallback ) );
         userQueue.addProcessor ( new NewPushProcessor ( index, conMan ) );
 
+        hasFileCreator = new HasFileCreator ( session, index );
         //HH2Session s, Index i, HasFileCreator h, ProcessQueue pq
         shareManager = new ShareManager ( session, requestHandler, index,
-                                          new HasFileCreator ( session, index ), userQueue );
+                                          hasFileCreator, userQueue );
 
 
         doUpdate();
+    }
+
+    public HasFileCreator getHasFileCreator()
+    {
+        return hasFileCreator;
     }
 
     private void doUpdate()
@@ -164,6 +171,8 @@ public class Node
     {
         return shareManager;
     }
+
+    //public
 
     public void closeDestinationConnections ( CObj id )
     {

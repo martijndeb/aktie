@@ -457,7 +457,14 @@ public class TestBasic
 
         o1 = pollForData ( Tn1 );
         assertNotNull ( o1 );
-        assertTrue ( o1 instanceof RequestFile );
+
+        assertTrue ( o1 instanceof CObj );
+        CObj to = ( CObj ) o1;
+        assertEquals ( CObj.FILE, to.getType() );
+
+        o1 = pollForData ( Tn1 );
+        assertNotNull ( o1 );
+
         RequestFile nrf = ( RequestFile ) o1;
         assertEquals ( RequestFile.REQUEST_FRAG, nrf.getState() );
 

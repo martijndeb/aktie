@@ -23,14 +23,17 @@ public class Wrapper
 
     public static int RESTART_RC = 7;
 
-    public static String VERSION = "version 0.1.14";
+    public static String VERSION_0115 = "version 0.1.15";
+
+    public static String VERSION = VERSION_0115;
+
     public static String VERSION_FILE = "version.txt";
     //ADD ONE HOUR TO TIME.
     //This makes sure this time value is greater than the time of
     //the upgrade file added to the network by the developer account.
     //This keeps new installs from downloading the same version as
     //an upgrade
-    public static long RELEASETIME = ( 1428129453L * 1000L ) + 3600000;
+    public static long RELEASETIME = ( 1430235432L * 1000L ) + 3600000;
 
     public static String RUNDIR = "aktie_run_dir";
     public static String JARFILE = "aktie.jar";
@@ -343,19 +346,50 @@ public class Wrapper
 
     public static int[] convertVersionString ( String v )
     {
-        Matcher m = Pattern.compile ( "(\\d+)\\.(\\d+)\\.(\\d+)" ).matcher ( v );
-
-        if ( m.find() )
+        if ( v != null )
         {
-            int va[] = new int[3];
-            va[0] = Integer.valueOf ( m.group ( 1 ) );
-            va[1] = Integer.valueOf ( m.group ( 2 ) );
-            va[2] = Integer.valueOf ( m.group ( 3 ) );
-            return va;
+            Matcher m = Pattern.compile ( "(\\d+)\\.(\\d+)\\.(\\d+)" ).matcher ( v );
+
+            if ( m.find() )
+            {
+                int va[] = new int[3];
+                va[0] = Integer.valueOf ( m.group ( 1 ) );
+                va[1] = Integer.valueOf ( m.group ( 2 ) );
+                va[2] = Integer.valueOf ( m.group ( 3 ) );
+                return va;
+            }
+
         }
 
         return new int[] {0, 0, 0};
 
+    }
+
+    public static int compareVersions ( String ol, String nv )
+    {
+        int oldv[] = Wrapper.convertVersionString ( ol );
+        int newv[] = Wrapper.convertVersionString ( nv );
+
+        for ( int c = 0; c < oldv.length; c++ )
+        {
+            if ( oldv[c] > newv[c] )
+            {
+                //this means that we have probably upgraded to an older
+                //version that what is in the aktie.jar.  so we delete
+                //the version file and restart.  so the newer jars in
+                //aktie.jar are unzipped again.
+                return 1;
+            }
+
+            if ( oldv[c] < newv[c] )
+            {
+                //This is fine.  We have just upgraded.
+                return -1;
+            }
+
+        }
+
+        return 0;
     }
 
     /*
@@ -374,21 +408,10 @@ public class Wrapper
                 BufferedReader br = new BufferedReader ( fr );
                 String oldstr = br.readLine();
                 br.close();
-                int oldv[] = convertVersionString ( oldstr );
-                int newv[] = convertVersionString ( VERSION );
 
-                for ( int c = 0; c < oldv.length; c++ )
+                if ( compareVersions ( oldstr, VERSION ) < 0 )
                 {
-                    if ( newv[c] < oldv[c] )
-                    {
-                        return false;
-                    }
-
-                    if ( newv[c] > oldv[c] )
-                    {
-                        return true;
-                    }
-
+                    return true;
                 }
 
                 return false;

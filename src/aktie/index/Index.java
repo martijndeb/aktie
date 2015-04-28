@@ -884,6 +884,15 @@ public class Index
         return search ( bq, Integer.MAX_VALUE );
     }
 
+    public CObjList getAllHasFiles ( )
+    {
+        BooleanQuery bq = new BooleanQuery();
+        Term typterm = new Term ( CObj.PARAM_TYPE, CObj.HASFILE );
+        bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
+
+        return search ( bq, Integer.MAX_VALUE );
+    }
+
     public CObjList getMyHasFiles ( String wdig, String pdig )
     {
         BooleanQuery bq = new BooleanQuery();
@@ -1249,6 +1258,33 @@ public class Index
         {
             Document d = o.getDocument();
             writer.updateDocument ( updateterm, d );
+        }
+
+    }
+
+    public void delete ( CObj o ) throws IOException
+    {
+        if ( o.getDig() == null && o.getId() == null )
+        {
+            throw new IOException ( "Digest or id required!" );
+        }
+
+        Term updateterm = null;
+
+        if ( o.getId() != null )
+        {
+            updateterm = new Term ( "id", o.getId() );
+        }
+
+        if ( o.getDig() != null && o.getId() == null )
+        {
+            updateterm = new Term ( "dig", o.getDig() );
+        }
+
+        if ( updateterm != null )
+        {
+            writer.deleteDocuments ( updateterm );
+            writer.commit();
         }
 
     }

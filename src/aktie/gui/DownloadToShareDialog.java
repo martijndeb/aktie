@@ -135,7 +135,10 @@ public class DownloadToShareDialog extends Dialog
                     {
                         CObjListArrayElement ae = ( CObjListArrayElement ) selo;
                         CObj fr = ae.getCObj();
-                        fr.pushString ( CObj.SHARE_NAME, ds.getShareName() );
+
+                        String sharename = ds.getShareName();
+                        System.out.println ( "SHARENAME: " + sharename );
+                        fr.pushString ( CObj.SHARE_NAME, sharename );
 
                         if ( doPreview )
                         {

@@ -1426,6 +1426,10 @@ public class SWTApp
 
             node = new Node ( nodeDir, i2pnet, usrcallback,
                               netcallback, concallback );
+
+            String lastversion = lastVersion();
+            upgrade0115 ( lastversion );
+
             identSubTreeModel = new IdentitySubTreeModel ( this );
             identTreeViewer.setContentProvider ( new IdentitySubTreeProvider() );
 
@@ -1581,7 +1585,7 @@ public class SWTApp
 
     }
 
-    private boolean isSameOrNewer()
+    public String lastVersion()
     {
         File vf = new File ( nodeDir + File.separator + Wrapper.VERSION_FILE );
 
@@ -1592,29 +1596,9 @@ public class SWTApp
                 FileReader fr = new FileReader ( vf );
                 BufferedReader br = new BufferedReader ( fr );
                 String vl = br.readLine();
-                int oldv[] = Wrapper.convertVersionString ( vl );
-                int newv[] = Wrapper.convertVersionString ( Wrapper.VERSION );
                 br.close();
 
-                for ( int c = 0; c < oldv.length; c++ )
-                {
-                    if ( oldv[c] > newv[c] )
-                    {
-                        //this means that we have probably upgraded to an older
-                        //version that what is in the aktie.jar.  so we delete
-                        //the version file and restart.  so the newer jars in
-                        //aktie.jar are unzipped again.
-                        return false;
-                    }
-
-                    if ( oldv[c] < newv[c] )
-                    {
-                        //This is fine.  We have just upgraded.
-                        return true;
-                    }
-
-                }
-
+                return vl;
             }
 
             catch ( Exception e )
@@ -1622,6 +1606,27 @@ public class SWTApp
                 e.printStackTrace();
             }
 
+        }
+
+        return null;
+    }
+
+    private void upgrade0115 ( String lastversion )
+    {
+        if ( Wrapper.compareVersions ( lastversion, Wrapper.VERSION_0115 ) < 0 )
+        {
+            node.getHasFileCreator().updateHasFile();
+        }
+
+    }
+
+    private boolean isSameOrNewer()
+    {
+        String vl = lastVersion();
+
+        if ( Wrapper.compareVersions ( vl, Wrapper.VERSION ) > 0 )
+        {
+            return false;
         }
 
         return true;
@@ -2228,6 +2233,7 @@ public class SWTApp
             p.pushNumber ( CObj.FRAGSIZE, c.getNumber ( CObj.FRAGSIZE ) );
             p.pushNumber ( CObj.FRAGNUMBER, c.getNumber ( CObj.FRAGNUMBER ) );
             p.pushString ( CObj.FILEDIGEST, c.getString ( CObj.FILEDIGEST ) );
+            p.pushString ( CObj.SHARE_NAME, c.getString ( CObj.SHARE_NAME ) );
             getNode().enqueue ( p );
             return true;
         }
@@ -2251,6 +2257,7 @@ public class SWTApp
             p.pushNumber ( CObj.FRAGSIZE, c.getNumber ( CObj.PRV_FRAGSIZE ) );
             p.pushNumber ( CObj.FRAGNUMBER, c.getNumber ( CObj.PRV_FRAGNUMBER ) );
             p.pushString ( CObj.FILEDIGEST, c.getString ( CObj.PRV_FILEDIGEST ) );
+            p.pushString ( CObj.SHARE_NAME, c.getString ( CObj.SHARE_NAME ) );
             getNode().enqueue ( p );
             return true;
         }

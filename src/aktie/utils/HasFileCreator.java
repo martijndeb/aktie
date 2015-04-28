@@ -2,6 +2,7 @@ package aktie.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import org.hibernate.Session;
 
@@ -14,6 +15,7 @@ import aktie.index.Index;
 
 public class HasFileCreator
 {
+    Logger log = Logger.getLogger ( "aktie" );
 
     private HH2Session session;
     private Index index;
@@ -66,6 +68,7 @@ public class HasFileCreator
 
             CObjList wl = index.getHasFiles ( comid, wholedig, digofdigs );
             int numberhasfile = wl.size();
+            System.out.println ( "HASFILE: " + numberhasfile + " name: " + name );
             wl.close();
 
             String id = Utils.mergeIds ( comid, digofdigs, wholedig );
@@ -136,6 +139,54 @@ public class HasFileCreator
     {
         String id = getCommunityMemberId ( creator, comid );
         return getHasFileId ( id, digofdigs, wholedig );
+    }
+
+    public void updateHasFile()
+    {
+        CObjList hflst = index.getAllHasFiles();
+        System.out.println ( "UPDATING HASFILE: " + hflst.size() );
+
+        for ( int c = 0; c < hflst.size(); c++ )
+        {
+            try
+            {
+                CObj b = hflst.get ( c );
+
+                String creatorid = b.getString ( CObj.CREATOR );
+                String comid = b.getString ( CObj.COMMUNITYID );
+                String wdig = b.getString ( CObj.FILEDIGEST );
+                String ddig = b.getString ( CObj.FRAGDIGEST );
+
+                if ( creatorid != null && comid != null &&
+                        wdig != null && ddig != null )
+                {
+
+                    String id = HasFileCreator.getCommunityMemberId ( creatorid, comid );
+
+                    //Hasfileid is an upgrade.  We just set it here to what it is supposed to
+                    //be.  If the signature does not match with the id value set.  DigestValidator
+                    //has been upgraded to check the signature with a null id value for
+                    //hasfile records. All new hasfile records should have the proper id value
+                    //set so this does nothing.
+                    String hasfileid = HasFileCreator.getHasFileId ( id, ddig, wdig );
+
+                    index.delete ( b );
+                    b.setId ( hasfileid );
+                    index.index ( b );
+                    updateFileInfo ( b );
+                }
+
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        hflst.close();
+
     }
 
     public boolean createHasFile ( CObj o )
