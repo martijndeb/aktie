@@ -530,17 +530,20 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         //Check hasfile requests (always initiate connections for highest prioty no
         //mater what.  If user is only working in one community don't waste connections
         //for other subscriptions.
-        List<CommunityMember> reqfilelist = identManager.nextHasFileUpdate ( 5 );
+        List<CommunityMember> reqfilelist = identManager.nextHasFileUpdate ( 20 );
 
         for ( CommunityMember cm : reqfilelist )
         {
             List<DestinationThread> destlist = findMyDestinationsForCommunity ( mymap, cm.getCommunityId() );
+
+            log.info ( "CONMAN: My destinations for community: " + cm.getCommunityId() + " # " + destlist.size() );
 
             for ( DestinationThread dt : destlist )
             {
                 if ( dt.numberConnection() < MAX_CONNECTIONS )
                 {
                     CObjList hlst = index.getSubscriptions ( cm.getCommunityId(), null );
+                    log.info ( "CONMAN: Attempt connection for has_file " + hlst.size() );
                     //See how many of these nodes we're connected to
                     attemptDestinationConnection ( hlst, dt, mymap );
                 }
@@ -550,7 +553,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         }
 
         //Check post requests
-        List<CommunityMember> reqpostlist = identManager.nextHasPostUpdate ( 5 );
+        List<CommunityMember> reqpostlist = identManager.nextHasPostUpdate ( 20 );
 
         for ( CommunityMember cm : reqpostlist )
         {
@@ -570,7 +573,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         }
 
         //Check subscription requests
-        List<CommunityMember> reqsublist = identManager.nextHasSubscriptionUpdate ( 5 );
+        List<CommunityMember> reqsublist = identManager.nextHasSubscriptionUpdate ( 20 );
         log.info ( "subscription updates: " + reqsublist.size() );
 
         for ( CommunityMember cm : reqsublist )
@@ -649,10 +652,12 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     {
         Object r = null;
 
+        log.info ( "READY FOR NEXT: " + localdest + " to " + remotedest + " RDY: " + rdy + " match com: " + comlist.size() );
+
         //get files if we want them
         if ( rdy == 0 )
         {
-            List<RequestFile> rflst = fileHandler.findFileListFrags ( localdest, 10L * 60L * 1000L );
+            List<RequestFile> rflst = fileHandler.findFileListFrags ( localdest, 60L * 60L * 1000L );
             log.info ( "CONMAN: Requests for fragment list: " + rflst.size() );
             Iterator<RequestFile> it = rflst.iterator();
 
@@ -865,7 +870,12 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             if ( cm != null )
             {
-                log.info ( "send has file update request" );
+                log.info ( "CONMAN: send has file update request from " +
+                           localdest + " to " +
+                           remotedest + " community : " +
+                           cm.getCommunityId() +
+                           " member: " + cm.getMemberId() +
+                           " last num: " + cm.getLastFileNumber() );
                 CObj cr = new CObj();
                 cr.setType ( CObj.CON_REQ_HASFILE );
                 cr.pushString ( CObj.COMMUNITYID, cm.getCommunityId() );

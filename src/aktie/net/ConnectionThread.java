@@ -630,7 +630,8 @@ public class ConnectionThread implements Runnable, GuiCallback
             Long flen = fg.getNumber ( CObj.FRAGSIZE );
             String cplt = fg.getString ( CObj.COMPLETE );
 
-            log.info ( "CONTHREAD: " + fg.getPrivate ( CObj.LOCALFILE ) + " offset: " + fidx + " state: " + fg.getPrivate ( CObj.COMPLETE ) );
+            log.info ( "CONTHREAD: " + " offset: " + fidx + " wdig: " + wdig +
+                       " fdig: " + fdig + " flen: " + flen + " state: " + cplt );
 
             if ( wdig != null && fdig != null && fidx != null &&
                     flen != null && ( !"true".equals ( cplt ) ) )
@@ -922,6 +923,7 @@ public class ConnectionThread implements Runnable, GuiCallback
                         if ( lc > LONGESTLIST ) { stop(); }
 
                         listCount = ( int ) lc;
+                        log.info ( "CONTHREAD: New list: " + listCount );
                     }
 
                     else
@@ -946,7 +948,7 @@ public class ConnectionThread implements Runnable, GuiCallback
 
                             currentList.add ( r );
                             listCount--;
-
+                            log.info ( "CONTHREAD: listCount: " + listCount );
                         }
 
                         else

@@ -55,4 +55,10 @@ public class RawNet implements Net
         return null;
     }
 
+    @Override
+    public String getStatus()
+    {
+        return "Running";
+    }
+
 }

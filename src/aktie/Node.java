@@ -189,4 +189,9 @@ public class Node
         return settings;
     }
 
+    public Net getNet()
+    {
+        return network;
+    }
+
 }

@@ -9,4 +9,6 @@ public interface Net
 
     public Destination getNewDestination();
 
+    public String getStatus();
+
 }

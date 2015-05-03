@@ -23,7 +23,7 @@ public class Wrapper
 
     public static int RESTART_RC = 7;
 
-    public static String VERSION_0115 = "version 0.1.15";
+    public static String VERSION_0115 = "version 0.1.16";
 
     public static String VERSION = VERSION_0115;
 
@@ -33,7 +33,7 @@ public class Wrapper
     //the upgrade file added to the network by the developer account.
     //This keeps new installs from downloading the same version as
     //an upgrade
-    public static long RELEASETIME = ( 1430235432L * 1000L ) + 3600000;
+    public static long RELEASETIME = ( 1430671054L * 1000L ) + 3600000;
 
     public static String RUNDIR = "aktie_run_dir";
     public static String JARFILE = "aktie.jar";

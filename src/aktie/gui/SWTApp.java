@@ -1574,6 +1574,49 @@ public class SWTApp
 
     }
 
+    private void setVersionNetStatus()
+    {
+        String netstat = "";
+
+        if ( getNode() != null )
+        {
+            if ( getNode().getNet() != null )
+            {
+                netstat = getNode().getNet().getStatus();
+            }
+
+        }
+
+        lblVersion.setText ( Wrapper.VERSION + " (" + netstat + ")" );
+    }
+
+    private void startNetUpdateStatusTimer()
+    {
+        Timer t = new Timer ( "I2P Update timer", true );
+        t.schedule ( new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+
+                Display.getDefault().asyncExec ( new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        setVersionNetStatus();
+                        composite_header.layout();
+                    }
+
+                } );
+
+            }
+
+        }, 0, 30L * 1000L );
+
+    }
+
+
     public void closeNode()
     {
         node.close();
@@ -1691,6 +1734,7 @@ public class SWTApp
 
         startUpdateTimer();
         saveVersionFile();
+        startNetUpdateStatusTimer();
 
         while ( !shell.isDisposed() )
         {
@@ -2405,12 +2449,12 @@ public class SWTApp
         mntmStartManualUpdate.addSelectionListener ( new ManualUpdate() );
 
         composite_header = new Composite ( shell, SWT.NONE );
-        composite_header.setLayout ( new GridLayout ( 2, false ) );
+        composite_header.setLayout ( new GridLayout ( 3, false ) );
         composite_header.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
 
         lblVersion = new Label ( composite_header, SWT.NONE );
         lblVersion.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
-        lblVersion.setText ( Wrapper.VERSION );
+        setVersionNetStatus();
 
         lblError = new Label ( composite_header, SWT.NONE );
         lblError.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, false, false, 1, 1 ) );
@@ -4119,13 +4163,13 @@ public class SWTApp
 
         new Label ( composite_14, SWT.NONE );
 
-        txtAShareIs = new Text ( composite_14, SWT.BORDER );
+        txtAShareIs = new Text ( composite_14, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL );
         txtAShareIs.setEditable ( false );
-        txtAShareIs.setText ( "A Share is a directory or folder on your system, where all\n"
-                              + "files are automatically shared with the community.\n"
-                              + "Any new files copied to the directory will automatically\n"
-                              + "be shared.  You can move and rename files within a share,\n"
-                              + "and ohters will still be able to download.  You can also\n"
+        txtAShareIs.setText ( "A Share is a directory or folder on your system, where all "
+                              + "files are automatically shared with the community. "
+                              + "Any new files copied to the directory will automatically "
+                              + "be shared.  You can move and rename files within a share, "
+                              + "and ohters will still be able to download.  You can also "
                               + "do download new files to Share directories." );
         txtAShareIs.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
         btnDelete.addSelectionListener ( new SelectionListener()
