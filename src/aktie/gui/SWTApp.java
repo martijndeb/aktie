@@ -355,6 +355,38 @@ public class SWTApp
 
     }
 
+    class DownloadsColumnState extends ColumnLabelProvider
+    {
+        @Override
+        public String getText ( Object element )
+        {
+            RequestFile rf = ( RequestFile ) element;
+
+            if ( rf.getState() == RequestFile.INIT )
+            {
+                return "init";
+            }
+
+            if ( rf.getState() == RequestFile.REQUEST_FRAG )
+            {
+                return "download parts";
+            }
+
+            if ( rf.getState() == RequestFile.REQUEST_FRAG_LIST )
+            {
+                return "requesting list";
+            }
+
+            if ( rf.getState() == RequestFile.REQUEST_FRAG_LIST_SNT )
+            {
+                return "waiting on list";
+            }
+
+            return rf.getState() + "?";
+        }
+
+    }
+
     class DownloadsSorter extends ViewerSorter
     {
         private int column;
@@ -412,6 +444,11 @@ public class SWTApp
                     labprov = new DownloadsColumnFileSize();
                 }
 
+                if ( column == 5 )
+                {
+                    labprov = new DownloadsColumnState();
+                }
+
                 if ( labprov != null )
                 {
 
@@ -421,7 +458,7 @@ public class SWTApp
                     Comparable dn0 = s0;
                     Comparable dn1 = s1;
 
-                    if ( column > 0 )
+                    if ( column > 0 && column < 5 )
                     {
                         dn0 = Long.valueOf ( s0 );
                         dn1 = Long.valueOf ( s1 );
@@ -4309,6 +4346,27 @@ public class SWTApp
             {
                 DownloadsSorter srt = ( DownloadsSorter ) downloadTableViewer.getSorter();
                 srt.doSort ( 4 );
+                downloadTableViewer.refresh();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        TableViewerColumn dlcol5 = new TableViewerColumn ( downloadTableViewer, SWT.NONE );
+        dlcol5.getColumn().setText ( "State" );
+        dlcol5.getColumn().setWidth ( 200 );
+        dlcol5.setLabelProvider ( new DownloadsColumnState() );
+        dlcol5.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                DownloadsSorter srt = ( DownloadsSorter ) downloadTableViewer.getSorter();
+                srt.doSort ( 5 );
                 downloadTableViewer.refresh();
             }
 

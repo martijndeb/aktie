@@ -13,6 +13,7 @@ import net.i2p.data.router.RouterInfo;
 import net.i2p.router.CommSystemFacade;
 import net.i2p.router.Router;
 import net.i2p.router.RouterContext;
+import net.i2p.router.RouterVersion;
 import net.i2p.router.networkdb.kademlia.FloodfillNetworkDatabaseFacade;
 import net.i2p.router.transport.TransportUtil;
 import net.i2p.router.transport.udp.UDPTransport;
@@ -279,6 +280,11 @@ public class I2PNet  implements Net
         return false;
     }
 
+    private String getRouterVersion()
+    {
+        return RouterVersion.FULL_VERSION;
+    }
+
     private String getPort()
     {
         return router.getContext().getProperty ( UDPTransport.PROP_INTERNAL_PORT, "unset" );
@@ -293,11 +299,11 @@ public class I2PNet  implements Net
             RouterContext _context = router.getContext();
 
             if ( _context.commSystem().isDummy() )
-            { return "I2P: VM Comm System"; }
+            { return "I2P: VM Comm System (" + getRouterVersion() + ")"; }
 
             if ( _context.router().getUptime() > 60 * 1000 && ( !_context.router().gracefulShutdownInProgress() ) &&
                     !_context.clientManager().isAlive() )
-            { return "I2P: ERR-Client Manager I2CP Error - check logs"; }  // not a router problem but the user should know
+            { return "I2P: ERR-Client Manager I2CP Error - check logs (" + getRouterVersion() + ")"; }  // not a router problem but the user should know
 
             // Warn based on actual skew from peers, not update status, so if we successfully offset
             // the clock, we don't complain.
@@ -309,12 +315,12 @@ public class I2PNet  implements Net
             { return "I2P: ERR-Clock Skew of " + DataHelper.formatDuration2 ( Math.abs ( skew ) ); }
 
             if ( _context.router().isHidden() )
-            { return "I2P: Hidden"; }
+            { return "I2P: Hidden (" + getRouterVersion() + ")"; }
 
             RouterInfo routerInfo = _context.router().getRouterInfo();
 
             if ( routerInfo == null )
-            { return "I2P: Testing"; }
+            { return "I2P: Testing (" + getRouterVersion() + ")"; }
 
             int status = _context.commSystem().getReachabilityStatus();
 
@@ -324,38 +330,38 @@ public class I2PNet  implements Net
                 RouterAddress ra = routerInfo.getTargetAddress ( "NTCP" );
 
                 if ( ra == null )
-                { return "I2P: OK"; }
+                { return "I2P: OK (" + getRouterVersion() + ")"; }
 
                 byte[] ip = ra.getIP();
 
                 if ( ip == null )
-                { return "I2P: ERR-Unresolved TCP Address"; }
+                { return "I2P: ERR-Unresolved TCP Address (" + getRouterVersion() + ")"; }
 
                 // TODO set IPv6 arg based on configuration?
                 if ( TransportUtil.isPubliclyRoutable ( ip, true ) )
-                { return "I2P: OK"; }
+                { return "I2P: OK (" + getRouterVersion() + ")"; }
 
-                return "I2P: ERR-Private TCP Address";
+                return "I2P: ERR-Private TCP Address (" + getRouterVersion() + ")";
 
             case CommSystemFacade.STATUS_DIFFERENT:
-                return "I2P: ERR-SymmetricNAT";
+                return "I2P: ERR-SymmetricNAT (" + getRouterVersion() + ")";
 
             case CommSystemFacade.STATUS_REJECT_UNSOLICITED:
                 if ( routerInfo.getTargetAddress ( "NTCP" ) != null )
-                { return "I2P: WARN-Firewalled with Inbound TCP Enabled"; }
+                { return "I2P: WARN-Firewalled with Inbound TCP Enabled (" + getRouterVersion() + ")"; }
 
                 if ( ( ( FloodfillNetworkDatabaseFacade ) _context.netDb() ).floodfillEnabled() )
-                { return "I2P: WARN-Firewalled and Floodfill"; }
+                { return "I2P: WARN-Firewalled and Floodfill (" + getRouterVersion() + ")"; }
 
                 //if (_context.router().getRouterInfo().getCapabilities().indexOf('O') >= 0)
                 //    return _("WARN-Firewalled and Fast");
-                return "I2P: Firewalled (please port forward: " + getPort() + ")";
+                return "I2P: Firewalled (please port forward: " + getPort() + ") (" + getRouterVersion() + ")";
 
             case CommSystemFacade.STATUS_DISCONNECTED:
-                return "I2P: Disconnected - check network cable";
+                return "I2P: Disconnected - check network cable (" + getRouterVersion() + ")";
 
             case CommSystemFacade.STATUS_HOSED:
-                return "I2P: ERR-UDP Port In Use - Set i2np.udp.internalPort=xxxx in advanced config and restart";
+                return "I2P: ERR-UDP Port In Use - Set i2np.udp.internalPort=xxxx in advanced config and restart (" + getRouterVersion() + ")";
 
             case CommSystemFacade.STATUS_UNKNOWN: // fallthrough
             default:
@@ -364,23 +370,23 @@ public class I2PNet  implements Net
                 if ( ra == null && _context.router().getUptime() > 5 * 60 * 1000 )
                 {
                     if ( _context.commSystem().countActivePeers() <= 0 )
-                    { return "I2P: ERR-No Active Peers, Check Network Connection and Firewall"; }
+                    { return "I2P: ERR-No Active Peers, Check Network Connection and Firewall (" + getRouterVersion() + ")"; }
 
                     else if ( _context.getProperty ( PROP_I2NP_NTCP_HOSTNAME ) == null ||
                               _context.getProperty ( PROP_I2NP_NTCP_PORT ) == null )
-                    { return "I2P: ERR-UDP Disabled and Inbound TCP host/port not set"; }
+                    { return "I2P: ERR-UDP Disabled and Inbound TCP host/port not set (" + getRouterVersion() + ")"; }
 
                     else
-                    { return "I2P: WARN-Firewalled with UDP Disabled"; }
+                    { return "I2P: WARN-Firewalled with UDP Disabled (" + getRouterVersion() + ")"; }
 
                 }
 
             }
 
-            return "I2P: Testing";
+            return "I2P: Testing (" + getRouterVersion() + ")";
         }
 
-        return "I2P: Using existing router";
+        return "I2P: Using existing router (" + getRouterVersion() + ")";
     }
 
 

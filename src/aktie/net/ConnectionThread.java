@@ -1,11 +1,14 @@
 package aktie.net;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -166,6 +169,36 @@ public class ConnectionThread implements Runnable, GuiCallback
                 IdentManager.connectionClose ( endd.getId(),
                                                getInNonFileBytes(),
                                                getInBytes(), getOutBytes() );
+            }
+
+            if ( intrace != null )
+            {
+                try
+                {
+                    appendInput ( "stopping" );
+                    intrace.close();
+                }
+
+                catch ( Exception e )
+                {
+                    e.printStackTrace();
+                }
+
+            }
+
+            if ( outtrace != null )
+            {
+                try
+                {
+                    appendOutput ( "stopping" );
+                    outtrace.close();
+                }
+
+                catch ( Exception e )
+                {
+                    e.printStackTrace();
+                }
+
             }
 
             conListener.closed ( this );
@@ -427,6 +460,7 @@ public class ConnectionThread implements Runnable, GuiCallback
 
                     seeIfUseless();
 
+                    appendOutput ( "WAIT FOR DATA.." );
                     Object o = getData();
 
                     if ( o == null )
@@ -442,33 +476,14 @@ public class ConnectionThread implements Runnable, GuiCallback
 
                             if ( log.getLevel() == Level.INFO )
                             {
-                                StringBuilder dbmsg = new StringBuilder();
-                                dbmsg.append ( "CONTHREAD: Sending: " );
-                                dbmsg.append ( c.getType() );
-
-                                if ( dest.getIdentity() != null )
-                                {
-                                    dbmsg.append ( " from: " );
-                                    dbmsg.append ( dest.getIdentity().getDisplayName() );
-                                }
-
-                                else
-                                {
-                                    dbmsg.append ( " from: null??" );
-                                }
-
-                                if ( endDestination != null )
-                                {
-                                    dbmsg.append ( " to: " );
-                                    dbmsg.append ( endDestination.getDisplayName() );
-                                }
-
-                                else
-                                {
-                                    dbmsg.append ( " to: ?? " );
-                                }
-
-                                log.info ( dbmsg.toString() );
+                                appendOutput ( c.getType() + "=============" );
+                                appendOutput ( "comid:   " + c.getString ( CObj.COMMUNITYID ) );
+                                appendOutput ( "creator: " + c.getString ( CObj.CREATOR ) );
+                                appendOutput ( "memid:   " + c.getString ( CObj.MEMBERID ) );
+                                appendOutput ( "seqnum:  " + c.getNumber ( CObj.SEQNUM ) );
+                                appendOutput ( "first:   " + c.getNumber ( CObj.FIRSTNUM ) );
+                                appendOutput ( "wdig:    " + c.getString ( CObj.FILEDIGEST ) );
+                                appendOutput ( "offset:  " + c.getNumber ( CObj.FRAGOFFSET ) );
                             }
 
                             sendCObj ( c );
@@ -563,7 +578,7 @@ public class ConnectionThread implements Runnable, GuiCallback
     {
         if ( loadFile )
         {
-            log.info ( "CONTHREAD: READING FILE" );
+            appendInput ( "Start reading file" );
             byte buf[] = new byte[1024];
 
             RIPEMD256Digest fdig = new RIPEMD256Digest();
@@ -602,7 +617,7 @@ public class ConnectionThread implements Runnable, GuiCallback
             lastMyRequest = System.currentTimeMillis();
             outproc.go(); //it holds off on local requests until the file is read.
 
-            log.info ( "CONTHREAD: File read dig: " + dstr );
+            appendInput ( "File read " + dstr );
             processFragment ( dstr, tmpf );
             //now we have it, tell outproc to go again.
         }
@@ -614,7 +629,7 @@ public class ConnectionThread implements Runnable, GuiCallback
     {
         byte buf[] = new byte[1024];
         CObjList flist = index.getFragments ( dig );
-        log.info ( "CONTHREAD: Matching fragments found: " + flist.size() );
+        appendInput ( "matching frags: " + flist.size() );
 
         for ( int c = 0; c < flist.size(); c++ )
         {
@@ -630,8 +645,8 @@ public class ConnectionThread implements Runnable, GuiCallback
             Long flen = fg.getNumber ( CObj.FRAGSIZE );
             String cplt = fg.getString ( CObj.COMPLETE );
 
-            log.info ( "CONTHREAD: " + " offset: " + fidx + " wdig: " + wdig +
-                       " fdig: " + fdig + " flen: " + flen + " state: " + cplt );
+            appendInput ( " offset: " + fidx + " wdig: " + wdig +
+                          " fdig: " + fdig + " flen: " + flen + " state: " + cplt );
 
             if ( wdig != null && fdig != null && fidx != null &&
                     flen != null && ( !"true".equals ( cplt ) ) )
@@ -646,19 +661,19 @@ public class ConnectionThread implements Runnable, GuiCallback
                     List<RequestFile> lrf = q.list();
                     String lf = null;
 
-                    log.info ( "CONTHREAD: matches RequestFiles found: " + lrf.size() );
+                    appendInput ( "matches RequestFiles found: " + lrf.size() );
 
                     for ( RequestFile rf : lrf )
                     {
                         boolean exists = false;
                         lf = rf.getLocalFile();
 
-                        log.info ( "CONTHREAD: lf: " + lf );
+                        appendInput ( "lf: " + lf );
 
                         if ( lf != null )
                         {
                             File f = new File ( lf + RequestFileHandler.AKTIEPART );
-                            log.info ( "CONTHREAD: Check part file: " + f.getPath() + " exists " + f.exists() );
+                            appendInput ( "Check part file: " + f.getPath() + " exists " + f.exists() );
                             exists = f.exists();
                         }
 
@@ -914,6 +929,18 @@ public class ConnectionThread implements Runnable, GuiCallback
                 CObj r = new CObj();
                 r.loadJSON ( jo );
 
+                if ( log.getLevel() == Level.INFO )
+                {
+                    appendInput ( r.getType() + "=============" );
+                    appendInput ( "comid:   " + r.getString ( CObj.COMMUNITYID ) );
+                    appendInput ( "creator: " + r.getString ( CObj.CREATOR ) );
+                    appendInput ( "memid:   " + r.getString ( CObj.MEMBERID ) );
+                    appendInput ( "seqnum:  " + r.getNumber ( CObj.SEQNUM ) );
+                    appendInput ( "first:   " + r.getNumber ( CObj.FIRSTNUM ) );
+                    appendInput ( "wdig:    " + r.getString ( CObj.FILEDIGEST ) );
+                    appendInput ( "offset:  " + r.getNumber ( CObj.FRAGOFFSET ) );
+                }
+
                 if ( CObj.CON_LIST.equals ( r.getType() ) )
                 {
                     if ( currentList == null )
@@ -923,7 +950,7 @@ public class ConnectionThread implements Runnable, GuiCallback
                         if ( lc > LONGESTLIST ) { stop(); }
 
                         listCount = ( int ) lc;
-                        log.info ( "CONTHREAD: New list: " + listCount );
+                        appendInput ( Integer.toString ( listCount ) );
                     }
 
                     else
@@ -948,7 +975,7 @@ public class ConnectionThread implements Runnable, GuiCallback
 
                             currentList.add ( r );
                             listCount--;
-                            log.info ( "CONTHREAD: listCount: " + listCount );
+                            appendInput ( Integer.toString ( listCount ) );
                         }
 
                         else
@@ -1030,6 +1057,115 @@ public class ConnectionThread implements Runnable, GuiCallback
     {
         guicallback.update ( o );
         lastMyRequest = System.currentTimeMillis();
+    }
+
+    private PrintWriter outtrace;
+    private PrintWriter intrace;
+
+    private void appendOutput ( String msg )
+    {
+        if ( log.getLevel() == Level.INFO )
+        {
+            if ( endDestination != null )
+            {
+                if ( outtrace == null )
+                {
+                    String myid = dest.getIdentity().getId().substring ( 0, 6 );
+                    String oid = endDestination.getId().substring ( 0, 6 );
+                    String n = "out_" + myid + "_to_" + oid + ".trace";
+                    File f = new File ( n );
+                    int idx = 0;
+
+                    while ( f.exists() )
+                    {
+                        f = new File ( n + idx );
+                        idx++;
+                    }
+
+                    try
+                    {
+                        outtrace = new PrintWriter ( new BufferedWriter ( new FileWriter ( f.getPath(), true ) ) );
+                    }
+
+                    catch ( Exception e )
+                    {
+                        e.printStackTrace();
+                    }
+
+                }
+
+                if ( outtrace != null )
+                {
+                    appendLog ( outtrace, msg );
+                }
+
+            }
+
+        }
+
+    }
+
+    private void appendInput ( String msg )
+    {
+        if ( log.getLevel() == Level.INFO )
+        {
+            if ( endDestination != null )
+            {
+                if ( intrace == null )
+                {
+                    String myid = dest.getIdentity().getId().substring ( 0, 6 );
+                    String oid = endDestination.getId().substring ( 0, 6 );
+                    String n = "in_" + myid + "_to_" + oid + ".trace";
+                    File f = new File ( n );
+                    int idx = 0;
+
+                    while ( f.exists() )
+                    {
+                        f = new File ( n + idx );
+                        idx++;
+                    }
+
+                    try
+                    {
+                        intrace = new PrintWriter ( new BufferedWriter ( new FileWriter ( f.getPath(), true ) ) );
+                    }
+
+                    catch ( Exception e )
+                    {
+                        e.printStackTrace();
+                    }
+
+                }
+
+                if ( intrace != null )
+                {
+                    appendLog ( intrace, msg );
+                }
+
+            }
+
+        }
+
+    }
+
+    private void appendLog ( PrintWriter pw, String s )
+    {
+        if ( pw != null )
+        {
+            try
+            {
+                s = System.currentTimeMillis() + ":: " + s;
+                pw.println ( s );
+                pw.flush();
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
     }
 
 }
