@@ -23,9 +23,10 @@ public class Wrapper
 
     public static int RESTART_RC = 7;
 
-    public static String VERSION_0115 = "version 0.1.17";
+    public static String VERSION_0115 = "version 0.1.15";
+    public static String VERSION_0119 = "version 0.1.19";
 
-    public static String VERSION = VERSION_0115;
+    public static String VERSION = VERSION_0119;
 
     public static String VERSION_FILE = "version.txt";
     //ADD ONE HOUR TO TIME.
@@ -33,7 +34,7 @@ public class Wrapper
     //the upgrade file added to the network by the developer account.
     //This keeps new installs from downloading the same version as
     //an upgrade
-    public static long RELEASETIME = ( 1430780899L * 1000L ) + 3600000;
+    public static long RELEASETIME = ( 1432183925L * 1000L ) + 3600000;
 
     public static String RUNDIR = "aktie_run_dir";
     public static String JARFILE = "aktie.jar";
@@ -356,6 +357,7 @@ public class Wrapper
                 va[0] = Integer.valueOf ( m.group ( 1 ) );
                 va[1] = Integer.valueOf ( m.group ( 2 ) );
                 va[2] = Integer.valueOf ( m.group ( 3 ) );
+                System.out.println("VERSION: " + va[0] + "." + va[1] + "." + va[2]);
                 return va;
             }
 
@@ -372,6 +374,7 @@ public class Wrapper
 
         for ( int c = 0; c < oldv.length; c++ )
         {
+        	System.out.println("oldv: " + oldv[c] + " newv: " + newv[c]);
             if ( oldv[c] > newv[c] )
             {
                 //this means that we have probably upgraded to an older
