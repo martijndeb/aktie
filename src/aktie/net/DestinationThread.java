@@ -86,17 +86,20 @@ public class DestinationThread implements Runnable
 
     public void closeConnections()
     {
+        List<ConnectionThread> r = new LinkedList<ConnectionThread>();
+
         synchronized ( connections )
         {
             for ( List<ConnectionThread> tl : connections.values() )
             {
-                for ( ConnectionThread ct : tl )
-                {
-                    ct.stop();
-                }
-
+                r.addAll ( tl );
             }
 
+        }
+
+        for ( ConnectionThread ct : r )
+        {
+            ct.stop();
         }
 
     }
@@ -234,7 +237,7 @@ public class DestinationThread implements Runnable
 
     }
 
-    public boolean isConnected ( String id )
+    public boolean isConnected ( String id, boolean filemode )
     {
         synchronized ( connections )
         {
@@ -242,20 +245,27 @@ public class DestinationThread implements Runnable
 
             if ( clst == null ) { return false; }
 
-            if ( clst.size() == 0 ) { return false; }
+            for ( ConnectionThread ct : clst )
+            {
+                if ( ct.isFileMode() == filemode )
+                {
+                    return true;
+                }
 
-            return true;
+            }
+
+            return false;
         }
 
     }
 
-    public void connect ( String d )
+    public void connect ( String d, boolean filemode )
     {
         Connection con = dest.connect ( d );
 
         if ( con != null )
         {
-            buildConnection ( con );
+            buildConnection ( con, filemode );
         }
 
     }
@@ -276,7 +286,7 @@ public class DestinationThread implements Runnable
         return l;
     }
 
-    private void buildConnection ( Connection c )
+    private void buildConnection ( Connection c, boolean filemode )
     {
         if ( identity == null )
         {
@@ -285,7 +295,7 @@ public class DestinationThread implements Runnable
 
         else
         {
-            ConnectionThread ct = new ConnectionThread ( this, session, index, c, sendData, callback, conListener, fileHandler );
+            ConnectionThread ct = new ConnectionThread ( this, session, index, c, sendData, callback, conListener, fileHandler, filemode );
             ct.enqueue ( identity );
             conListener.update ( ct );
         }
@@ -301,7 +311,7 @@ public class DestinationThread implements Runnable
             while ( !stop )
             {
                 Connection c = dest.accept();
-                buildConnection ( c );
+                buildConnection ( c, false );
             }
 
         }

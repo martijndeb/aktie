@@ -549,6 +549,12 @@ public class Index
         Term comterm = new Term ( CObj.docString ( CObj.COMMUNITYID ), comid );
         query.add ( new TermQuery ( comterm ), BooleanClause.Occur.MUST );
 
+        NumericRangeQuery<Long> nq = NumericRangeQuery.newLongRange (
+                                         CObj.docNumber ( CObj.NUMBER_HAS ),
+                                         0L, Long.MAX_VALUE, false, true );
+        query.add ( nq, BooleanClause.Occur.MUST );
+
+
         if ( share != null )
         {
             Term shareterm = new Term ( CObj.docString ( CObj.SHARE_NAME ), share );

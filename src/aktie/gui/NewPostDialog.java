@@ -1,5 +1,7 @@
 package aktie.gui;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -8,9 +10,12 @@ import aktie.data.CObj;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Label;
@@ -19,6 +24,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.layout.FillLayout;
 
 public class NewPostDialog extends Dialog
 {
@@ -35,8 +41,9 @@ public class NewPostDialog extends Dialog
     private CObj fileRef;
     private CObj prvFileRef;
     private CObj replyPost;
-    private Text file1Text;
-    private Text file2Text;
+    private Text previewText;
+    private Text fileText;
+    private Shell shell;
 
     /**
         Create the dialog.
@@ -47,6 +54,52 @@ public class NewPostDialog extends Dialog
         super ( parentShell );
         setShellStyle ( getShellStyle() | SWT.RESIZE );
         app = a;
+        shell = parentShell;
+    }
+
+    private File selectFile()
+    {
+        FileDialog fd = new FileDialog ( shell, SWT.OPEN | SWT.SINGLE );
+        fd.setText ( "Add File" );
+        //fd.setFilterPath();
+        String[] filterExt =
+        {
+            "*",
+            "*.txt",
+            "*.pdf",
+            "*.exe",
+            "*.jpg",
+            "*.jpeg",
+            "*.png",
+            "*.gif",
+            "*.bmp",
+            "*.mov",
+            "*.mpg",
+            "*.mpeg",
+            "*.avi",
+            "*.flv",
+            "*.wmv",
+            "*.webv",
+            "*.rm"
+        };
+
+        fd.setFilterExtensions ( filterExt );
+        fd.open();
+        String selary[] = fd.getFileNames();
+        String selpath = fd.getFilterPath();
+
+        if ( selary != null && selpath != null && selary.length > 0 )
+        {
+            File f = new File ( selpath + File.separator + selary[0] );
+
+            if ( f.exists() )
+            {
+                return f;
+            }
+
+        }
+
+        return null;
     }
 
     public static String formatDisplay ( String body, boolean quote )
@@ -197,22 +250,22 @@ public class NewPostDialog extends Dialog
 
                 if ( prvFileRef != null )
                 {
-                    file1Text.setText ( prvFileRef.getString ( CObj.NAME ) );
+                    previewText.setText ( prvFileRef.getString ( CObj.NAME ) );
                 }
 
                 else
                 {
-                    file1Text.setText ( "" );
+                    previewText.setText ( "" );
                 }
 
                 if ( fileRef != null )
                 {
-                    file2Text.setText ( fileRef.getString ( CObj.NAME ) );
+                    fileText.setText ( fileRef.getString ( CObj.NAME ) );
                 }
 
                 else
                 {
-                    file2Text.setText ( "" );
+                    fileText.setText ( "" );
                 }
 
             }
@@ -225,6 +278,8 @@ public class NewPostDialog extends Dialog
     {
         fileRef = null;
         prvFileRef = null;
+        newAttachment = null;
+        newPreview = null;
         replyPost = rpst;
         selectIdentity ( id, comid );
         super.open();
@@ -233,6 +288,8 @@ public class NewPostDialog extends Dialog
     public void open ( CObj id, CObj comid, CObj prv, CObj lref )
     {
         replyPost = null;
+        newAttachment = null;
+        newPreview = null;
         prvFileRef = prv;
         fileRef = lref;
         selectIdentity ( id, comid );
@@ -277,22 +334,130 @@ public class NewPostDialog extends Dialog
         postBody = new StyledText ( container, SWT.WRAP | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL );
         postBody.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, true, 1, 1 ) );
         new Label ( container, SWT.NONE );
+        new Label ( container, SWT.NONE );
+
+        Composite composite = new Composite ( container, SWT.NONE );
+        composite.setLayout ( new FillLayout ( SWT.HORIZONTAL ) );
+
+        Button btnAttachNewFile = new Button ( composite, SWT.NONE );
+        btnAttachNewFile.setText ( "Attach File" );
+        btnAttachNewFile.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                newAttachment = selectFile();
+
+                if ( newAttachment != null )
+                {
+                    try
+                    {
+                        fileText.setText ( newAttachment.getCanonicalPath() );
+                    }
+
+                    catch ( Exception e2 )
+                    {
+                        e2.printStackTrace();
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        Button btnAttachPreview = new Button ( composite, SWT.NONE );
+        btnAttachPreview.setText ( "Attach Preview" );
+        btnAttachPreview.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                newPreview = selectFile();
+
+                if ( newPreview != null )
+                {
+                    try
+                    {
+                        fileText.setText ( newPreview.getCanonicalPath() );
+                    }
+
+                    catch ( Exception e2 )
+                    {
+                        e2.printStackTrace();
+                    }
+
+                }
+
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        Button btnRemoveFile = new Button ( composite, SWT.NONE );
+        btnRemoveFile.setText ( "Remove File" );
+        btnRemoveFile.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                fileRef = null;
+                newAttachment = null;
+                fileText.setText ( "" );
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        Button btnRemovePreview = new Button ( composite, SWT.NONE );
+        btnRemovePreview.setText ( "Remove Preview" );
+        btnRemovePreview.addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                prvFileRef = null;
+                newPreview = null;
+                previewText.setText ( "" );
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        new Label ( container, SWT.NONE );
 
         Label lblFile = new Label ( container, SWT.NONE );
         lblFile.setText ( "Preview File" );
 
-        file1Text = new Text ( container, SWT.BORDER );
-        file1Text.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
-        file1Text.setEditable ( false );
+        previewText = new Text ( container, SWT.BORDER );
+        previewText.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
+        previewText.setEditable ( false );
 
         new Label ( container, SWT.NONE );
 
         Label lblFile_1 = new Label ( container, SWT.NONE );
         lblFile_1.setText ( "Complete File" );
 
-        file2Text = new Text ( container, SWT.BORDER );
-        file2Text.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
-        file2Text.setEditable ( false );
+        fileText = new Text ( container, SWT.BORDER );
+        fileText.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
+        fileText.setEditable ( false );
         //scrolledComposite.setContent(bodyText);
         //scrolledComposite.setMinSize(bodyText.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 
@@ -315,6 +480,9 @@ public class NewPostDialog extends Dialog
                        IDialogConstants.CANCEL_LABEL, false );
     }
 
+    private File newAttachment;
+    private File newPreview;
+
     @Override
     protected void okPressed()
     {
@@ -330,27 +498,113 @@ public class NewPostDialog extends Dialog
             p.pushNumber ( CObj.CREATEDON, ( new Date() ).getTime() );
             p.pushText ( CObj.BODY, postBody.getText() );
 
-            if ( fileRef != null )
+            if ( newAttachment == null )
             {
-                p.pushString ( CObj.NAME, fileRef.getString ( CObj.NAME ) );
-                p.pushNumber ( CObj.FILESIZE, fileRef.getNumber ( CObj.FILESIZE ) );
-                p.pushString ( CObj.FRAGDIGEST, fileRef.getString ( CObj.FRAGDIGEST ) );
-                p.pushNumber ( CObj.FRAGSIZE, fileRef.getNumber ( CObj.FRAGSIZE ) );
-                p.pushNumber ( CObj.FRAGNUMBER, fileRef.getNumber ( CObj.FRAGNUMBER ) );
-                p.pushString ( CObj.FILEDIGEST, fileRef.getString ( CObj.FILEDIGEST ) );
+                if ( fileRef != null )
+                {
+                    p.pushString ( CObj.NAME, fileRef.getString ( CObj.NAME ) );
+                    p.pushNumber ( CObj.FILESIZE, fileRef.getNumber ( CObj.FILESIZE ) );
+                    p.pushString ( CObj.FRAGDIGEST, fileRef.getString ( CObj.FRAGDIGEST ) );
+                    p.pushNumber ( CObj.FRAGSIZE, fileRef.getNumber ( CObj.FRAGSIZE ) );
+                    p.pushNumber ( CObj.FRAGNUMBER, fileRef.getNumber ( CObj.FRAGNUMBER ) );
+                    p.pushString ( CObj.FILEDIGEST, fileRef.getString ( CObj.FILEDIGEST ) );
+                }
+
             }
 
-            if ( prvFileRef != null )
+            else
             {
-                p.pushString ( CObj.PRV_NAME,       prvFileRef.getString ( CObj.NAME ) );
-                p.pushNumber ( CObj.PRV_FILESIZE,   prvFileRef.getNumber ( CObj.FILESIZE ) );
-                p.pushString ( CObj.PRV_FRAGDIGEST, prvFileRef.getString ( CObj.FRAGDIGEST ) );
-                p.pushNumber ( CObj.PRV_FRAGSIZE,   prvFileRef.getNumber ( CObj.FRAGSIZE ) );
-                p.pushNumber ( CObj.PRV_FRAGNUMBER, prvFileRef.getNumber ( CObj.FRAGNUMBER ) );
-                p.pushString ( CObj.PRV_FILEDIGEST, prvFileRef.getString ( CObj.FILEDIGEST ) );
+                try
+                {
+                    p.pushPrivate ( CObj.LOCALFILE, newAttachment.getCanonicalPath() );
+                }
+
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    newAttachment = null;
+                }
+
             }
 
-            app.getNode().enqueue ( p );
+            if ( newPreview == null )
+            {
+                if ( prvFileRef != null )
+                {
+                    p.pushString ( CObj.PRV_NAME,       prvFileRef.getString ( CObj.NAME ) );
+                    p.pushNumber ( CObj.PRV_FILESIZE,   prvFileRef.getNumber ( CObj.FILESIZE ) );
+                    p.pushString ( CObj.PRV_FRAGDIGEST, prvFileRef.getString ( CObj.FRAGDIGEST ) );
+                    p.pushNumber ( CObj.PRV_FRAGSIZE,   prvFileRef.getNumber ( CObj.FRAGSIZE ) );
+                    p.pushNumber ( CObj.PRV_FRAGNUMBER, prvFileRef.getNumber ( CObj.FRAGNUMBER ) );
+                    p.pushString ( CObj.PRV_FILEDIGEST, prvFileRef.getString ( CObj.FILEDIGEST ) );
+                }
+
+            }
+
+            else
+            {
+                try
+                {
+                    p.pushPrivate ( CObj.PRV_LOCALFILE, newPreview.getCanonicalPath() );
+                }
+
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    newPreview = null;
+                }
+
+            }
+
+            if ( newPreview == null && newAttachment == null )
+            {
+                app.getNode().enqueue ( p );
+            }
+
+            else
+            {
+                app.addPendingPost ( p );
+
+                if ( newPreview != null )
+                {
+                    try
+                    {
+                        CObj nf = new CObj();
+                        nf.setType ( CObj.HASFILE );
+                        nf.pushString ( CObj.COMMUNITYID, community.getDig() );
+                        nf.pushString ( CObj.CREATOR, postIdentity.getId() );
+                        nf.pushPrivate ( CObj.LOCALFILE, newPreview.getCanonicalPath() );
+                        app.getNode().enqueue ( nf );
+                    }
+
+                    catch ( Exception e )
+                    {
+                        e.printStackTrace();
+                    }
+
+                }
+
+                if ( newAttachment != null )
+                {
+                    try
+                    {
+                        CObj nf = new CObj();
+                        nf.setType ( CObj.HASFILE );
+                        nf.pushString ( CObj.COMMUNITYID, community.getDig() );
+                        nf.pushString ( CObj.CREATOR, postIdentity.getId() );
+                        nf.pushPrivate ( CObj.LOCALFILE, newAttachment.getCanonicalPath() );
+                        app.getNode().enqueue ( nf );
+                    }
+
+                    catch ( Exception e )
+                    {
+                        e.printStackTrace();
+                    }
+
+                }
+
+            }
+
         }
 
         super.okPressed();
@@ -387,12 +641,12 @@ public class NewPostDialog extends Dialog
 
     public Text getFile1Text()
     {
-        return file1Text;
+        return previewText;
     }
 
     public Text getFile2Text()
     {
-        return file2Text;
+        return fileText;
     }
 
 }

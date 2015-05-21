@@ -352,7 +352,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         return dlst;
     }
 
-    private void attemptOneConnection ( DestinationThread dt, List<String> idlst, Map<String, CObj> myids )
+    private void attemptOneConnection ( DestinationThread dt, List<String> idlst, Map<String, CObj> myids, boolean filemode )
     {
         IdentityData idat = null;
         long curtime = ( new Date() ).getTime();
@@ -406,7 +406,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
             {
                 identManager.connectionAttempted ( idat.getId() );
                 log.info ( "CONMAN: attempt new connection " + tid.getDisplayName() );
-                dt.connect ( tid.getString ( CObj.DEST ) );
+                dt.connect ( tid.getString ( CObj.DEST ), filemode );
             }
 
         }
@@ -417,7 +417,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         hlst is a list of CObj's with CREATOR set to identies we
         could connect to
     */
-    private void attemptDestinationConnection ( CObjList hlst, DestinationThread dt, Map<String, CObj> myids )
+    private void attemptDestinationConnection ( CObjList hlst, DestinationThread dt, Map<String, CObj> myids, boolean filemode )
     {
         //See how many of these nodes we're connected to
         List<String> idlst = new LinkedList<String>();
@@ -447,7 +447,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
                 log.info ( "CONMAN: attempt connection add node: " + cr );
 
-                if ( dt.isConnected ( cr ) )
+                if ( dt.isConnected ( cr, filemode ) )
                 {
                     log.info ( "CONMAN: alrady connected." );
                     connected++;
@@ -472,7 +472,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         if ( connected < MAX_CONNECTIONS && idlst.size() > 0 )
         {
-            attemptOneConnection ( dt, idlst, myids );
+            attemptOneConnection ( dt, idlst, myids, filemode );
         }
 
     }
@@ -519,7 +519,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                     CObjList hlst = index.getHasFiles ( rf.getCommunityId(),
                                                         rf.getWholeDigest(), rf.getFragmentDigest() );
                     log.info ( "CONMAN: number has file: " + hlst.size() );
-                    attemptDestinationConnection ( hlst, dt, mymap );
+                    attemptDestinationConnection ( hlst, dt, mymap, true );
                 }
 
             }
@@ -545,7 +545,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                     CObjList hlst = index.getSubscriptions ( cm.getCommunityId(), null );
                     log.info ( "CONMAN: Attempt connection for has_file " + hlst.size() );
                     //See how many of these nodes we're connected to
-                    attemptDestinationConnection ( hlst, dt, mymap );
+                    attemptDestinationConnection ( hlst, dt, mymap, false );
                 }
 
             }
@@ -565,7 +565,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 {
                     CObjList hlst = index.getSubscriptions ( cm.getCommunityId(), null );
                     //See how many of these nodes we're connected to
-                    attemptDestinationConnection ( hlst, dt, mymap );
+                    attemptDestinationConnection ( hlst, dt, mymap, false );
                 }
 
             }
@@ -593,13 +593,13 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                         hlst.add ( com ); //attempt to connect to the community creator too
                         log.info ( "subscription update nodes to try: " + hlst.size() );
                         //See how many of these nodes we're connected to
-                        attemptDestinationConnection ( hlst, dt, mymap );
+                        attemptDestinationConnection ( hlst, dt, mymap, false );
                     }
 
                     else
                     {
                         CObjList hlst = index.getIdentities();
-                        attemptDestinationConnection ( hlst, dt, mymap );
+                        attemptDestinationConnection ( hlst, dt, mymap, false );
                     }
 
                 }
@@ -621,7 +621,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
             {
                 IdentityData id = i.next();
 
-                if ( dt.isConnected ( id.getId() ) )
+                if ( dt.isConnected ( id.getId(), false ) )
                 {
                     i.remove();
                 }
@@ -641,21 +641,21 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         {
             if ( dt.numberConnection() < MAX_CONNECTIONS )
             {
-                attemptOneConnection ( dt, ids, mymap );
+                attemptOneConnection ( dt, ids, mymap, false );
             }
 
         }
 
     }
 
-    private Object findNext ( String localdest, String remotedest, List<String> comlist, long rdy )
+    private Object findNext ( String localdest, String remotedest, List<String> comlist, long rdy, boolean filemode )
     {
         Object r = null;
 
         log.info ( "READY FOR NEXT: " + localdest + " to " + remotedest + " RDY: " + rdy + " match com: " + comlist.size() );
 
         //get files if we want them
-        if ( rdy == 0 )
+        if ( rdy == 0 || filemode  )
         {
             List<RequestFile> rflst = fileHandler.findFileListFrags ( localdest, 60L * 60L * 1000L );
             log.info ( "CONMAN: Requests for fragment list: " + rflst.size() );
@@ -861,6 +861,11 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             }
 
+        }
+
+        if ( filemode )
+        {
+            return r;
         }
 
         //get has file information
@@ -1090,7 +1095,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     private Map<String, Integer> lastRequestType = new HashMap<String, Integer>();
 
     @Override
-    public Object next ( String localdest, String remotedest )
+    public Object next ( String localdest, String remotedest, boolean filemode )
     {
         Object r = null;
 
@@ -1157,21 +1162,21 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         if ( rdy == null )
         {
-            rdy = 0;
+            rdy = 1; //Skip files.  Only download files with file only mode
         }
 
-        r = findNext ( localdest, remotedest, ncomlst, rdy ) ;
+        r = findNext ( localdest, remotedest, ncomlst, rdy, filemode ) ;
 
-        if ( r == null )
+        if ( r == null && !filemode )
         {
-            r = findNext ( localdest, remotedest, ncomlst, 0 ) ;
+            r = findNext ( localdest, remotedest, ncomlst, 1, false ) ;
         }
 
         rdy++;
 
         if ( rdy > 6 )
         {
-            rdy = 0;
+            rdy = 1; //Skip files.  Only download files with file only mode
         }
 
         synchronized ( lastRequestType )

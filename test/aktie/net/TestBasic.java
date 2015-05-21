@@ -115,10 +115,10 @@ public class TestBasic
         assertNull ( o1 );
 
         DestinationThread dt0 = DestinationThread.threadlist.get ( d0 );
-        dt0.connect ( ns1 );
+        dt0.connect ( ns1, true );
+        dt0.connect ( ns1, false );
 
         o0 = pollForData ( Tn1 );
-
         System.out.println ( "o0: " + o0 );
         assertTrue ( o0 instanceof CObj );
         CObj oc0 = ( CObj ) o0;
@@ -129,6 +129,20 @@ public class TestBasic
         System.out.println ( "o1: " + o1 );
         assertTrue ( o1 instanceof CObj );
         CObj oc1 = ( CObj ) o1;
+        assertEquals ( n1.getId(), oc1.getId() );
+        assertEquals ( n1.getDig(), oc1.getDig() );
+
+        o0 = pollForData ( Tn1 );
+        System.out.println ( "o0: " + o0 );
+        assertTrue ( o0 instanceof CObj );
+        oc0 = ( CObj ) o0;
+        assertEquals ( n0.getId(), oc0.getId() );
+        assertEquals ( n0.getDig(), oc0.getDig() );
+
+        o1 = pollForData ( Tn0 );
+        System.out.println ( "o1: " + o1 );
+        assertTrue ( o1 instanceof CObj );
+        oc1 = ( CObj ) o1;
         assertEquals ( n1.getId(), oc1.getId() );
         assertEquals ( n1.getDig(), oc1.getDig() );
 

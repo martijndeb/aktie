@@ -117,6 +117,14 @@ public class ConnectionValidatorProcessor extends GenericProcessor
                 else
                 {
                     con.setEndDestination ( endDest );
+
+                    if ( con.isFileMode() )
+                    {
+                        CObj filemode = new CObj();
+                        filemode.setType ( CObj.CON_FILEMODE );
+                        con.enqueue ( filemode );
+                    }
+
                     dest.addEstablishedConnection ( con );
                     IdentProcessor.process ( endDest );
                     con.poke();

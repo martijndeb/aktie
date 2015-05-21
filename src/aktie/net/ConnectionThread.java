@@ -43,6 +43,7 @@ public class ConnectionThread implements Runnable, GuiCallback
     public static int MAXQUEUESIZE = 100; //Long lists should be in CObjList each one could have open indexreader!
 
     private boolean stop;
+    private boolean fileOnly;
     private Connection con;
     private BatchProcessor preprocProcessor;
     private BatchProcessor inProcessor;
@@ -70,9 +71,10 @@ public class ConnectionThread implements Runnable, GuiCallback
     private long lastMyRequest;
     private long startTime;
 
-    public ConnectionThread ( DestinationThread d, HH2Session s, Index i, Connection c, GetSendData sd, GuiCallback cb, ConnectionListener cl, RequestFileHandler rf )
+    public ConnectionThread ( DestinationThread d, HH2Session s, Index i, Connection c, GetSendData sd, GuiCallback cb, ConnectionListener cl, RequestFileHandler rf, boolean fo )
     {
         This = this;
+        fileOnly = fo;
         conListener = cl;
         guicallback = cb;
         sendData = sd;
@@ -96,6 +98,7 @@ public class ConnectionThread implements Runnable, GuiCallback
         //Otherwise the list of fragments will be interate though for preceding processors
         //that don't need to and time will be wasted.
         preprocProcessor.addProcessor ( new InFragProcessor ( session, index, this ) );
+        preprocProcessor.addProcessor ( new InFileModeProcessor ( this ) );
         preprocProcessor.addProcessor ( ip );
         preprocProcessor.addProcessor ( new InFileProcessor ( this ) );
         preprocProcessor.addProcessor ( new InComProcessor ( session, index, this ) );
@@ -120,6 +123,16 @@ public class ConnectionThread implements Runnable, GuiCallback
         outproc = new OutputProcessor();
         Thread t = new Thread ( this );
         t.start();
+    }
+
+    public void setFileMode ( boolean filemode )
+    {
+        fileOnly = filemode;
+    }
+
+    public boolean isFileMode()
+    {
+        return fileOnly;
     }
 
     public long getStartTime()
@@ -353,7 +366,7 @@ public class ConnectionThread implements Runnable, GuiCallback
                     pendingFileRequests < MAX_PENDING_FILES )
             {
                 Object r = sendData.next ( dest.getIdentity().getId(),
-                                           endDestination.getId() );
+                                           endDestination.getId(), fileOnly );
 
                 if ( r != null )
                 {
@@ -433,11 +446,15 @@ public class ConnectionThread implements Runnable, GuiCallback
         {
             long curtime = System.currentTimeMillis();
 
-            long cuttime = curtime - ConnectionManager.MAX_TIME_WITH_NO_REQUESTS;
-
-            if ( lastMyRequest < cuttime )
+            if ( !fileOnly )
             {
-                stop();
+                long cuttime = curtime - ConnectionManager.MAX_TIME_WITH_NO_REQUESTS;
+
+                if ( lastMyRequest < cuttime )
+                {
+                    stop();
+
+                }
 
             }
 
@@ -496,7 +513,7 @@ public class ConnectionThread implements Runnable, GuiCallback
 
                                 if ( lfs != null && offset != null && len != null )
                                 {
-                                    byte buf[] = new byte[1024];
+                                    byte buf[] = new byte[4096];
                                     File lf = new File ( lfs );
                                     RandomAccessFile raf = new RandomAccessFile ( lf, "rw" );
                                     raf.seek ( offset );
@@ -829,13 +846,13 @@ public class ConnectionThread implements Runnable, GuiCallback
                                     hf.pushString ( CObj.SHARE_NAME, rf.getShareName() );
                                     hfc.createHasFile ( hf );
                                     hfc.updateFileInfo ( hf );
-                                    guicallback.update ( hf );
+                                    update ( hf );
 
                                 }
 
                             }
 
-                            guicallback.update ( rf );
+                            update ( rf );
                         }
 
                         else

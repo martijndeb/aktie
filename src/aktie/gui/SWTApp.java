@@ -1037,6 +1037,7 @@ public class SWTApp
                     if ( CObj.HASFILE.equals ( co.getType() ) )
                     {
 
+                        checkPendingPosts ( co );
                         checkDownloadUpgrade ( co );
                         checkUpgradeDownloadComplete ( co );
 
@@ -1305,6 +1306,114 @@ public class SWTApp
     private TableViewer downloadTableViewer;
     private String exportCommunitiesFile;
     private CObj developerIdentity;
+    private Map<String, List<CObj>> pendingPosts = new HashMap<String, List<CObj>>();
+
+    //Should be a HASFILE
+    private void checkPendingPosts ( CObj c )
+    {
+        String lfname = c.getPrivate ( CObj.LOCALFILE );
+
+        if ( lfname != null )
+        {
+            synchronized ( pendingPosts )
+            {
+                List<CObj> pplst = pendingPosts.get ( lfname );
+
+                if ( pplst != null )
+                {
+                    Iterator<CObj> i = pplst.iterator();
+
+                    while ( i.hasNext() )
+                    {
+                        CObj pst = i.next();
+                        String fname = pst.getPrivate ( CObj.LOCALFILE );
+                        String pvname = pst.getPrivate ( CObj.PRV_LOCALFILE );
+
+                        //Primary file attachment
+                        if ( lfname.equals ( fname ) )
+                        {
+                            pst.pushString ( CObj.NAME,       c.getString ( CObj.NAME ) );
+                            pst.pushNumber ( CObj.FILESIZE,   c.getNumber ( CObj.FILESIZE ) );
+                            pst.pushString ( CObj.FRAGDIGEST, c.getString ( CObj.FRAGDIGEST ) );
+                            pst.pushNumber ( CObj.FRAGSIZE,   c.getNumber ( CObj.FRAGSIZE ) );
+                            pst.pushNumber ( CObj.FRAGNUMBER, c.getNumber ( CObj.FRAGNUMBER ) );
+                            pst.pushString ( CObj.FILEDIGEST, c.getString ( CObj.FILEDIGEST ) );
+                        }
+
+                        if ( lfname.equals ( pvname ) )
+                        {
+                            pst.pushString ( CObj.PRV_NAME,       c.getString ( CObj.NAME ) );
+                            pst.pushNumber ( CObj.PRV_FILESIZE,   c.getNumber ( CObj.FILESIZE ) );
+                            pst.pushString ( CObj.PRV_FRAGDIGEST, c.getString ( CObj.FRAGDIGEST ) );
+                            pst.pushNumber ( CObj.PRV_FRAGSIZE,   c.getNumber ( CObj.FRAGSIZE ) );
+                            pst.pushNumber ( CObj.PRV_FRAGNUMBER, c.getNumber ( CObj.FRAGNUMBER ) );
+                            pst.pushString ( CObj.PRV_FILEDIGEST, c.getString ( CObj.FILEDIGEST ) );
+                        }
+
+                        if ( ( fname == null ||
+                                ( fname != null && pst.getString ( CObj.FILEDIGEST ) != null ) ) &&
+                                ( pvname == null ||
+                                  ( pvname != null && pst.getString ( CObj.PRV_FILEDIGEST ) != null ) ) )
+                        {
+                            i.remove();
+                            getNode().enqueue ( pst );
+                        }
+
+                    }
+
+                    if ( pplst.size() == 0 )
+                    {
+                        pendingPosts.remove ( lfname );
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+    public void addPendingPost ( CObj c )
+    {
+        String fname = c.getPrivate ( CObj.LOCALFILE );
+        String pvname = c.getPrivate ( CObj.PRV_LOCALFILE );
+
+        if ( fname != null )
+        {
+            synchronized ( pendingPosts )
+            {
+                List<CObj> pl = pendingPosts.get ( fname );
+
+                if ( pl == null )
+                {
+                    pl = new LinkedList<CObj>();
+                    pendingPosts.put ( fname, pl );
+                }
+
+                pl.add ( c );
+            }
+
+        }
+
+        if ( pvname != null )
+        {
+            synchronized ( pendingPosts )
+            {
+                List<CObj> pl = pendingPosts.get ( pvname );
+
+                if ( pl == null )
+                {
+                    pl = new LinkedList<CObj>();
+                    pendingPosts.put ( pvname, pl );
+                }
+
+                pl.add ( c );
+            }
+
+        }
+
+    }
 
     public CObj getSelectedCommunity()
     {
@@ -3553,6 +3662,7 @@ public class SWTApp
         postText = new StyledText ( composite_6, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL );
         postText.setLayoutData ( new GridData ( SWT.FILL, SWT.FILL, true, true ) );
         postText.setEditable ( false );
+        postText.setCaret ( null );
 
         // use a verify listener to dispose the images
         postText.addVerifyListener ( new VerifyListener()
@@ -3644,17 +3754,14 @@ public class SWTApp
             @Override
             public void mouseDoubleClick ( MouseEvent e )
             {
+                resize = !resize;
+                postText.redraw();
+                postText.setSelection ( 0, 0 );
             }
 
             @Override
             public void mouseDown ( MouseEvent e )
             {
-                if ( e.button == 1 )
-                {
-                    resize = !resize;
-                    postText.redraw();
-                }
-
             }
 
             @Override

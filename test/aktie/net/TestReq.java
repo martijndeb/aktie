@@ -17,7 +17,7 @@ public class TestReq implements GetSendData
     }
 
     @Override
-    public Object next ( String localdest, String remotedest )
+    public Object next ( String localdest, String remotedest, boolean filemode )
     {
         System.out.println ( "CALLING NEXT: " + localdest + " -> " + remotedest );
 

@@ -299,7 +299,7 @@ public class UserTest implements GuiCallback, GetSendData, ConnectionListener, D
     }
 
     @Override
-    public CObj next ( String localdest, String remotedest )
+    public CObj next ( String localdest, String remotedest, boolean fmode )
     {
         //Called to get new data to send to remote destinations
         return null;

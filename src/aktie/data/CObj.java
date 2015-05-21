@@ -51,6 +51,7 @@ public class CObj
     public static String CON_REQ_FRAGLIST = "con_flist";
     public static String CON_REQ_FRAG = "con_frag";
     public static String CON_LIST = "lsttype";
+    public static String CON_FILEMODE = "filemode";
 
     //Temporary types - user requests.
     public static String USR_DOWNLOAD_FILE = "usr_downloadfile";
@@ -64,6 +65,7 @@ public class CObj
     public static String USR_COMMUNITY = "usr_com";
     public static String USR_START_DEST = "start_dest";
 
+    public static String PRV_LOCALFILE   = "prv_localfile";
     public static String PRV_NAME        = "prv_name";
     public static String PRV_FILESIZE    = "prv_filesize";
     public static String PRV_FRAGDIGEST  = "prv_fragdig";
