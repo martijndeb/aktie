@@ -167,6 +167,7 @@ public class ConnectionThread implements Runnable, GuiCallback
 
     public void stop()
     {
+        System.out.println ( "STOPPING!" );
         boolean wasstopped = stop;
         stop = true;
         outproc.go();
@@ -357,7 +358,11 @@ public class ConnectionThread implements Runnable, GuiCallback
 
         public synchronized void decrFileRequests()
         {
-            pendingFileRequests--;
+            if ( pendingFileRequests > 0 )
+            {
+                pendingFileRequests--;
+            }
+
         }
 
         private Object getLocalRequests()
@@ -374,7 +379,8 @@ public class ConnectionThread implements Runnable, GuiCallback
                     {
                         CObj co = ( CObj ) r;
 
-                        if ( CObj.CON_REQ_FRAG.equals ( co.getType() ) )
+                        if ( CObj.CON_REQ_FRAG.equals ( co.getType() ) ||
+                                CObj.CON_REQ_FRAGLIST.equals ( co.getType() ) )
                         {
                             incrFileRequests();
                         }
@@ -425,16 +431,14 @@ public class ConnectionThread implements Runnable, GuiCallback
 
         private void sendCObj ( CObj c ) throws IOException
         {
-            JSONObject ot = c.getJSON();
-            String os = ot.toString();
-            byte ob[] = os.getBytes ( "UTF-8" );
-            outBytes += ob.length;
-            outstream.write ( ob );
+            sendCObjNoFlush ( c );
             outstream.flush();
         }
 
         private void sendCObjNoFlush ( CObj c ) throws IOException
         {
+            lastSent = c.getType();
+            lastSentTime = System.currentTimeMillis();
             JSONObject ot = c.getJSON();
             String os = ot.toString();
             byte ob[] = os.getBytes ( "UTF-8" );
@@ -591,6 +595,11 @@ public class ConnectionThread implements Runnable, GuiCallback
     private boolean loadFile;
     private int length;
 
+    public int getPendingFileRequests()
+    {
+        return pendingFileRequests;
+    }
+
     private void readFileData ( InputStream i ) throws IOException
     {
         if ( loadFile )
@@ -672,9 +681,10 @@ public class ConnectionThread implements Runnable, GuiCallback
                 {
                     s = session.getSession();
                     Query q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.wholeDigest = :wdig "
-                                              + "AND x.fragmentDigest = :fdig" );
+                                              + "AND x.fragmentDigest = :fdig AND x.state != :dstate" );
                     q.setParameter ( "wdig", wdig );
                     q.setParameter ( "fdig", fdig );
+                    q.setParameter ( "dstate", RequestFile.COMPLETE );
                     List<RequestFile> lrf = q.list();
                     String lf = null;
 
@@ -709,6 +719,7 @@ public class ConnectionThread implements Runnable, GuiCallback
                             rf = ( RequestFile ) s.get ( RequestFile.class, rf.getId() );
                             rf.setFragsComplete ( rf.getFragsComplete() + 1 );
                             s.merge ( rf );
+                            appendInput ( "Frags complete: " + rf.getFragsComplete()  );
                             //Copy the fragment to the whole file.
                             raf = new RandomAccessFile ( rf.getLocalFile() + RequestFileHandler.AKTIEPART, "rw" );
                             fis = new FileInputStream ( fpart );
@@ -751,13 +762,16 @@ public class ConnectionThread implements Runnable, GuiCallback
 
                     //Refresh the list of RequestFiles in case we deleted any.
                     q = s.createQuery ( "SELECT x FROM RequestFile x WHERE x.wholeDigest = :wdig "
-                                        + "AND x.fragmentDigest = :fdig" );
+                                        + "AND x.fragmentDigest = :fdig AND x.state != :dstate" );
                     q.setParameter ( "wdig", wdig );
                     q.setParameter ( "fdig", fdig );
+                    q.setParameter ( "dstate", RequestFile.COMPLETE );
                     lrf = q.list();
 
                     //Commit the transaction
                     //Ok now count how many fragments of each is done.
+                    appendInput ( "Pending files: " + lrf.size()  );
+
                     for ( RequestFile rf : lrf )
                     {
                         s.getTransaction().begin();
@@ -772,11 +786,19 @@ public class ConnectionThread implements Runnable, GuiCallback
                             rf.setFragsComplete ( numdone );
                             s.merge ( rf );
                             s.getTransaction().commit();
+                            appendInput ( "Fragments complete in index: " + numdone + " <> " + rf.getFragsTotal() );
+
 
                             if ( rf.getFragsComplete() >= rf.getFragsTotal() )
                             {
-                                if ( fileHandler.claimFileComplete ( rf ) )
+                                if ( !fileHandler.claimFileComplete ( rf ) )
                                 {
+                                    appendInput ( "Failed to claim complete.." );
+                                }
+
+                                else
+                                {
+                                    appendInput ( "CLAIM FILE COMPLETE!!!!!!" );
                                     //rename the aktiepart file to the real file name
                                     File lff = new File ( rf.getLocalFile() );
                                     File rlp = new File ( rf.getLocalFile() + RequestFileHandler.AKTIEPART );
@@ -930,6 +952,35 @@ public class ConnectionThread implements Runnable, GuiCallback
 
     public static long LONGESTLIST = 100000000;
 
+    private long lastReadTime;
+    private String lastRead = "";
+    public String getLastRead()
+    {
+        return lastRead;
+    }
+
+    public long getLastReadTime()
+    {
+        return lastReadTime;
+    }
+
+    private long lastSentTime;
+    private String lastSent = "";
+    public String getLastSent()
+    {
+        return lastSent;
+    }
+
+    public long getLastSentTime()
+    {
+        return lastSentTime;
+    }
+
+    public long getListCount()
+    {
+        return listCount;
+    }
+
     @Override
     public void run()
     {
@@ -945,6 +996,8 @@ public class ConnectionThread implements Runnable, GuiCallback
                 inNonFileBytes += clnpar.getBytesRead();
                 CObj r = new CObj();
                 r.loadJSON ( jo );
+                lastRead = r.getType();
+                lastReadTime = System.currentTimeMillis();
 
                 if ( log.getLevel() == Level.INFO )
                 {
@@ -1029,6 +1082,7 @@ public class ConnectionThread implements Runnable, GuiCallback
                         {
                             try
                             {
+                                outproc.decrFileRequests();
                                 preprocProcessor.processObj ( currentList );
                             }
 
@@ -1072,6 +1126,7 @@ public class ConnectionThread implements Runnable, GuiCallback
     @Override
     public void update ( Object o )
     {
+        System.out.println ( "CALLING UPDATE!" );
         guicallback.update ( o );
         lastMyRequest = System.currentTimeMillis();
     }

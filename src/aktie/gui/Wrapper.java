@@ -357,7 +357,7 @@ public class Wrapper
                 va[0] = Integer.valueOf ( m.group ( 1 ) );
                 va[1] = Integer.valueOf ( m.group ( 2 ) );
                 va[2] = Integer.valueOf ( m.group ( 3 ) );
-                System.out.println("VERSION: " + va[0] + "." + va[1] + "." + va[2]);
+                System.out.println ( "VERSION: " + va[0] + "." + va[1] + "." + va[2] );
                 return va;
             }
 
@@ -374,7 +374,8 @@ public class Wrapper
 
         for ( int c = 0; c < oldv.length; c++ )
         {
-        	System.out.println("oldv: " + oldv[c] + " newv: " + newv[c]);
+            System.out.println ( "oldv: " + oldv[c] + " newv: " + newv[c] );
+
             if ( oldv[c] > newv[c] )
             {
                 //this means that we have probably upgraded to an older

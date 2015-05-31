@@ -2,7 +2,6 @@ package aktie.gui;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -120,6 +119,56 @@ public class SWTApp
 
     }
 
+    class ConnectionColumnLastSent extends ColumnLabelProvider
+    {
+        @Override
+        public String getText ( Object element )
+        {
+            ConnectionThread ct = ( ConnectionThread ) element;
+            return ct.getLastSent();
+        }
+
+    }
+
+    class ConnectionColumnLastRead extends ColumnLabelProvider
+    {
+        @Override
+        public String getText ( Object element )
+        {
+            ConnectionThread ct = ( ConnectionThread ) element;
+            return ct.getLastRead() + " " + ct.getListCount();
+        }
+
+    }
+
+    class ConnectionColumnMode extends ColumnLabelProvider
+    {
+        @Override
+        public String getText ( Object element )
+        {
+            ConnectionThread ct = ( ConnectionThread ) element;
+
+            if ( ct.isFileMode() )
+            {
+                return "FILE";
+            }
+
+            return "norm";
+        }
+
+    }
+
+    class ConnectionColumnPending extends ColumnLabelProvider
+    {
+        @Override
+        public String getText ( Object element )
+        {
+            ConnectionThread ct = ( ConnectionThread ) element;
+            return Long.toString ( ct.getPendingFileRequests() );
+        }
+
+    }
+
     class ConnectionColumnDownload extends ColumnLabelProvider
     {
         @Override
@@ -231,7 +280,27 @@ public class SWTApp
 
                 if ( column == 3 )
                 {
-                    labprov = new ConnectionColumnDownload();
+                    labprov = new ConnectionColumnTime();
+                }
+
+                if ( column == 4 )
+                {
+                    labprov = new ConnectionColumnLastSent();
+                }
+
+                if ( column == 5 )
+                {
+                    labprov = new ConnectionColumnLastRead();
+                }
+
+                if ( column == 6 )
+                {
+                    labprov = new ConnectionColumnPending();
+                }
+
+                if ( column == 7 )
+                {
+                    labprov = new ConnectionColumnMode();
                 }
 
                 if ( labprov != null )
@@ -242,7 +311,7 @@ public class SWTApp
                     Comparable dn0 = s0;
                     Comparable dn1 = s1;
 
-                    if ( column > 0 )
+                    if ( ( column > 0 && column < 4 ) || column == 6 )
                     {
                         dn0 = Long.valueOf ( s0 );
                         dn1 = Long.valueOf ( s1 );
@@ -1283,6 +1352,7 @@ public class SWTApp
     private ShowMembersDialog membersDialog;
     private NewDirectoryShareDialog shareDialog;
     private DownloadToShareDialog downloadToShareDialog;
+    private I2PSettingsDialog i2pDialog;
     private IdentitySubTreeModel identSubTreeModel;
 
     private Node node;
@@ -1437,6 +1507,8 @@ public class SWTApp
 
         setShares ( comid.getDig(), id.getId() );
 
+        searchText.setText ( "" );
+        fileSearch.setText ( "" );
         postSearch ( "" );
         filesSearch ( "" );
         postText.setText ( "" );
@@ -1522,35 +1594,64 @@ public class SWTApp
 
     }
 
+    public void setI2PProps ( Properties p )
+    {
+        if ( i2pnet != null )
+        {
+            i2pnet.setProperties ( p );
+            List<CObj> myonlist = new LinkedList<CObj>();
+            CObjList myids = node.getIndex().getMyIdentities();
+
+            for ( int c = 0; c < myids.size(); c++ )
+            {
+                try
+                {
+                    CObj ido = myids.get ( c );
+
+                    if ( ido.getPrivateNumber ( CObj.PRV_DEST_OPEN ) == null ||
+                            ido.getPrivateNumber ( CObj.PRV_DEST_OPEN ) == 1L )
+                    {
+                        myonlist.add ( ido );
+                    }
+
+                }
+
+                catch ( Exception e )
+                {
+                    e.printStackTrace();
+                }
+
+            }
+
+            myids.close();
+
+            for ( CObj mid : myonlist )
+            {
+                CObj off = mid.clone();
+                off.setType ( CObj.USR_START_DEST );
+                off.pushPrivateNumber ( CObj.PRV_DEST_OPEN, 0L );
+                node.enqueue ( off );
+            }
+
+            for ( CObj mid : myonlist )
+            {
+                CObj on = mid.clone();
+                on.setType ( CObj.USR_START_DEST );
+                on.pushPrivateNumber ( CObj.PRV_DEST_OPEN, 1L );
+                node.enqueue ( on );
+            }
+
+        }
+
+    }
+
     private void startI2P()
     {
-        Properties p = null;
         File i2pp = new File ( nodeDir + File.separator + "i2p.props" );
+        i2pDialog = new I2PSettingsDialog ( shell, this, i2pp );
+        i2pDialog.create();
 
-        if ( !i2pp.exists() )
-        {
-            i2pp = new File ( "i2p.props" );
-        }
-
-        if ( i2pp.exists() )
-        {
-            p = new Properties();
-
-            try
-            {
-                FileInputStream fis = new FileInputStream ( i2pp );
-                p.load ( fis );
-                fis.close();
-            }
-
-            catch ( Exception e )
-            {
-                e.printStackTrace();
-            }
-
-        }
-
-        i2pnet = new I2PNet ( nodeDir , p );
+        i2pnet = new I2PNet ( nodeDir, i2pDialog.getI2PProps() );
         i2pnet.waitUntilReady();
 
     }
@@ -1758,7 +1859,7 @@ public class SWTApp
 
             }
 
-        }, 0, 30L * 1000L );
+        }, 0, 5L * 60L * 1000L );
 
     }
 
@@ -2593,6 +2694,24 @@ public class SWTApp
         MenuItem mntmStartManualUpdate = new MenuItem ( menu_1, SWT.NONE );
         mntmStartManualUpdate.setText ( "Force Update" );
         mntmStartManualUpdate.addSelectionListener ( new ManualUpdate() );
+
+        MenuItem mntmI2Popts = new MenuItem ( menu_1, SWT.NONE );
+        mntmI2Popts.setText ( "I2P Options" );
+        mntmI2Popts.addSelectionListener ( new SelectionListener()
+        {
+
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                i2pDialog.open();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
 
         composite_header = new Composite ( shell, SWT.NONE );
         composite_header.setLayout ( new GridLayout ( 3, false ) );
@@ -4647,13 +4766,101 @@ public class SWTApp
         concol3.getColumn().setWidth ( 200 );
         concol3.setLabelProvider ( new ConnectionColumnTime() );
 
-        concol2.getColumn().addSelectionListener ( new SelectionListener()
+        concol3.getColumn().addSelectionListener ( new SelectionListener()
         {
             @Override
             public void widgetSelected ( SelectionEvent e )
             {
                 ConnectionSorter srt = ( ConnectionSorter ) connectionTableViewer.getSorter();
-                srt.doSort ( 2 );
+                srt.doSort ( 3 );
+                connectionTableViewer.refresh();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        TableViewerColumn concol4 = new TableViewerColumn ( connectionTableViewer, SWT.NONE );
+        concol4.getColumn().setText ( "Last Sent" );
+        concol4.getColumn().setWidth ( 200 );
+        concol4.setLabelProvider ( new ConnectionColumnLastSent() );
+
+        concol4.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                ConnectionSorter srt = ( ConnectionSorter ) connectionTableViewer.getSorter();
+                srt.doSort ( 4 );
+                connectionTableViewer.refresh();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        TableViewerColumn concol5 = new TableViewerColumn ( connectionTableViewer, SWT.NONE );
+        concol5.getColumn().setText ( "Last Read" );
+        concol5.getColumn().setWidth ( 200 );
+        concol5.setLabelProvider ( new ConnectionColumnLastRead() );
+
+        concol5.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                ConnectionSorter srt = ( ConnectionSorter ) connectionTableViewer.getSorter();
+                srt.doSort ( 5 );
+                connectionTableViewer.refresh();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        TableViewerColumn concol6 = new TableViewerColumn ( connectionTableViewer, SWT.NONE );
+        concol6.getColumn().setText ( "Pending" );
+        concol6.getColumn().setWidth ( 200 );
+        concol6.setLabelProvider ( new ConnectionColumnPending() );
+
+        concol6.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                ConnectionSorter srt = ( ConnectionSorter ) connectionTableViewer.getSorter();
+                srt.doSort ( 6 );
+                connectionTableViewer.refresh();
+            }
+
+            @Override
+            public void widgetDefaultSelected ( SelectionEvent e )
+            {
+            }
+
+        } );
+
+        TableViewerColumn concol7 = new TableViewerColumn ( connectionTableViewer, SWT.NONE );
+        concol7.getColumn().setText ( "Mode" );
+        concol7.getColumn().setWidth ( 200 );
+        concol7.setLabelProvider ( new ConnectionColumnMode() );
+
+        concol7.getColumn().addSelectionListener ( new SelectionListener()
+        {
+            @Override
+            public void widgetSelected ( SelectionEvent e )
+            {
+                ConnectionSorter srt = ( ConnectionSorter ) connectionTableViewer.getSorter();
+                srt.doSort ( 7 );
                 connectionTableViewer.refresh();
             }
 

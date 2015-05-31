@@ -481,7 +481,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     {
         Map<String, CObj> mymap = getMyIdMap();
         //Find the current file requests we have
-        List<RequestFile> rl = fileHandler.listRequestFilesNE ( RequestFile.COMPLETE, 5 );
+        List<RequestFile> rl = fileHandler.listRequestFilesNE ( RequestFile.COMPLETE, Integer.MAX_VALUE );
         log.info ( "CONMAN: Found files to request: " + rl.size() );
 
         for ( RequestFile rf : rl )
@@ -720,6 +720,8 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
                             log.info ( "CONMAN: resetting fragments: " + cl.size() + " file: " + rf.getLocalFile() );
 
+                            long backtime = System.currentTimeMillis() - 10L * 60L * 1000L;
+
                             for ( int c = 0; c < cl.size(); c++ )
                             {
                                 try
@@ -727,8 +729,16 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                     //Set to false, so that we'll request again.
                                     //Ones already complete won't be reset.
                                     CObj co = cl.get ( c );
-                                    co.pushPrivate ( CObj.COMPLETE, "false" );
-                                    index.index ( co );
+                                    Long lt = co.getPrivateNumber ( CObj.LASTUPDATE );
+
+                                    //Check lastupdate so we don't request it back to
+                                    //back when there's only one fragment for a file.
+                                    if ( lt == null || lt < backtime )
+                                    {
+                                        co.pushPrivate ( CObj.COMPLETE, "false" );
+                                        index.index ( co );
+                                    }
+
                                 }
 
                                 catch ( IOException e )
@@ -745,87 +755,6 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
                             log.info ( "CONMAN: fragments to request2: " + cl.size() + " file: " + rf.getLocalFile() );
 
-                            if ( cl.size() == 0 )
-                            {
-                                //We're done, but the RequestFile wasn't updated properly.  do it now.
-                                if ( fileHandler.claimFileComplete ( rf ) )
-                                {
-                                    //rename the aktiepart file to the real file name
-                                    File lff = new File ( rf.getLocalFile() );
-                                    File rlp = new File ( rf.getLocalFile() + RequestFileHandler.AKTIEPART );
-
-                                    int lps = 120;
-
-                                    while ( lff.exists() && lps > 0 )
-                                    {
-                                        lps--;
-
-                                        if ( !lff.delete() )
-                                        {
-                                            log.info ( "Could not delete file: " + lff.getPath() );
-
-                                            try
-                                            {
-                                                Thread.sleep ( 1000L );
-                                            }
-
-                                            catch ( InterruptedException e )
-                                            {
-                                                e.printStackTrace();
-                                            }
-
-                                        }
-
-                                    }
-
-                                    lps = 120;
-
-                                    while ( rlp.exists() && lps > 0 )
-                                    {
-                                        lps--;
-
-                                        if ( !rlp.renameTo ( lff ) )
-                                        {
-                                            log.info ( "Failed to rename: " + rlp.getPath() + " to " + lff.getPath() );
-
-                                            try
-                                            {
-                                                Thread.sleep ( 1000L );
-                                            }
-
-                                            catch ( InterruptedException e )
-                                            {
-                                                e.printStackTrace();
-                                            }
-
-                                        }
-
-                                    }
-
-                                    //Generate a HasFileRecord
-                                    CObj hf = new CObj();
-                                    hf.setType ( CObj.HASFILE );
-                                    hf.pushString ( CObj.CREATOR, rf.getRequestId() );
-                                    hf.pushString ( CObj.COMMUNITYID, rf.getCommunityId() );
-                                    hf.pushString ( CObj.NAME, ( new File ( rf.getLocalFile() ) ).getName() );
-                                    hf.pushText ( CObj.NAME, hf.getString ( CObj.NAME ) );
-                                    hf.pushNumber ( CObj.FRAGSIZE, rf.getFragSize() );
-                                    hf.pushNumber ( CObj.FILESIZE, rf.getFileSize() );
-                                    hf.pushNumber ( CObj.FRAGNUMBER, rf.getFragsTotal() );
-                                    hf.pushString ( CObj.STILLHASFILE, "true" );
-                                    hf.pushString ( CObj.FILEDIGEST, rf.getWholeDigest() );
-                                    hf.pushString ( CObj.FRAGDIGEST, rf.getFragmentDigest() );
-                                    hf.pushPrivate ( CObj.LOCALFILE, rf.getLocalFile() );
-                                    hf.pushPrivate ( CObj.UPGRADEFLAG, rf.isUpgrade() ? "true" : "false" );
-                                    hf.pushString ( CObj.SHARE_NAME, rf.getShareName() );
-                                    log.info ( "File download completed. 1  Upgrade flag: " + rf.isUpgrade() );
-                                    hfc.createHasFile ( hf );
-                                    hfc.updateFileInfo ( hf );
-                                    callback.update ( hf );
-                                }
-
-                            }
-
                         }
 
                         if ( cl.size() > 0 )
@@ -837,6 +766,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                 CObj co = cl.get ( idx );
                                 log.info ( "CONMAN: request fragment: offset " + co.getNumber ( CObj.FRAGOFFSET ) + " file: " + rf.getLocalFile() );
                                 co.pushPrivate ( CObj.COMPLETE, "req" );
+                                co.pushPrivateNumber ( CObj.LASTUPDATE, System.currentTimeMillis() );
                                 index.index ( co );
                                 CObj sr = new CObj();
                                 sr.setType ( CObj.CON_REQ_FRAG );

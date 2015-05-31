@@ -110,7 +110,7 @@ public class TestNode
     {
 
         Logger log = Logger.getLogger ( "aktie" );
-        log.setLevel ( Level.WARNING );
+        log.setLevel ( Level.INFO );
 
         ConnectionManager.MIN_TIME_BETWEEN_CONNECTIONS = 2L * 1000L;
         ConnectionManager.DECODE_DELAY = 1000L;
@@ -277,10 +277,12 @@ public class TestNode
             n1.enqueue ( updateIdent );
             n2.enqueue ( updateIdent );
             n3.enqueue ( updateIdent );
+            n0.enqueue ( updateIdent );
 
             n1.sendRequestsNow();
             n2.sendRequestsNow();
             n3.sendRequestsNow();
+            n0.sendRequestsNow();
 
             try
             {

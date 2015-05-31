@@ -115,8 +115,8 @@ public class TestBasic
         assertNull ( o1 );
 
         DestinationThread dt0 = DestinationThread.threadlist.get ( d0 );
-        dt0.connect ( ns1, true );
-        dt0.connect ( ns1, false );
+
+        dt0.connect ( ns1, true );  //Open a file only connection
 
         o0 = pollForData ( Tn1 );
         System.out.println ( "o0: " + o0 );
@@ -132,19 +132,17 @@ public class TestBasic
         assertEquals ( n1.getId(), oc1.getId() );
         assertEquals ( n1.getDig(), oc1.getDig() );
 
-        o0 = pollForData ( Tn1 );
-        System.out.println ( "o0: " + o0 );
-        assertTrue ( o0 instanceof CObj );
-        oc0 = ( CObj ) o0;
-        assertEquals ( n0.getId(), oc0.getId() );
-        assertEquals ( n0.getDig(), oc0.getDig() );
+        try
+        {
+            Thread.sleep ( 2000L );
+        }
 
-        o1 = pollForData ( Tn0 );
-        System.out.println ( "o1: " + o1 );
-        assertTrue ( o1 instanceof CObj );
-        oc1 = ( CObj ) o1;
-        assertEquals ( n1.getId(), oc1.getId() );
-        assertEquals ( n1.getDig(), oc1.getDig() );
+        catch ( InterruptedException e2 )
+        {
+            e2.printStackTrace();
+        }
+
+        dt0.connect ( ns1, false ); //Open a normal connection
 
         //Create a new public community.
         CObj com0 = new CObj();
@@ -182,6 +180,7 @@ public class TestBasic
         oc1 = ( CObj ) o1;
         System.out.println ( "COM0: ERROR: " + oc1.getString ( CObj.ERROR ) );
         System.out.println ( "COM0: TYPE:  " + oc1.getType() );
+        System.out.println ( " NAME: " + oc1.getString ( CObj.NAME ) );
         assertNull ( oc1.getString ( CObj.ERROR ) );
         assertNotNull ( oc1.getDig() );
         assertEquals ( CObj.COMMUNITY, oc1.getType() );

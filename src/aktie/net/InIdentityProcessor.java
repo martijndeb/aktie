@@ -86,6 +86,8 @@ public class InIdentityProcessor extends GenericProcessor
 
             catch ( Exception e )
             {
+                e.printStackTrace();
+
                 if ( s != null )
                 {
                     try
@@ -99,6 +101,7 @@ public class InIdentityProcessor extends GenericProcessor
 
                     catch ( Exception e2 )
                     {
+                        e2.printStackTrace();
                     }
 
                     try

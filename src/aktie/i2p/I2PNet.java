@@ -34,6 +34,11 @@ public class I2PNet  implements Net
     private File i2pdir;
     private Router router;
 
+    public void setProperties ( Properties p )
+    {
+        customProps = p;
+    }
+
     public I2PNet ( String nodedir, Properties p )
     {
         customProps = p;
@@ -114,6 +119,8 @@ public class I2PNet  implements Net
             p.setProperty ( "i2cp.tcp.host", hst );
             p.setProperty ( "i2cp.tcp.port", Integer.toString ( port ) );
             p.setProperty ( "inbound.nickname", "aktie" );
+            p.setProperty ( "inbound.length", "2" );
+            p.setProperty ( "outbound.length", "2" );
         }
 
         else
@@ -176,6 +183,8 @@ public class I2PNet  implements Net
             p.setProperty ( "i2cp.tcp.host", hst );
             p.setProperty ( "i2cp.tcp.port", Integer.toString ( port ) );
             p.setProperty ( "inbound.nickname", "aktie" );
+            p.setProperty ( "inbound.length", "2" );
+            p.setProperty ( "outbound.length", "2" );
         }
 
         else
@@ -322,7 +331,8 @@ public class I2PNet  implements Net
             if ( _context.router().isHidden() )
             { return "I2P: Hidden (" + getRouterVersion() + ") prt: " + getPort(); }
 
-            RouterInfo routerInfo = _context.router().getRouterInfo();
+            router.rebuildRouterInfo();
+            RouterInfo routerInfo = router.getRouterInfo();
 
             if ( routerInfo == null )
             { return "I2P: Testing (" + getRouterVersion() + ") prt: " + getPort(); }
@@ -333,6 +343,7 @@ public class I2PNet  implements Net
             {
             case CommSystemFacade.STATUS_OK:
                 RouterAddress ra = routerInfo.getTargetAddress ( "NTCP" );
+                router.rebuildRouterInfo();
 
                 if ( ra == null )
                 { return "I2P: OK (" + getRouterVersion() + ") prt: " + getPort(); }
