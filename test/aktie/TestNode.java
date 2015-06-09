@@ -114,6 +114,7 @@ public class TestNode
 
         ConnectionManager.MIN_TIME_BETWEEN_CONNECTIONS = 2L * 1000L;
         ConnectionManager.DECODE_AND_NEW_CONNECTION_DELAY = 1000L;
+        ConnectionManager.NO_REREQUEST_CYCLES = 1;
 
         CallbackIntr cb0 = new CallbackIntr();
         CallbackIntr cb1 = new CallbackIntr();
@@ -796,6 +797,26 @@ public class TestNode
             clist.close();
 
             System.out.println ( "UPDATE SUBSCRIPTION.............................." );
+            updatesubs = new CObj();
+            updatesubs.setType ( CObj.USR_SUB_UPDATE );
+            n1.enqueue ( updatesubs );
+            n2.enqueue ( updatesubs );
+            n3.enqueue ( updatesubs );
+
+            n1.sendRequestsNow();
+            n2.sendRequestsNow();
+            n3.sendRequestsNow();
+
+            try
+            {
+                Thread.sleep ( 10000 );
+            }
+
+            catch ( InterruptedException e )
+            {
+                e.printStackTrace();
+            }
+
             updatesubs = new CObj();
             updatesubs.setType ( CObj.USR_SUB_UPDATE );
             n1.enqueue ( updatesubs );

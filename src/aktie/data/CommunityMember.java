@@ -1,5 +1,6 @@
 package aktie.data;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
@@ -32,18 +33,21 @@ public class CommunityMember
     private int subscriptionStatus;
     private int subscriptionUpdatePriority;
     private String lastSubscriptionUpdateFrom;
+    @Column ( columnDefinition = "INTEGER(10) default 0" )
     private int subscriptionUpdateCycle;
 
     private long lastPostUpdate;
     private int postStatus;
     private int postUpdatePriority;
     private String lastPostUpdateFrom;
+    @Column ( columnDefinition = "INTEGER(10) default 0" )
     private int postUpdateCycle;
 
     private long lastFileUpdate;
     private int fileStatus;
     private int fileUpdatePriority;
     private String lastFileUpdateFrom;
+    @Column ( columnDefinition = "INTEGER(10) default 0" )
     private int fileUpdateCycle;
 
     public CommunityMember()

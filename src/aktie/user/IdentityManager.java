@@ -266,7 +266,7 @@ public class IdentityManager
                     //More than 2 subscribers, get update from someone other than
                     //same person got last one.  if updates have been requested
                     //a few times sense the last time we got updates then ok
-                    else if ( ( !c.getLastFileUpdateFrom().equals ( thisid ) ) ||
+                    else if ( ( !thisid.equals ( c.getLastFileUpdateFrom() ) ) ||
                               c.getFileUpdateCycle() > rereqperiod )
                     {
                         cm = c;
@@ -362,7 +362,7 @@ public class IdentityManager
                     //More than 2 subscribers, get update from someone other than
                     //same person got last one.  if updates have been requested
                     //a few times sense the last time we got updates then ok
-                    else if ( ( !c.getLastPostUpdateFrom().equals ( thisid ) ) ||
+                    else if ( ( !thisid.equals ( c.getLastPostUpdateFrom() ) ) ||
                               c.getPostUpdateCycle() > rereqperiod )
                     {
                         cm = c;
@@ -458,7 +458,7 @@ public class IdentityManager
                     //More than 1(2) members, get update from someone other than
                     //same person got last one.  if updates have been requested
                     //a few times sense the last time we got updates then ok
-                    else if ( ( !c.getLastSubscriptionUpdateFrom().equals ( thisid ) ) ||
+                    else if ( ( !thisid.equals ( c.getLastSubscriptionUpdateFrom() ) ) ||
                               c.getSubscriptionUpdateCycle() > rereqperiod )
                     {
                         cm = c;

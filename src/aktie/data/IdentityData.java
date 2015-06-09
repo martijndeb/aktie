@@ -1,5 +1,6 @@
 package aktie.data;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
@@ -47,12 +48,14 @@ public class IdentityData
     private int communityStatus;
     private int communityUpdatePriority;
     private String lastCommunityUpdateFrom;
+    @Column ( columnDefinition = "INTEGER(10) default 0" )
     private int communityUpdateCycle;
 
     private long lastMemberUpdate;
     private int memberStatus;
     private int memberUpdatePriority;
     private String lastMemberUpdateFrom;
+    @Column ( columnDefinition = "INTEGER(10) default 0" )
     private int memberUpdateCycle;
 
     private boolean mine;
