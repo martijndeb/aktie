@@ -31,14 +31,20 @@ public class CommunityMember
     private long lastSubscriptionUpdate;
     private int subscriptionStatus;
     private int subscriptionUpdatePriority;
+    private String lastSubscriptionUpdateFrom;
+    private int subscriptionUpdateCycle;
 
     private long lastPostUpdate;
     private int postStatus;
     private int postUpdatePriority;
+    private String lastPostUpdateFrom;
+    private int postUpdateCycle;
 
     private long lastFileUpdate;
     private int fileStatus;
     private int fileUpdatePriority;
+    private String lastFileUpdateFrom;
+    private int fileUpdateCycle;
 
     public CommunityMember()
     {
@@ -252,6 +258,66 @@ public class CommunityMember
     public void setNumClosestFileNumber ( int numClosestFileNumber )
     {
         this.numClosestFileNumber = numClosestFileNumber;
+    }
+
+    public String getLastSubscriptionUpdateFrom()
+    {
+        return lastSubscriptionUpdateFrom;
+    }
+
+    public void setLastSubscriptionUpdateFrom ( String lastSubscriptionUpdateFrom )
+    {
+        this.lastSubscriptionUpdateFrom = lastSubscriptionUpdateFrom;
+    }
+
+    public String getLastPostUpdateFrom()
+    {
+        return lastPostUpdateFrom;
+    }
+
+    public void setLastPostUpdateFrom ( String lastPostUpdateFrom )
+    {
+        this.lastPostUpdateFrom = lastPostUpdateFrom;
+    }
+
+    public String getLastFileUpdateFrom()
+    {
+        return lastFileUpdateFrom;
+    }
+
+    public void setLastFileUpdateFrom ( String lastFileUpdateFrom )
+    {
+        this.lastFileUpdateFrom = lastFileUpdateFrom;
+    }
+
+    public int getSubscriptionUpdateCycle()
+    {
+        return subscriptionUpdateCycle;
+    }
+
+    public void setSubscriptionUpdateCycle ( int subscriptionUpdateCycle )
+    {
+        this.subscriptionUpdateCycle = subscriptionUpdateCycle;
+    }
+
+    public int getPostUpdateCycle()
+    {
+        return postUpdateCycle;
+    }
+
+    public void setPostUpdateCycle ( int postUpdateCycle )
+    {
+        this.postUpdateCycle = postUpdateCycle;
+    }
+
+    public int getFileUpdateCycle()
+    {
+        return fileUpdateCycle;
+    }
+
+    public void setFileUpdateCycle ( int fileUpdateCycle )
+    {
+        this.fileUpdateCycle = fileUpdateCycle;
     }
 
 }

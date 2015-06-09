@@ -13,11 +13,9 @@ import aktie.index.Index;
 import aktie.user.IdentityManager;
 import aktie.user.PushInterface;
 import aktie.user.RequestFileHandler;
-import aktie.utils.HasFileCreator;
 import aktie.utils.MembershipValidator;
 import aktie.utils.SymDecoder;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,7 +39,6 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     private SymDecoder symdec;
     private MembershipValidator memvalid;
     private boolean stop;
-    private HasFileCreator hfc;
     private GuiCallback callback;
 
     public static int MAX_CONNECTIONS = 10;
@@ -51,7 +48,9 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     //!!!!!!!!!! DO NOT MAKE LESS THAN 10 MINUTES OR YOU BROKE THE UPDATE PERIOD NEGATIVE
     public static long MAX_TIME_WITH_NO_REQUESTS = 60L * 60L * 1000L;
     public static long MAX_CONNECTION_TIME  = 2L * 60L * 60L * 1000L; //Only keep connections for 2 hours
-    public static long DECODE_DELAY = 5L * 60L * 1000L;
+    public static long DECODE_AND_NEW_CONNECTION_DELAY = 5L * 60L * 1000L;
+    //Don't send the same request to the same node within this period.
+    public static int NO_REREQUEST_CYCLES = 2;
 
     public ConnectionManager ( HH2Session s, Index i, RequestFileHandler r, IdentityManager id,
                                GuiCallback cb )
@@ -63,7 +62,6 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         fileHandler = r;
         symdec = new SymDecoder();
         memvalid = new MembershipValidator ( index );
-        hfc = new HasFileCreator ( s, index );
         Thread t = new Thread ( this );
         t.setDaemon ( true );
         t.start();
@@ -648,7 +646,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
     }
 
-    private Object findNext ( String localdest, String remotedest, List<String> comlist, long rdy, boolean filemode )
+    private Object findNext ( String localdest, String remotedest, Map<String, Integer> comlist, long rdy, boolean filemode )
     {
         Object r = null;
 
@@ -801,7 +799,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         //get has file information
         if ( rdy == 1 || ( rdy < 1 && r == null ) )
         {
-            CommunityMember cm = identManager.claimHasFileUpdate ( comlist );
+            CommunityMember cm = identManager.claimHasFileUpdate ( remotedest, comlist, NO_REREQUEST_CYCLES );
 
             if ( cm != null )
             {
@@ -825,7 +823,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         //get posts
         if ( rdy == 2 || ( rdy < 2 && r == null ) )
         {
-            CommunityMember cm = identManager.claimPostUpdate ( comlist );
+            CommunityMember cm = identManager.claimPostUpdate ( remotedest, comlist, NO_REREQUEST_CYCLES  );
 
             if ( cm != null )
             {
@@ -844,7 +842,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         if ( rdy == 3 || ( rdy < 3 && r == null ) )
         {
 
-            List<String> allmems = new LinkedList<String>();
+            Map<String, Integer> allmems = new HashMap<String, Integer>();
             //See which communities the remote identity is a member
             //does not have to be subscribed
             CObjList memlst = index.getIdentityMemberships ( remotedest );
@@ -854,51 +852,13 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 try
                 {
                     CObj m = memlst.get ( c );
-                    allmems.add ( m.getPrivate ( CObj.COMMUNITYID ) );
-                }
-
-                catch ( IOException e )
-                {
-                    e.printStackTrace();
-                }
-
-            }
-
-            memlst.close();
-            //Get all the private communities created by this node.
-            memlst = index.getIdentityPrivateCommunities ( remotedest );
-
-            for ( int c = 0; c < memlst.size(); c++ )
-            {
-                try
-                {
-                    CObj m = memlst.get ( c );
-                    allmems.add ( m.getDig() );
-                }
-
-                catch ( IOException e )
-                {
-                    e.printStackTrace();
-                }
-
-            }
-
-            memlst.close();
-
-            //Only keep communities we are membership of
-            List<String> mymems = new LinkedList<String>();
-            memlst = index.getIdentityMemberships ( localdest );
-
-            for ( int c = 0; c < memlst.size(); c++ )
-            {
-                try
-                {
-                    CObj m = memlst.get ( c );
                     String comid = m.getPrivate ( CObj.COMMUNITYID );
 
-                    if ( comid != null && allmems.contains ( comid ) )
+                    if ( comid != null )
                     {
-                        mymems.add ( comid );
+                        CObjList numms = index.getMemberships ( comid, null );
+                        allmems.put ( comid, numms.size() );
+                        numms.close();
                     }
 
                 }
@@ -911,7 +871,61 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
             }
 
             memlst.close();
-            //Get all the private communities created by this node.
+            //Get all the private communities created by remote node
+            memlst = index.getIdentityPrivateCommunities ( remotedest );
+
+            for ( int c = 0; c < memlst.size(); c++ )
+            {
+                try
+                {
+                    CObj m = memlst.get ( c );
+                    CObjList numms = index.getMemberships ( m.getDig(), null );
+                    allmems.put ( m.getDig(), numms.size() );
+                    numms.close();
+                }
+
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                }
+
+            }
+
+            memlst.close();
+
+            //Keep privates communities we are membership of
+            Map<String, Integer> mymems = new HashMap<String, Integer>();
+            memlst = index.getIdentityMemberships ( localdest );
+
+            for ( int c = 0; c < memlst.size(); c++ )
+            {
+                try
+                {
+                    CObj m = memlst.get ( c );
+                    String comid = m.getPrivate ( CObj.COMMUNITYID );
+
+                    if ( comid != null )
+                    {
+                        Integer mnum = allmems.get ( comid );
+
+                        if ( mnum != null )
+                        {
+                            mymems.put ( comid, mnum );
+                        }
+
+                    }
+
+                }
+
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                }
+
+            }
+
+            memlst.close();
+            //Keep private communities we created
             memlst = index.getIdentityPrivateCommunities ( localdest );
 
             for ( int c = 0; c < memlst.size(); c++ )
@@ -921,9 +935,15 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                     CObj m = memlst.get ( c );
                     String comid = m.getDig();
 
-                    if ( comid != null && allmems.contains ( comid ) )
+                    if ( comid != null )
                     {
-                        mymems.add ( m.getDig() );
+                        Integer mnum = allmems.get ( comid );
+
+                        if ( mnum != null )
+                        {
+                            mymems.put ( comid, mnum );
+                        }
+
                     }
 
                 }
@@ -946,7 +966,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 try
                 {
                     CObj m = memlst.get ( c );
-                    allmems.add ( m.getDig() );
+                    allmems.put ( m.getDig(), Integer.MAX_VALUE );
                 }
 
                 catch ( IOException e )
@@ -958,7 +978,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             memlst.close();
             log.info ( "memberships in common for requesting subscription update: " + allmems.size() );
-            CommunityMember cm = identManager.claimSubUpdate ( allmems );
+            CommunityMember cm = identManager.claimSubUpdate ( remotedest, allmems, NO_REREQUEST_CYCLES );
 
             if ( cm != null )
             {
@@ -974,7 +994,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         //get memberships
         if ( rdy == 4 || ( rdy < 4 && r == null ) )
         {
-            IdentityData id = identManager.claimMemberUpdate();
+            IdentityData id = identManager.claimMemberUpdate ( remotedest, NO_REREQUEST_CYCLES );
 
             if ( id != null )
             {
@@ -991,7 +1011,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         //get communities
         if ( rdy == 5 || ( rdy < 5 && r == null ) )
         {
-            IdentityData id = identManager.claimCommunityUpdate();
+            IdentityData id = identManager.claimCommunityUpdate ( remotedest, NO_REREQUEST_CYCLES );
 
             if ( id != null )
             {
@@ -1029,9 +1049,10 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     {
         Object r = null;
 
-        //Find all subscriptions the remotedest has
+        //Find all subscriptions the remotedest has, and see how
+        //many subscribers that community has
         CObjList clst = index.getMemberSubscriptions ( remotedest );
-        List<String> comlist = new LinkedList<String>();
+        Map<String, Integer> comlist = new HashMap<String, Integer>();
 
         for ( int c = 0; c < clst.size(); c++ )
         {
@@ -1042,7 +1063,9 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
                 if ( comid != null )
                 {
-                    comlist.add ( comid );
+                    CObjList sublst = index.getSubscriptions ( comid, null );
+                    comlist.put ( comid, sublst.size() );
+                    sublst.close();
                 }
 
             }
@@ -1056,7 +1079,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         clst.close();
         //Remove subscriptions that this localdest does not have
-        List<String> ncomlst = new LinkedList<String>();
+        Map<String, Integer> ncomlst = new HashMap<String, Integer>();
         clst = index.getMemberSubscriptions ( localdest );
 
         for ( int c = 0; c < clst.size(); c++ )
@@ -1066,9 +1089,15 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 CObj co = clst.get ( c );
                 String comid = co.getString ( CObj.COMMUNITYID );
 
-                if ( comid != null && comlist.contains ( comid ) )
+                if ( comid != null )
                 {
-                    ncomlst.add ( comid );
+                    Integer scnt = comlist.get ( comid );
+
+                    if ( scnt != null )
+                    {
+                        ncomlst.put ( comid, scnt );
+                    }
+
                 }
 
             }
@@ -1282,7 +1311,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     {
         try
         {
-            wait ( DECODE_DELAY ); //5 minutes
+            wait ( DECODE_AND_NEW_CONNECTION_DELAY ); //5 minutes
         }
 
         catch ( InterruptedException e )

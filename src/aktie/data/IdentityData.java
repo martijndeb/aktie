@@ -46,10 +46,14 @@ public class IdentityData
     private long lastCommunityUpdate;
     private int communityStatus;
     private int communityUpdatePriority;
+    private String lastCommunityUpdateFrom;
+    private int communityUpdateCycle;
 
     private long lastMemberUpdate;
     private int memberStatus;
     private int memberUpdatePriority;
+    private String lastMemberUpdateFrom;
+    private int memberUpdateCycle;
 
     private boolean mine;
 
@@ -311,6 +315,46 @@ public class IdentityData
     public void setNumClosestMembershipNumber ( int numClosestMembershipNumber )
     {
         this.numClosestMembershipNumber = numClosestMembershipNumber;
+    }
+
+    public String getLastCommunityUpdateFrom()
+    {
+        return lastCommunityUpdateFrom;
+    }
+
+    public void setLastCommunityUpdateFrom ( String lastCommunityUpdateFrom )
+    {
+        this.lastCommunityUpdateFrom = lastCommunityUpdateFrom;
+    }
+
+    public int getCommunityUpdateCycle()
+    {
+        return communityUpdateCycle;
+    }
+
+    public void setCommunityUpdateCycle ( int communityUpdateCycle )
+    {
+        this.communityUpdateCycle = communityUpdateCycle;
+    }
+
+    public String getLastMemberUpdateFrom()
+    {
+        return lastMemberUpdateFrom;
+    }
+
+    public void setLastMemberUpdateFrom ( String lastMemberUpdateFrom )
+    {
+        this.lastMemberUpdateFrom = lastMemberUpdateFrom;
+    }
+
+    public int getMemberUpdateCycle()
+    {
+        return memberUpdateCycle;
+    }
+
+    public void setMemberUpdateCycle ( int memberUpdateCycle )
+    {
+        this.memberUpdateCycle = memberUpdateCycle;
     }
 
 }

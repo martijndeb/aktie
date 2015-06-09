@@ -113,7 +113,7 @@ public class TestNode
         log.setLevel ( Level.INFO );
 
         ConnectionManager.MIN_TIME_BETWEEN_CONNECTIONS = 2L * 1000L;
-        ConnectionManager.DECODE_DELAY = 1000L;
+        ConnectionManager.DECODE_AND_NEW_CONNECTION_DELAY = 1000L;
 
         CallbackIntr cb0 = new CallbackIntr();
         CallbackIntr cb1 = new CallbackIntr();

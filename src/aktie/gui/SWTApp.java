@@ -1817,6 +1817,9 @@ public class SWTApp
 
             }
 
+            //Make the update period shorter than the max time with no requests, so that we
+            //actually send requests before the time is up.  That way we don't loose the connection
+            //when it is actually useful to us.
         }, 0, Math.min ( 30L * 60L * 1000L, ConnectionManager.MAX_TIME_WITH_NO_REQUESTS - ( 10L * 60L * 1000L ) ) );
 
     }

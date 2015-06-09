@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -228,7 +229,7 @@ public class IdentityManager
     }
 
     @SuppressWarnings ( "unchecked" )
-    public CommunityMember claimHasFileUpdate ( List<String> comids )
+    public CommunityMember claimHasFileUpdate ( String thisid, Map<String, Integer> comids, int rereqperiod )
     {
         Session s = null;
 
@@ -237,7 +238,8 @@ public class IdentityManager
             s = session.getSession();
             s.getTransaction().begin();
             Query q = s.createQuery ( "SELECT x FROM CommunityMember x WHERE "
-                                      + "x.fileStatus = :st ORDER BY "
+                                      + "x.fileStatus = :st "
+                                      + " ORDER BY "
                                       + "x.fileUpdatePriority DESC, "
                                       + "x.lastFileUpdate ASC" );
             q.setParameter ( "st", CommunityMember.UPDATE );
@@ -250,9 +252,26 @@ public class IdentityManager
             {
                 CommunityMember c = i.next();
 
-                if ( comids.contains ( c.getCommunityId() ) )
+                Integer nummem = comids.get ( c.getCommunityId() );
+
+                if ( nummem != null )
                 {
-                    cm = c;
+                    //If only 2 subscribers, then always get update from other
+                    //subscriber (you one of the two).
+                    if ( nummem <= 2 ) //Crazy if less than 2. but 2 ok.
+                    {
+                        cm = c;
+                    }
+
+                    //More than 2 subscribers, get update from someone other than
+                    //same person got last one.  if updates have been requested
+                    //a few times sense the last time we got updates then ok
+                    else if ( ( !c.getLastFileUpdateFrom().equals ( thisid ) ) ||
+                              c.getFileUpdateCycle() > rereqperiod )
+                    {
+                        cm = c;
+                    }
+
                 }
 
             }
@@ -261,6 +280,8 @@ public class IdentityManager
             {
                 cm.setFileStatus ( CommunityMember.DONE );
                 cm.setLastFileUpdate ( System.currentTimeMillis() );
+                cm.setFileUpdateCycle ( 0 );
+                cm.setLastFileUpdateFrom ( thisid );
                 s.merge ( cm );
             }
 
@@ -305,7 +326,7 @@ public class IdentityManager
     }
 
     @SuppressWarnings ( "unchecked" )
-    public CommunityMember claimPostUpdate ( List<String> comids )
+    public CommunityMember claimPostUpdate ( String thisid, Map<String, Integer> comids, int rereqperiod )
     {
         Session s = null;
 
@@ -327,9 +348,26 @@ public class IdentityManager
             {
                 CommunityMember c = i.next();
 
-                if ( comids.contains ( c.getCommunityId() ) )
+                Integer nummem = comids.get ( c.getCommunityId() );
+
+                if ( nummem != null )
                 {
-                    cm = c;
+                    //If only 2 subscribers, then always get update from other
+                    //subscriber (you one of the two).
+                    if ( nummem <= 2 ) //Crazy if less than 2. but 2 ok.
+                    {
+                        cm = c;
+                    }
+
+                    //More than 2 subscribers, get update from someone other than
+                    //same person got last one.  if updates have been requested
+                    //a few times sense the last time we got updates then ok
+                    else if ( ( !c.getLastPostUpdateFrom().equals ( thisid ) ) ||
+                              c.getPostUpdateCycle() > rereqperiod )
+                    {
+                        cm = c;
+                    }
+
                 }
 
             }
@@ -338,6 +376,8 @@ public class IdentityManager
             {
                 cm.setPostStatus ( CommunityMember.DONE );
                 cm.setLastPostUpdate ( System.currentTimeMillis() );
+                cm.setPostUpdateCycle ( 0 );
+                cm.setLastPostUpdateFrom ( thisid );
                 s.merge ( cm );
             }
 
@@ -382,7 +422,7 @@ public class IdentityManager
     }
 
     @SuppressWarnings ( "unchecked" )
-    public CommunityMember claimSubUpdate ( List<String> comids )
+    public CommunityMember claimSubUpdate ( String thisid, Map<String, Integer> comids, int rereqperiod )
     {
         Session s = null;
 
@@ -404,9 +444,26 @@ public class IdentityManager
             {
                 CommunityMember c = i.next();
 
-                if ( comids.contains ( c.getCommunityId() ) )
+                Integer nummem = comids.get ( c.getCommunityId() );
+
+                if ( nummem != null )
                 {
-                    cm = c;
+                    //If only 1 member (2 counting creator), then just always get
+                    //update from other member.
+                    if ( nummem <= 1 )
+                    {
+                        cm = c;
+                    }
+
+                    //More than 1(2) members, get update from someone other than
+                    //same person got last one.  if updates have been requested
+                    //a few times sense the last time we got updates then ok
+                    else if ( ( !c.getLastSubscriptionUpdateFrom().equals ( thisid ) ) ||
+                              c.getSubscriptionUpdateCycle() > rereqperiod )
+                    {
+                        cm = c;
+                    }
+
                 }
 
             }
@@ -415,6 +472,8 @@ public class IdentityManager
             {
                 cm.setSubscriptionStatus ( CommunityMember.DONE );
                 cm.setLastSubscriptionUpdate ( System.currentTimeMillis() );
+                cm.setSubscriptionUpdateCycle ( 0 );
+                cm.setLastSubscriptionUpdateFrom ( thisid );
                 s.merge ( cm );
             }
 
@@ -459,7 +518,7 @@ public class IdentityManager
     }
 
     @SuppressWarnings ( "unchecked" )
-    public IdentityData claimMemberUpdate()
+    public IdentityData claimMemberUpdate ( String fromid, int upcycle )
     {
         Session s = null;
 
@@ -468,10 +527,15 @@ public class IdentityManager
             s = session.getSession();
             s.getTransaction().begin();
             Query q = s.createQuery ( "SELECT x FROM IdentityData x WHERE x.mine = false AND "
-                                      + "x.memberStatus = :st ORDER BY "
+                                      + "x.memberStatus = :st AND "
+                                      + "( x.lastMemberUpdateFrom != :fromid OR "
+                                      + "  x.memberUpdateCycle >= :cycnum "
+                                      + ") ORDER BY "
                                       + "x.memberUpdatePriority DESC, "
                                       + "x.lastMemberUpdate ASC" );
             q.setParameter ( "st", IdentityData.UPDATE );
+            q.setParameter ( "fromid", fromid );
+            q.setParameter ( "cycnum", upcycle );
             q.setMaxResults ( 1 );
             List<IdentityData> r = q.list();
             IdentityData id = null;
@@ -484,6 +548,8 @@ public class IdentityManager
                 {
                     id.setLastMemberUpdate ( System.currentTimeMillis() );
                     id.setMemberStatus ( IdentityData.DONE );
+                    id.setMemberUpdateCycle ( 0 );
+                    id.setLastMemberUpdateFrom ( fromid );
                     s.merge ( id );
                 }
 
@@ -530,7 +596,7 @@ public class IdentityManager
     }
 
     @SuppressWarnings ( "unchecked" )
-    public IdentityData claimCommunityUpdate()
+    public IdentityData claimCommunityUpdate ( String fromid, int upcycle )
     {
         Session s = null;
 
@@ -539,10 +605,15 @@ public class IdentityManager
             s = session.getSession();
             s.getTransaction().begin();
             Query q = s.createQuery ( "SELECT x FROM IdentityData x WHERE x.mine = false AND "
-                                      + "x.communityStatus = :st ORDER BY "
+                                      + "x.communityStatus = :st AND "
+                                      + "( x.lastCommunityUpdateFrom != :fromid OR "
+                                      + "  x.communityUpdateCycle >= :cycnum "
+                                      + ") ORDER BY "
                                       + "x.communityUpdatePriority DESC, "
                                       + "x.lastCommunityUpdate ASC" );
             q.setParameter ( "st", IdentityData.UPDATE );
+            q.setParameter ( "fromid", fromid );
+            q.setParameter ( "cycnum", upcycle );
             q.setMaxResults ( 1 );
             List<IdentityData> r = q.list();
             IdentityData id = null;
@@ -555,6 +626,8 @@ public class IdentityManager
                 {
                     id.setLastCommunityUpdate ( System.currentTimeMillis() );
                     id.setCommunityStatus ( IdentityData.DONE );
+                    id.setCommunityUpdateCycle ( 0 );
+                    id.setLastCommunityUpdateFrom ( fromid );
                     s.merge ( id );
                 }
 
@@ -1053,6 +1126,7 @@ public class IdentityManager
                     }
 
                     idat.setCommunityStatus ( IdentityData.UPDATE );
+                    idat.setCommunityUpdateCycle ( idat.getCommunityUpdateCycle() + 1 );
                     s.merge ( idat );
                 }
 
@@ -1136,6 +1210,7 @@ public class IdentityManager
                     }
 
                     idat.setMemberStatus ( IdentityData.UPDATE );
+                    idat.setMemberUpdateCycle ( idat.getMemberUpdateCycle() + 1 );
                     s.merge ( idat );
                 }
 
@@ -1299,6 +1374,7 @@ public class IdentityManager
 
                         cm.setFileStatus ( CommunityMember.UPDATE );
                         cm.setFileUpdatePriority ( priority );
+                        cm.setFileUpdateCycle ( cm.getFileUpdateCycle() + 1 );
                         s.merge ( cm );
                     }
 
@@ -1309,6 +1385,7 @@ public class IdentityManager
                         cm.setCommunityId ( comid );
                         cm.setMemberId ( memid );
                         cm.setFileStatus ( CommunityMember.UPDATE );
+                        cm.setFileUpdateCycle ( 1 );
                         cm.setFileUpdatePriority ( priority );
                         s.persist ( cm );
                     }
@@ -1405,6 +1482,7 @@ public class IdentityManager
 
                         cm.setPostStatus ( CommunityMember.UPDATE );
                         cm.setPostUpdatePriority ( priority );
+                        cm.setPostUpdateCycle ( cm.getPostUpdateCycle() + 1 );
                         s.merge ( cm );
                     }
 
@@ -1416,6 +1494,7 @@ public class IdentityManager
                         cm.setMemberId ( memid );
                         cm.setPostStatus ( CommunityMember.UPDATE );
                         cm.setPostUpdatePriority ( priority );
+                        cm.setPostUpdateCycle ( 1 );
                         s.persist ( cm );
                     }
 
@@ -1581,6 +1660,7 @@ public class IdentityManager
                     {
                         cm.setSubscriptionStatus ( CommunityMember.UPDATE );
                         cm.setSubscriptionUpdatePriority ( priority );
+                        cm.setSubscriptionUpdateCycle ( cm.getSubscriptionUpdateCycle() + 1 );
                         s.merge ( cm );
                     }
 
@@ -1592,6 +1672,7 @@ public class IdentityManager
                         cm.setMemberId ( mid );
                         cm.setSubscriptionStatus ( CommunityMember.UPDATE );
                         cm.setSubscriptionUpdatePriority ( priority );
+                        cm.setSubscriptionUpdateCycle ( 1 );
                         s.persist ( cm );
                     }
 

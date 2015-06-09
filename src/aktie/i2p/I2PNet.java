@@ -10,13 +10,12 @@ import net.i2p.client.streaming.I2PSocketManagerFactory;
 import net.i2p.data.DataHelper;
 import net.i2p.data.router.RouterAddress;
 import net.i2p.data.router.RouterInfo;
-import net.i2p.router.CommSystemFacade;
 import net.i2p.router.Router;
 import net.i2p.router.RouterContext;
 import net.i2p.router.RouterVersion;
 import net.i2p.router.networkdb.kademlia.FloodfillNetworkDatabaseFacade;
+import net.i2p.router.CommSystemFacade.Status;
 import net.i2p.router.transport.TransportUtil;
-import net.i2p.router.transport.udp.UDPTransport;
 import aktie.net.Destination;
 import aktie.net.Net;
 
@@ -294,14 +293,20 @@ public class I2PNet  implements Net
         return RouterVersion.FULL_VERSION;
     }
 
-    private String getPort()
+    private int getActivePeers()
     {
-        if ( router != null && router.getContext() != null )
+        if ( router != null )
         {
-            return router.getContext().getProperty ( UDPTransport.PROP_INTERNAL_PORT, "unset" );
+            RouterContext _context = router.getContext();
+
+            if ( _context != null )
+            {
+                return _context.commSystem().countActivePeers();
+            }
+
         }
 
-        return "-";
+        return 0;
     }
 
     //Copypasta from I2P code
@@ -312,97 +317,112 @@ public class I2PNet  implements Net
         {
             RouterContext _context = router.getContext();
 
-            if ( _context.commSystem().isDummy() )
-            { return "I2P: VM Comm System (" + getRouterVersion() + ") prt: " + getPort(); }
-
-            if ( _context.router().getUptime() > 60 * 1000 && ( !_context.router().gracefulShutdownInProgress() ) &&
-                    !_context.clientManager().isAlive() )
-            { return "I2P: ERR-Client Manager I2CP Error - check logs (" + getRouterVersion() + ") prt: " + getPort(); }  // not a router problem but the user should know
-
-            // Warn based on actual skew from peers, not update status, so if we successfully offset
-            // the clock, we don't complain.
-            //if (!_context.clock().getUpdatedSuccessfully())
-            long skew = _context.commSystem().getFramedAveragePeerClockSkew ( 33 );
-
-            // Display the actual skew, not the offset
-            if ( Math.abs ( skew ) > 30 * 1000 )
-            { return "I2P: ERR-Clock Skew of " + DataHelper.formatDuration2 ( Math.abs ( skew ) ); }
-
-            if ( _context.router().isHidden() )
-            { return "I2P: Hidden (" + getRouterVersion() + ") prt: " + getPort(); }
-
-            router.rebuildRouterInfo();
-            RouterInfo routerInfo = router.getRouterInfo();
-
-            if ( routerInfo == null )
-            { return "I2P: Testing (" + getRouterVersion() + ") prt: " + getPort(); }
-
-            int status = _context.commSystem().getReachabilityStatus();
-
-            switch ( status )
+            if ( _context != null )
             {
-            case CommSystemFacade.STATUS_OK:
-                RouterAddress ra = routerInfo.getTargetAddress ( "NTCP" );
-                router.rebuildRouterInfo();
+                if ( _context.commSystem().isDummy() )
+                { return "VM Comm System"; }
 
-                if ( ra == null )
-                { return "I2P: OK (" + getRouterVersion() + ") prt: " + getPort(); }
+                if ( _context.router().getUptime() > 60 * 1000 && ( !_context.router().gracefulShutdownInProgress() ) &&
+                        !_context.clientManager().isAlive() )
+                { return "I2P: ERR-Client Manager I2CP Error - check logs"; }  // not a router problem but the user should know
 
-                byte[] ip = ra.getIP();
+                // Warn based on actual skew from peers, not update status, so if we successfully offset
+                // the clock, we don't complain.
+                //if (!_context.clock().getUpdatedSuccessfully())
+                long skew = _context.commSystem().getFramedAveragePeerClockSkew ( 33 );
 
-                if ( ip == null )
-                { return "I2P: ERR-Unresolved TCP Address (" + getRouterVersion() + ") prt: " + getPort(); }
+                // Display the actual skew, not the offset
+                if ( Math.abs ( skew ) > 30 * 1000 )
+                { return "I2P: ERR-Clock Skew of " + DataHelper.formatDuration2 ( Math.abs ( skew ) ); }
 
-                // TODO set IPv6 arg based on configuration?
-                if ( TransportUtil.isPubliclyRoutable ( ip, true ) )
-                { return "I2P: OK (" + getRouterVersion() + ") prt: " + getPort(); }
+                if ( _context.router().isHidden() )
+                { return "I2P: Hidden"; }
 
-                return "I2P: ERR-Private TCP Address (" + getRouterVersion() + ") prt: " + getPort();
+                RouterInfo routerInfo = _context.router().getRouterInfo();
 
-            case CommSystemFacade.STATUS_DIFFERENT:
-                return "I2P: ERR-SymmetricNAT (" + getRouterVersion() + ") prt: " + getPort();
+                if ( routerInfo == null )
+                { return "I2P: Testing"; }
 
-            case CommSystemFacade.STATUS_REJECT_UNSOLICITED:
-                if ( routerInfo.getTargetAddress ( "NTCP" ) != null )
-                { return "I2P: WARN-Firewalled with Inbound TCP Enabled (" + getRouterVersion() + ") prt: " + getPort(); }
+                Status status = _context.commSystem().getStatus();
 
-                if ( ( ( FloodfillNetworkDatabaseFacade ) _context.netDb() ).floodfillEnabled() )
-                { return "I2P: WARN-Firewalled and Floodfill (" + getRouterVersion() + ") prt: " + getPort(); }
-
-                //if (_context.router().getRouterInfo().getCapabilities().indexOf('O') >= 0)
-                //    return _("WARN-Firewalled and Fast");
-                return "I2P: Firewalled (please port forward: " + getPort() + ") (" + getRouterVersion() + ") prt: " + getPort();
-
-            case CommSystemFacade.STATUS_DISCONNECTED:
-                return "I2P: Disconnected - check network cable (" + getRouterVersion() + ") prt: " + getPort();
-
-            case CommSystemFacade.STATUS_HOSED:
-                return "I2P: ERR-UDP Port In Use - Set i2np.udp.internalPort=xxxx in advanced config and restart (" + getRouterVersion() + ") prt: " + getPort();
-
-            case CommSystemFacade.STATUS_UNKNOWN: // fallthrough
-            default:
-                ra = routerInfo.getTargetAddress ( "SSU" );
-
-                if ( ra == null && _context.router().getUptime() > 5 * 60 * 1000 )
+                switch ( status )
                 {
-                    if ( _context.commSystem().countActivePeers() <= 0 )
-                    { return "I2P: ERR-No Active Peers, Check Network Connection and Firewall (" + getRouterVersion() + ") prt: " + getPort(); }
+                case OK:
+                case IPV4_OK_IPV6_UNKNOWN:
+                case IPV4_OK_IPV6_FIREWALLED:
+                case IPV4_UNKNOWN_IPV6_OK:
+                case IPV4_DISABLED_IPV6_OK:
+                case IPV4_SNAT_IPV6_OK:
+                    RouterAddress ra = routerInfo.getTargetAddress ( "NTCP" );
 
-                    else if ( _context.getProperty ( PROP_I2NP_NTCP_HOSTNAME ) == null ||
-                              _context.getProperty ( PROP_I2NP_NTCP_PORT ) == null )
-                    { return "I2P: ERR-UDP Disabled and Inbound TCP host/port not set (" + getRouterVersion() + ") prt: " + getPort(); }
+                    if ( ra == null )
+                    { return status.toStatusString(); }
 
-                    else
-                    { return "I2P: WARN-Firewalled with UDP Disabled (" + getRouterVersion() + ") prt: " + getPort(); }
+                    byte[] ip = ra.getIP();
 
+                    if ( ip == null )
+                    { return "I2P: ERR-Unresolved TCP Address"; }
+
+                    // TODO set IPv6 arg based on configuration?
+                    if ( TransportUtil.isPubliclyRoutable ( ip, true ) )
+                    { return status.toStatusString(); }
+
+                    return "I2P: ERR-Private TCP Address";
+
+                case IPV4_SNAT_IPV6_UNKNOWN:
+                case DIFFERENT:
+                    return "I2P: ERR-SymmetricNAT";
+
+                case REJECT_UNSOLICITED:
+                case IPV4_DISABLED_IPV6_FIREWALLED:
+                    if ( routerInfo.getTargetAddress ( "NTCP" ) != null )
+                    { return "I2P: WARN-Firewalled with Inbound TCP Enabled"; }
+
+                // fall through...
+                case IPV4_FIREWALLED_IPV6_OK:
+                case IPV4_FIREWALLED_IPV6_UNKNOWN:
+                    if ( ( ( FloodfillNetworkDatabaseFacade ) _context.netDb() ).floodfillEnabled() )
+                    { return "I2P: WARN-Firewalled and Floodfill"; }
+
+                    //if (_context.router().getRouterInfo().getCapabilities().indexOf('O') >= 0)
+                    //    return "I2P: WARN-Firewalled and Fast";
+                    return status.toStatusString();
+
+                case DISCONNECTED:
+                    return "I2P: Disconnected - check network cable";
+
+                case HOSED:
+                    return "I2P: ERR-UDP Port In Use - Set i2np.udp.internalPort=xxxx in advanced config and restart";
+
+                case UNKNOWN:
+                case IPV4_UNKNOWN_IPV6_FIREWALLED:
+                case IPV4_DISABLED_IPV6_UNKNOWN:
+                default:
+                    ra = routerInfo.getTargetAddress ( "SSU" );
+
+                    if ( ra == null && _context.router().getUptime() > 5 * 60 * 1000 )
+                    {
+                        if ( getActivePeers() <= 0 )
+                        { return "I2P: ERR-No Active Peers, Check Network Connection and Firewall"; }
+
+                        else if ( _context.getProperty ( PROP_I2NP_NTCP_HOSTNAME ) == null ||
+                                  _context.getProperty ( PROP_I2NP_NTCP_PORT ) == null )
+                        { return "I2P: ERR-UDP Disabled and Inbound TCP host/port not set"; }
+
+                        else
+                        { return "I2P: WARN-Firewalled with UDP Disabled"; }
+
+                    }
+
+                    return status.toStatusString();
                 }
 
             }
 
-            return "I2P: Testing (" + getRouterVersion() + ") prt: " + getPort();
         }
 
-        return "I2P: Using existing router (" + getRouterVersion() + ") prt: " + getPort();
+        return "I2P: Using existing router (" + getRouterVersion();
+
     }
 
 

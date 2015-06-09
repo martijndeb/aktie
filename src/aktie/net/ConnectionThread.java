@@ -237,12 +237,47 @@ public class ConnectionThread implements Runnable, GuiCallback
         return false;
     }
 
+    private boolean checkType ( Object o )
+    {
+        if ( fileOnly )
+        {
+            if ( o instanceof CObj )
+            {
+                CObj c = ( CObj ) o;
+                String tt = c.getType();
+
+                if ( ! ( CObj.CON_REQ_FRAG.equals ( tt ) ||
+                         CObj.CON_REQ_FRAGLIST.equals ( tt ) ||
+                         CObj.FILEF.equals ( tt ) ||
+                         CObj.FRAGMENT.equals ( tt ) ||
+                         CObj.IDENTITY.equals ( tt ) ||
+                         CObj.CON_CHALLENGE.equals ( tt ) ||
+                         CObj.CON_REPLY.equals ( tt ) ||
+                         CObj.CON_FILEMODE.equals ( tt )
+                       ) )
+                {
+                    log.severe ( "ERROR: file mode unacceptable type: " + tt );
+                    return false;
+                }
+
+            }
+
+        }
+
+        return true;
+    }
+
     public boolean enqueue ( Object o )
     {
         log.info ( "CONTHREAD: enqueue: size: " + outqueue.size() );
 
         if ( outqueue.size() < MAXQUEUESIZE )
         {
+            if ( !checkType ( o ) )
+            {
+                return false;
+            }
+
             outqueue.add ( o );
             outproc.go();
             return true;
@@ -491,6 +526,8 @@ public class ConnectionThread implements Runnable, GuiCallback
 
                     else
                     {
+                        checkType ( o ); //TODO: Remove
+
                         if ( o instanceof CObj )
                         {
                             CObj c = ( CObj ) o;
