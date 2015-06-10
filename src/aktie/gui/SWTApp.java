@@ -1675,7 +1675,11 @@ public class SWTApp
                               netcallback, concallback );
 
             String lastversion = lastVersion();
-            upgrade0115 ( lastversion );
+
+            if ( lastversion != null )
+            {
+                upgrade0115 ( lastversion );
+            }
 
             identSubTreeModel = new IdentitySubTreeModel ( this );
             identTreeViewer.setContentProvider ( new IdentitySubTreeProvider() );

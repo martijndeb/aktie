@@ -41,7 +41,8 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     private boolean stop;
     private GuiCallback callback;
 
-    public static int MAX_CONNECTIONS = 10;
+    public static int MAX_NODE_CONNECTIONS = 10;
+    public static int MAX_TOTAL_DEST_CONNECTIONS = 100;
     public static long MIN_TIME_BETWEEN_CONNECTIONS = 5L * 60L * 1000L;
     //This value must be longer than the update period so we keep connections open
     //long enough to make requests.
@@ -468,7 +469,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         hlst.close();
         log.info ( "CONMAN existing connections valid for request: " + connected  + " number to pick from: " + idlst.size() );
 
-        if ( connected < MAX_CONNECTIONS && idlst.size() > 0 )
+        if ( connected < MAX_NODE_CONNECTIONS && idlst.size() > 0 )
         {
             attemptOneConnection ( dt, idlst, myids, filemode );
         }
@@ -512,7 +513,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
                 log.info ( "CONMAN: connections: " + dt.numberConnection() );
 
-                if ( dt.numberConnection() < MAX_CONNECTIONS )
+                if ( dt.numberConnection() < MAX_TOTAL_DEST_CONNECTIONS )
                 {
                     CObjList hlst = index.getHasFiles ( rf.getCommunityId(),
                                                         rf.getWholeDigest(), rf.getFragmentDigest() );
@@ -538,7 +539,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             for ( DestinationThread dt : destlist )
             {
-                if ( dt.numberConnection() < MAX_CONNECTIONS )
+                if ( dt.numberConnection() < MAX_TOTAL_DEST_CONNECTIONS )
                 {
                     CObjList hlst = index.getSubscriptions ( cm.getCommunityId(), null );
                     log.info ( "CONMAN: Attempt connection for has_file " + hlst.size() );
@@ -559,7 +560,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             for ( DestinationThread dt : destlist )
             {
-                if ( dt.numberConnection() < MAX_CONNECTIONS )
+                if ( dt.numberConnection() < MAX_TOTAL_DEST_CONNECTIONS )
                 {
                     CObjList hlst = index.getSubscriptions ( cm.getCommunityId(), null );
                     //See how many of these nodes we're connected to
@@ -581,7 +582,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
             for ( DestinationThread dt : destlist )
             {
-                if ( dt.numberConnection() < MAX_CONNECTIONS )
+                if ( dt.numberConnection() < MAX_TOTAL_DEST_CONNECTIONS )
                 {
                     CObj com = index.getCommunity ( cm.getCommunityId() );
 
@@ -637,7 +638,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         for ( DestinationThread dt : dlst )
         {
-            if ( dt.numberConnection() < MAX_CONNECTIONS )
+            if ( dt.numberConnection() < MAX_TOTAL_DEST_CONNECTIONS )
             {
                 attemptOneConnection ( dt, ids, mymap, false );
             }
