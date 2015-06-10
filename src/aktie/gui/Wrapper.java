@@ -16,17 +16,15 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import aktie.utils.FUtils;
-
 public class Wrapper
 {
 
     public static int RESTART_RC = 7;
 
     public static String VERSION_0115 = "version 0.1.15";
-    public static String VERSION_0121 = "version 0.1.21";
+    public static String VERSION_0200 = "version 0.2.0";
 
-    public static String VERSION = VERSION_0121;
+    public static String VERSION = VERSION_0200;
 
     public static String VERSION_FILE = "version.txt";
     //ADD ONE HOUR TO TIME.
@@ -34,9 +32,10 @@ public class Wrapper
     //the upgrade file added to the network by the developer account.
     //This keeps new installs from downloading the same version as
     //an upgrade
-    public static long RELEASETIME = ( 1433861831L * 1000L ) + 3600000;
+    public static long RELEASETIME = ( 1433910297L * 1000L ) + 3600000;
 
     public static String RUNDIR = "aktie_run_dir";
+    public static String LIBDIR = RUNDIR + File.separator + "lib";
     public static String JARFILE = "aktie.jar";
 
 
@@ -192,7 +191,6 @@ public class Wrapper
             updir.mkdirs();
         }
 
-        File libd = new File ( RUNDIR + File.separator + "lib" );
         File uplst[] = updir.listFiles();
         System.out.println ( "Upgrade list: " + uplst.length );
 
@@ -209,57 +207,11 @@ public class Wrapper
 
             if ( len != null && len.equals ( rlen ) )
             {
-
-                File bakfile = new File ( bd.getPath() + File.separator + ufn + ".bak" );
-
-                //delete if bak file already there.
-                if ( bakfile.exists() )
-                {
-                    bakfile.delete();
-                }
-
-                File ef = new File ( libd.getPath() + File.separator + ufn );
-
-                if ( ef.exists() )
-                {
-                    try
-                    {
-                        FUtils.copy ( ef, bakfile );
-                    }
-
-                    catch ( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-
-                }
-
-                //Now change upgrade file
-                System.out.println ( "UPGRADING: " + ef.getPath() );
-
-                try
-                {
-                    FUtils.copy ( uf, ef );
-
-                    if ( !uf.delete() )
-                    {
-                        System.out.println ( "ERROR: Could not delete upgrade file." );
-                    }
-
-                }
-
-                catch ( IOException e )
-                {
-                    e.printStackTrace();
-                }
+                unZipUpgrade ( uf );
 
             }
 
-            else
-            {
-                uf.delete();
-            }
-
+            saveUpdateLength ( ufn, "-1" );
         }
 
         //Just run it!
@@ -275,6 +227,7 @@ public class Wrapper
         cmd.add ( "-Xmx128m" );
         cmd.add ( "-cp" );
         StringBuilder sb = new StringBuilder();
+        File libd = new File ( LIBDIR );
         System.out.println ( "LIST LIBS: " + libd.getPath() );
         File ll[] = libd.listFiles();
 
@@ -488,6 +441,73 @@ public class Wrapper
             zis.close();
 
             System.out.println ( "Done" );
+
+        }
+
+        catch ( IOException ex )
+        {
+            ex.printStackTrace();
+        }
+
+    }
+
+    public static void unZipUpgrade ( File upfile )
+    {
+
+        byte[] buffer = new byte[1024];
+
+        try
+        {
+
+            //create output directory is not exists
+            File folder = new File ( LIBDIR );
+
+            if ( !folder.exists() )
+            {
+                folder.mkdir();
+            }
+
+            //get the zip file content
+            ZipInputStream zis =
+                new ZipInputStream ( new FileInputStream ( upfile ) );
+            //get the zipped file list entry
+            ZipEntry ze = zis.getNextEntry();
+
+            while ( ze != null )
+            {
+
+                String fileName = ze.getName();
+                File newFile = new File ( LIBDIR + File.separator + fileName );
+
+                System.out.println ( "file unzip : " + newFile.getAbsoluteFile() );
+
+                //create all non exists folders
+                //else you will hit FileNotFoundException for compressed folder
+                File pd = new File ( newFile.getParent() );
+                pd.mkdirs();
+
+                if ( pd.isDirectory() && !ze.isDirectory() )
+                {
+
+                    FileOutputStream fos = new FileOutputStream ( newFile );
+
+                    int len;
+
+                    while ( ( len = zis.read ( buffer ) ) > 0 )
+                    {
+                        fos.write ( buffer, 0, len );
+                    }
+
+                    fos.close();
+                }
+
+                ze = zis.getNextEntry();
+            }
+
+            zis.closeEntry();
+            zis.close();
+
+            System.out.println ( "Done Upgrading" );
 
         }
 

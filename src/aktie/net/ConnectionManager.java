@@ -451,7 +451,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                     connected++;
                 }
 
-                else
+                if ( cr != null )
                 {
                     idlst.add ( cr );
                 }
