@@ -8,11 +8,19 @@ import java.net.Socket;
 public class SocketConnection implements Connection
 {
 
+    private String host;
+    private int port;
     private Socket sock;
 
     public SocketConnection ( Socket s )
     {
         sock = s;
+    }
+
+    public SocketConnection ( String hst, int prt )
+    {
+        host = hst;
+        port = prt;
     }
 
     @Override
@@ -58,6 +66,16 @@ public class SocketConnection implements Connection
         catch ( IOException e )
         {
             e.printStackTrace();
+        }
+
+    }
+
+    @Override
+    public void connect() throws IOException
+    {
+        if ( sock == null && host != null )
+        {
+            sock = new Socket ( host, port );
         }
 
     }

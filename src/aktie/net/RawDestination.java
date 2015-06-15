@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 public class RawDestination implements Destination
 {
@@ -54,25 +53,8 @@ public class RawDestination implements Destination
         String p[] = destination.split ( ":" );
         int prt = Integer.valueOf ( p[1] );
 
-        try
-        {
-            System.out.println ( "ATTEMPT CONNECTION: " + p[0] + ":" + prt );
-            Socket s = new Socket ( p[0], prt );
-            System.out.println ( "CON: " + s );
-            return new SocketConnection ( s );
-        }
-
-        catch ( UnknownHostException e )
-        {
-            e.printStackTrace();
-        }
-
-        catch ( IOException e )
-        {
-            e.printStackTrace();
-        }
-
-        return null;
+        System.out.println ( "ATTEMPT CONNECTION: " + p[0] + ":" + prt );
+        return new SocketConnection ( p[0], prt );
     }
 
     @Override

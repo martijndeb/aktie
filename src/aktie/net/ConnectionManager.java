@@ -19,10 +19,12 @@ import aktie.utils.SymDecoder;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -41,7 +43,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     private boolean stop;
     private GuiCallback callback;
 
-    public static int MAX_NODE_CONNECTIONS = 10;
+    public static int MAX_SERVICING_CONNECTIONS = 10;
     public static int MAX_TOTAL_DEST_CONNECTIONS = 100;
     public static long MIN_TIME_BETWEEN_CONNECTIONS = 5L * 60L * 1000L;
     //This value must be longer than the update period so we keep connections open
@@ -53,12 +55,21 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     //Don't send the same request to the same node within this period.
     public static int NO_REREQUEST_CYCLES = 2;
 
+    public static int MAX_PUSH_LOOPS = 6; //The number of times we attempt to connect to a node to push to
+    public static int PUSH_NODES = 5;  //The number of nodes we'd like to push to
+    public static int PUSH_CONNECTS = 5; //The number of nodes we attempt to connect to for a push at one time
+
+    public Map<String, Set<String>> pushMap;
+    public Map<String, Integer> pushLoops;
+
     public ConnectionManager ( HH2Session s, Index i, RequestFileHandler r, IdentityManager id,
                                GuiCallback cb )
     {
         callback = cb;
         identManager = id;
         index = i;
+        pushMap = new HashMap<String, Set<String>>();
+        pushLoops = new HashMap<String, Integer>();
         destinations = new HashMap<String, DestinationThread>();
         fileHandler = r;
         symdec = new SymDecoder();
@@ -452,9 +463,14 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                     connected++;
                 }
 
-                if ( cr != null )
+                else
                 {
-                    idlst.add ( cr );
+
+                    if ( cr != null )
+                    {
+                        idlst.add ( cr );
+                    }
+
                 }
 
             }
@@ -469,7 +485,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         hlst.close();
         log.info ( "CONMAN existing connections valid for request: " + connected  + " number to pick from: " + idlst.size() );
 
-        if ( connected < MAX_NODE_CONNECTIONS && idlst.size() > 0 )
+        if ( connected < MAX_SERVICING_CONNECTIONS && idlst.size() > 0 )
         {
             attemptOneConnection ( dt, idlst, myids, filemode );
         }
@@ -479,9 +495,119 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
     private void checkConnections()
     {
         Map<String, CObj> mymap = getMyIdMap();
+
+        //Clean up push lists to free memory
+
+        //Find things to push
+        CObjList clst = index.getPushesToConnect();
+        int pushcons = 0;
+        log.info ( "CONMAN: Items ready to push: " + clst.size() );
+        log.info ( "CONMAN BLARG00000" );
+
+        for ( int c = 0; c < clst.size() && pushcons < PUSH_CONNECTS; c++ )
+        {
+            log.info ( "CONMAN BLARG00001" );
+
+            try
+            {
+                CObj b = clst.get ( c );
+                String err = b.getString ( CObj.ERROR );
+                String creator = b.getString ( CObj.CREATOR );
+                String type = b.getType();
+
+                if ( err == null && creator != null )
+                {
+                    DestinationThread dt = null;
+
+                    synchronized ( destinations )
+                    {
+                        dt = destinations.get ( mymap.get ( creator ).getString ( CObj.DEST ) );
+                    }
+
+                    if ( dt != null && dt.numberConnection() < MAX_TOTAL_DEST_CONNECTIONS )
+                    {
+                        if ( CObj.HASFILE.equals ( type ) || CObj.POST.equals ( type ) )
+                        {
+                            String comid = b.getString ( CObj.COMMUNITYID );
+                            CObjList hlst = index.getSubscriptions ( comid, null );
+                            log.info ( "CONMAN: Attempt connection for push hasfile/post " + hlst.size() );
+                            attemptDestinationConnection ( hlst, dt, mymap, false );
+                            pushcons++;
+                        }
+
+                        else if ( CObj.SUBSCRIPTION.equals ( type ) )
+                        {
+                            String comid = b.getString ( CObj.COMMUNITYID );
+
+                            if ( comid != null )
+                            {
+                                CObj com = index.getCommunity ( comid );
+
+                                if ( com != null )
+                                {
+                                    //if public it do not matter
+                                    if ( CObj.SCOPE_PRIVATE.equals ( com.getString ( CObj.SCOPE ) ) )
+                                    {
+                                        CObjList mems = index.getMemberships ( comid, null );
+                                        mems.add ( com ); //Add creator
+                                        attemptDestinationConnection ( mems, dt, mymap, false );
+                                        pushcons++;
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                        else
+                        {
+                            //Bellow we attempt to connect to most reliable anyway
+                        }
+
+                    }
+
+                    Integer curloops = pushLoops.get ( b.getDig() );
+
+                    if ( curloops == null )
+                    {
+                        curloops = 0;
+                    }
+
+                    pushLoops.put ( b.getDig(), curloops + 1 );
+
+                    if ( curloops >= MAX_PUSH_LOOPS )
+                    {
+                        //No longer attempt to connect to a node to push to,
+                        //but make pushable if we happen to get a connection we can push to
+                        b.pushPrivate ( CObj.PRV_PUSH_REQ, "nocon" );
+                        index.index ( b );
+                        pushLoops.remove ( b.getDig() );
+                    }
+
+                }
+
+                else
+                {
+                    b.pushPrivate ( CObj.PRV_PUSH_REQ, "false" );
+                    index.index ( b );
+                }
+
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        clst.close();
+
         //Find the current file requests we have
         List<RequestFile> rl = fileHandler.listRequestFilesNE ( RequestFile.COMPLETE, Integer.MAX_VALUE );
         log.info ( "CONMAN: Found files to request: " + rl.size() );
+        log.info ( "CONMAN BLARG00002" );
 
         for ( RequestFile rf : rl )
         {
@@ -525,6 +651,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         }
 
+        log.info ( "CONMAN BLARG000003" );
         //--- only members ---
         //Check hasfile requests (always initiate connections for highest prioty no
         //mater what.  If user is only working in one community don't waste connections
@@ -551,6 +678,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         }
 
+        log.info ( "CONMAN BLARG00004" );
         //Check post requests
         List<CommunityMember> reqpostlist = identManager.nextHasPostUpdate ( 20 );
 
@@ -571,6 +699,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         }
 
+        log.info ( "CONMAN BLARG000005" );
         //Check subscription requests
         List<CommunityMember> reqsublist = identManager.nextHasSubscriptionUpdate ( 20 );
         log.info ( "subscription updates: " + reqsublist.size() );
@@ -607,6 +736,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         }
 
+        log.info ( "CONMAN BLARG000006" );
         //Connect to the most reliable
         List<IdentityData> mrel = identManager.listMostReliable ( 100 );
         List<DestinationThread> dlst = getDestList();
@@ -629,6 +759,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         }
 
+        log.info ( "CONMAN BLARG000007" );
         List<String> ids = new LinkedList<String>();
 
         for ( IdentityData id : mrel )
@@ -638,9 +769,40 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         for ( DestinationThread dt : dlst )
         {
+            log.info ( "CONMAN BLARG000008" );
+
             if ( dt.numberConnection() < MAX_TOTAL_DEST_CONNECTIONS )
             {
                 attemptOneConnection ( dt, ids, mymap, false );
+            }
+
+        }
+
+        log.info ( "CONMAN BLARG000009" );
+
+    }
+
+    private boolean alreadyPushedTo ( String remotedest, String dig )
+    {
+        synchronized ( pushMap )
+        {
+            Set<String> mset = pushMap.get ( dig );
+
+            if ( mset == null )
+            {
+                mset = new HashSet<String>();
+                pushMap.put ( dig, mset );
+            }
+
+            if ( mset.contains ( remotedest ) )
+            {
+                return true;
+            }
+
+            else
+            {
+                mset.add ( remotedest );
+                return false;
             }
 
         }
@@ -653,8 +815,165 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         log.info ( "READY FOR NEXT: " + localdest + " to " + remotedest + " RDY: " + rdy + " match com: " + comlist.size() );
 
+        //Remove pushes that are done.
+        Set<String> digs = new HashSet<String>();
+
+        synchronized ( pushMap )
+        {
+            digs.addAll ( pushMap.keySet() );
+        }
+
+        digs.addAll ( pushLoops.keySet() );
+
+        for ( String d : digs )
+        {
+            CObj o = index.getByDig ( d );
+            String pushstr = o.getPrivate ( CObj.PRV_PUSH_REQ );
+
+            if ( pushstr == null || "false".equals ( pushstr ) )
+            {
+                pushLoops.remove ( d );
+
+                synchronized ( pushMap )
+                {
+                    pushMap.remove ( d );
+                }
+
+            }
+
+        }
+
+        //Find things we want to push
+        if ( !filemode )
+        {
+            CObjList pushlst = index.getPushesToSend();
+
+            for ( int c = 0; c < pushlst.size() && r == null; c++ )
+            {
+                try
+                {
+                    CObj p = pushlst.get ( c );
+                    int max = Integer.MAX_VALUE;
+                    String type = p.getType();
+
+                    if ( CObj.POST.equals ( type ) || CObj.HASFILE.equals ( type ) )
+                    {
+                        String comid = p.getString ( CObj.COMMUNITYID );
+
+                        if ( comlist.containsKey ( comid ) )
+                        {
+                            if ( !alreadyPushedTo ( remotedest, p.getDig() ) )
+                            {
+                                r = p;
+                                max = comlist.get ( comid );
+                            }
+
+                        }
+
+                    }
+
+                    else if ( CObj.SUBSCRIPTION.equals ( type ) )
+                    {
+                        String comid = p.getString ( CObj.COMMUNITYID );
+
+                        if ( comid != null )
+                        {
+                            CObj com = index.getCommunity ( comid );
+
+                            if ( com != null )
+                            {
+                                if ( CObj.SCOPE_PUBLIC.equals ( com.getString ( CObj.SCOPE ) ) )
+                                {
+                                    if ( !alreadyPushedTo ( remotedest, p.getDig() ) )
+                                    {
+                                        r = p;
+                                    }
+
+                                }
+
+                                else
+                                {
+                                    if ( remotedest.equals ( com.getString ( CObj.CREATOR ) ) )
+                                    {
+                                        if ( !alreadyPushedTo ( remotedest, p.getDig() ) )
+                                        {
+                                            r = p;
+                                        }
+
+                                    }
+
+                                    CObjList memlst = index.getMembership ( comid, remotedest );
+
+                                    if ( memlst.size() > 0 )
+                                    {
+                                        if ( !alreadyPushedTo ( remotedest, p.getDig() ) )
+                                        {
+                                            max = memlst.size() + 1;
+                                            r = p;
+                                        }
+
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                    else
+                    {
+                        //Anyone can do it.
+                        if ( !alreadyPushedTo ( remotedest, p.getDig() ) )
+                        {
+                            r = p;
+                        }
+
+                    }
+
+                    //See if we already pushed to as many as we can
+                    if ( r != null )
+                    {
+                        boolean maxreached = false;
+
+                        synchronized ( pushMap )
+                        {
+                            Set<String> pushset = pushMap.get ( p.getDig() );
+
+                            if ( pushset != null )
+                            {
+                                if ( pushset.size() >= max || pushset.size() >= PUSH_NODES )
+                                {
+                                    maxreached = true;
+                                }
+
+                            }
+
+                        }
+
+                        if ( maxreached )
+                        {
+                            p.pushPrivate ( CObj.PRV_PUSH_REQ, "false" );
+                            index.index ( p );
+                        }
+
+                    }
+
+                }
+
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                }
+
+            }
+
+            pushlst.close();
+        }
+
         //get files if we want them
-        if ( rdy == 0 || filemode  )
+        if ( ( rdy == 0 && r == null ) || filemode )
         {
             List<RequestFile> rflst = fileHandler.findFileListFrags ( localdest, 60L * 60L * 1000L );
             log.info ( "CONMAN: Requests for fragment list: " + rflst.size() );
@@ -1332,11 +1651,15 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
         {
             if ( !stop )
             {
+                log.info ( "CONMAN [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[ checkConnections ]]]]]]]]]]]]]]]]]]]]]]]]]]]]]" );
                 checkConnections();
+                log.info ( "CONMAN [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[ decodeMemberships ]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]" );
                 decodeMemberships();
+                log.info ( "CONMAN [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[ deleteOldRequests ]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]" );
                 deleteOldRequests();
             }
 
+            log.info ( "CONMAN [[[[[[[[[[[[[[[[[[[[[[[[[[[[[ STOP? " + stop + " ]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]" );
             delay();
 
         }

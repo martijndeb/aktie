@@ -90,6 +90,9 @@ public class NewIdentityProcessor extends GenericProcessor
                 o.sign ( ( RSAPrivateCrtKeyParameters ) pair.getPrivate() );
                 o.pushPrivate ( CObj.MINE, "true" );
 
+                o.pushPrivate ( CObj.PRV_PUSH_REQ, "true" );
+                o.pushPrivateNumber ( CObj.PRV_PUSH_TIME, System.currentTimeMillis() );
+
                 try
                 {
                     dt.setIdentity ( o );

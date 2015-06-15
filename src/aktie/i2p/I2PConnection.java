@@ -5,12 +5,21 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import net.i2p.client.streaming.I2PSocket;
+import net.i2p.client.streaming.I2PSocketManager;
 import aktie.net.Connection;
 
 public class I2PConnection implements Connection
 {
 
+    private String destination;
     private I2PSocket socket;
+    private I2PSocketManager manager;
+
+    public I2PConnection ( I2PSocketManager man, String dest )
+    {
+        manager = man;
+        destination = dest;
+    }
 
     public I2PConnection ( I2PSocket s )
     {
@@ -60,6 +69,26 @@ public class I2PConnection implements Connection
         catch ( IOException e )
         {
             e.printStackTrace();
+        }
+
+    }
+
+    @Override
+    public void connect() throws IOException
+    {
+        if ( socket == null && destination != null )
+        {
+            try
+            {
+                socket = manager.connect (
+                             new net.i2p.data.Destination ( destination ) );
+            }
+
+            catch ( Exception e )
+            {
+                throw new IOException ( e );
+            }
+
         }
 
     }

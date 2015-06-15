@@ -154,6 +154,8 @@ public class NewCommunityProcessor extends GenericProcessor
                 s.merge ( idata );
 
                 o.pushPrivate ( CObj.MINE, "true" );
+                o.pushPrivate ( CObj.PRV_PUSH_REQ, "true" );
+                o.pushPrivateNumber ( CObj.PRV_PUSH_TIME, System.currentTimeMillis() );
 
                 o.sign ( Utils.privateKeyFromString ( myid.getPrivate ( CObj.PRIVATEKEY ) ) );
 

@@ -194,6 +194,9 @@ public class NewFileProcessor extends GenericProcessor
                 return true;
             }
 
+            o.pushPrivate ( CObj.PRV_PUSH_REQ, "true" );
+            o.pushPrivateNumber ( CObj.PRV_PUSH_TIME, System.currentTimeMillis() );
+
             if ( !hsc.createHasFile ( o ) )
             {
                 guicallback.update ( o );

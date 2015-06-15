@@ -222,6 +222,9 @@ public class NewMembershipProcessor extends GenericProcessor
             o.pushPrivate ( CObj.NAME, com.getPrivate ( CObj.NAME ) );
             o.pushPrivate ( CObj.DESCRIPTION, com.getPrivate ( CObj.DESCRIPTION ) );
 
+            o.pushPrivate ( CObj.PRV_PUSH_REQ, "true" );
+            o.pushPrivateNumber ( CObj.PRV_PUSH_TIME, System.currentTimeMillis() );
+
             if ( "true".equals ( member.getPrivate ( CObj.MINE ) ) )
             {
                 o.pushPrivate ( CObj.MINE, "true" );

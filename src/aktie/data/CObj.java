@@ -74,6 +74,8 @@ public class CObj
     public static String PRV_FILEDIGEST  = "prv_filedig";
     public static String PRV_DEST_OPEN   = "prv_dest_open";
     public static String PRV_CLEAR_ERR   = "prv_clear_err";
+    public static String PRV_PUSH_REQ    = "prv_push_req";
+    public static String PRV_PUSH_TIME   = "prv_push_time";
 
     public static String PRV_TEMP_NEWPOSTS = "newposts";
 

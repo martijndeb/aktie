@@ -119,7 +119,6 @@ public class ConnectionThread implements Runnable, GuiCallback
         inProcessor.addProcessor ( new ReqMemProcessor ( i, this ) );
         inProcessor.addProcessor ( new ReqPostsProcessor ( i, this ) );
         inProcessor.addProcessor ( new ReqSubProcessor ( i, this ) );
-        outstream = con.getOutputStream();
         outproc = new OutputProcessor();
         Thread t = new Thread ( this );
         t.start();
@@ -342,11 +341,6 @@ public class ConnectionThread implements Runnable, GuiCallback
     private class OutputProcessor implements Runnable
     {
         private int tick = 0;
-        public OutputProcessor()
-        {
-            Thread t = new Thread ( this );
-            t.start();
-        }
 
         public synchronized void go()
         {
@@ -1023,6 +1017,12 @@ public class ConnectionThread implements Runnable, GuiCallback
     {
         try
         {
+            con.connect();
+            outstream = con.getOutputStream();
+            outproc = new OutputProcessor();
+            Thread t = new Thread ( outproc );
+            t.start();
+
             InputStream is = con.getInputStream();
             CleanParser clnpar = new CleanParser ( is );
 

@@ -1144,6 +1144,37 @@ public class Index
         return search ( bq, Integer.MAX_VALUE );
     }
 
+    public CObjList getPushesToSend()
+    {
+        BooleanQuery bq = new BooleanQuery();
+
+        //For a BooleanQuery with no MUST clauses one or more SHOULD clauses
+        //must match a document for the BooleanQuery to match.
+        Term decterm = new Term ( CObj.docPrivate ( CObj.PRV_PUSH_REQ ), "true" );
+        bq.add ( new TermQuery ( decterm ), BooleanClause.Occur.SHOULD );
+
+        Term nocterm = new Term ( CObj.docPrivate ( CObj.PRV_PUSH_REQ ), "nocon" );
+        bq.add ( new TermQuery ( nocterm ), BooleanClause.Occur.SHOULD );
+
+        Sort s = new Sort();
+        s.setSort ( new SortField ( CObj.docPrivateNumber ( CObj.PRV_PUSH_TIME ), SortField.Type.LONG, false ) );
+
+        return search ( bq, Integer.MAX_VALUE, s );
+    }
+
+    public CObjList getPushesToConnect()
+    {
+        BooleanQuery bq = new BooleanQuery();
+
+        Term decterm = new Term ( CObj.docPrivate ( CObj.PRV_PUSH_REQ ), "true" );
+        bq.add ( new TermQuery ( decterm ), BooleanClause.Occur.MUST );
+
+        Sort s = new Sort();
+        s.setSort ( new SortField ( CObj.docPrivateNumber ( CObj.PRV_PUSH_TIME ), SortField.Type.LONG, false ) );
+
+        return search ( bq, Integer.MAX_VALUE, s );
+    }
+
     public CObjList getInvalidMemberships()
     {
         BooleanQuery bq = new BooleanQuery();

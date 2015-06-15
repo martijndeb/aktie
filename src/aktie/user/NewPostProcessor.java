@@ -116,6 +116,9 @@ public class NewPostProcessor extends GenericProcessor
                 return true;
             }
 
+            o.pushPrivate ( CObj.PRV_PUSH_REQ, "true" );
+            o.pushPrivateNumber ( CObj.PRV_PUSH_TIME, System.currentTimeMillis() );
+
             //Sign it.
             o.sign ( Utils.privateKeyFromString ( myid.getPrivate ( CObj.PRIVATEKEY ) ) );
 
