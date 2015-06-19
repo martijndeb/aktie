@@ -124,7 +124,7 @@ public class NewPostProcessor extends GenericProcessor
 
             //Sign it.
             o.sign ( Utils.privateKeyFromString ( myid.getPrivate ( CObj.PRIVATEKEY ) ) );
-            log.info("NEW POST: " + o.getDig());
+            log.info ( "NEW POST: " + o.getDig() );
 
             try
             {

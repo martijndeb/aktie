@@ -116,6 +116,7 @@ public class DestinationThread implements Runnable
         conListener.update ( con );
 
         String d = con.getEndDestination().getId();
+
         if ( d != null )
         {
             synchronized ( connections )
