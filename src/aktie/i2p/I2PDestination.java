@@ -60,9 +60,7 @@ public class I2PDestination implements Destination
     {
         try
         {
-            I2PSocket sock = manager.connect (
-                                 new net.i2p.data.Destination ( destination ) );
-            return new I2PConnection ( sock );
+            return new I2PConnection ( manager, destination );
         }
 
         catch ( Exception e )

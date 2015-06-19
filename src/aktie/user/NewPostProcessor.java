@@ -1,5 +1,7 @@
 package aktie.user;
 
+import java.util.logging.Logger;
+
 import org.hibernate.Session;
 
 import aktie.GenericProcessor;
@@ -14,6 +16,7 @@ import aktie.utils.SubscriptionValidator;
 public class NewPostProcessor extends GenericProcessor
 {
 
+    Logger log = Logger.getLogger ( "aktie" );
 
     private GuiCallback guicallback;
     private Index index;
@@ -121,6 +124,7 @@ public class NewPostProcessor extends GenericProcessor
 
             //Sign it.
             o.sign ( Utils.privateKeyFromString ( myid.getPrivate ( CObj.PRIVATEKEY ) ) );
+            log.info("NEW POST: " + o.getDig());
 
             try
             {

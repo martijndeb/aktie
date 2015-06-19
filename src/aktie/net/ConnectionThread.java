@@ -171,7 +171,10 @@ public class ConnectionThread implements Runnable, GuiCallback
         stop = true;
         outproc.go();
         dest.connectionClosed ( this );
-        con.close();
+        
+        if (con != null) {
+        	con.close();
+        }
 
         if ( !wasstopped )
         {
@@ -353,7 +356,7 @@ public class ConnectionThread implements Runnable, GuiCallback
             {
                 try
                 {
-                    wait ( 60000 );
+                    wait ( 5000 );
                 }
 
                 catch ( InterruptedException e )
@@ -396,8 +399,12 @@ public class ConnectionThread implements Runnable, GuiCallback
 
         private Object getLocalRequests()
         {
-            if ( dest != null && endDestination != null && !loadFile &&
-                    pendingFileRequests < MAX_PENDING_FILES )
+            if ( 
+            	 dest != null && endDestination != null && 
+            		(	(!loadFile) ||
+            			(loadFile && pendingFileRequests < MAX_PENDING_FILES )
+            		)
+            	)
             {
                 Object r = sendData.next ( dest.getIdentity().getId(),
                                            endDestination.getId(), fileOnly );
@@ -1039,6 +1046,7 @@ public class ConnectionThread implements Runnable, GuiCallback
                 if ( log.getLevel() == Level.INFO )
                 {
                     appendInput ( r.getType() + "=============" );
+                    appendInput ( "dig:     " + r.getDig());
                     appendInput ( "comid:   " + r.getString ( CObj.COMMUNITYID ) );
                     appendInput ( "creator: " + r.getString ( CObj.CREATOR ) );
                     appendInput ( "memid:   " + r.getString ( CObj.MEMBERID ) );

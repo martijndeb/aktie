@@ -494,6 +494,34 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
     private void checkConnections()
     {
+        //Remove pushes that are done.
+        Set<String> digs = new HashSet<String>();
+
+        synchronized ( pushMap )
+        {
+            digs.addAll ( pushMap.keySet() );
+        }
+
+        digs.addAll ( pushLoops.keySet() );
+
+        for ( String d : digs )
+        {
+            CObj o = index.getByDig ( d );
+            String pushstr = o.getPrivate ( CObj.PRV_PUSH_REQ );
+
+            if ( pushstr == null || "false".equals ( pushstr ) )
+            {
+                pushLoops.remove ( d );
+
+                synchronized ( pushMap )
+                {
+                    pushMap.remove ( d );
+                }
+
+            }
+
+        }
+
         Map<String, CObj> mymap = getMyIdMap();
 
         //Clean up push lists to free memory
@@ -815,39 +843,11 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
 
         log.info ( "READY FOR NEXT: " + localdest + " to " + remotedest + " RDY: " + rdy + " match com: " + comlist.size() );
 
-        //Remove pushes that are done.
-        Set<String> digs = new HashSet<String>();
-
-        synchronized ( pushMap )
-        {
-            digs.addAll ( pushMap.keySet() );
-        }
-
-        digs.addAll ( pushLoops.keySet() );
-
-        for ( String d : digs )
-        {
-            CObj o = index.getByDig ( d );
-            String pushstr = o.getPrivate ( CObj.PRV_PUSH_REQ );
-
-            if ( pushstr == null || "false".equals ( pushstr ) )
-            {
-                pushLoops.remove ( d );
-
-                synchronized ( pushMap )
-                {
-                    pushMap.remove ( d );
-                }
-
-            }
-
-        }
-
         //Find things we want to push
         if ( !filemode )
         {
             CObjList pushlst = index.getPushesToSend();
-
+            log.info("CONTHREAD: Ready to send pushes: " + localdest + " to " + remotedest + " " + pushlst.size());
             for ( int c = 0; c < pushlst.size() && r == null; c++ )
             {
                 try
@@ -866,6 +866,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                             {
                                 r = p;
                                 max = comlist.get ( comid );
+                                log.info("CONTHREAD: 1 push ok, " + localdest + " to " + remotedest + " max: " + max);
                             }
 
                         }
@@ -887,6 +888,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                     if ( !alreadyPushedTo ( remotedest, p.getDig() ) )
                                     {
                                         r = p;
+                                        log.info("CONTHREAD: 2 push ok, " + localdest + " to " + remotedest + " max: " + max);
                                     }
 
                                 }
@@ -898,6 +900,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                         if ( !alreadyPushedTo ( remotedest, p.getDig() ) )
                                         {
                                             r = p;
+                                            log.info("CONTHREAD: 3 push ok, " + localdest + " to " + remotedest + " max: " + max);
                                         }
 
                                     }
@@ -910,6 +913,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                                         {
                                             max = memlst.size() + 1;
                                             r = p;
+                                            log.info("CONTHREAD: 4 push ok, " + localdest + " to " + remotedest + " max: " + max);
                                         }
 
                                     }
@@ -1384,6 +1388,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 if ( comid != null )
                 {
                     CObjList sublst = index.getSubscriptions ( comid, null );
+                    log.info("CONMAN: " + remotedest + " subscribed to: " + comid + " num: " + sublst.size());
                     comlist.put ( comid, sublst.size() );
                     sublst.close();
                 }
@@ -1412,6 +1417,7 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 if ( comid != null )
                 {
                     Integer scnt = comlist.get ( comid );
+                    log.info("CONMAN22: " + remotedest + " subscribed to: " + comid + " num: " + scnt);
 
                     if ( scnt != null )
                     {

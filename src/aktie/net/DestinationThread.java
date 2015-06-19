@@ -113,8 +113,9 @@ public class DestinationThread implements Runnable
 
     public void addEstablishedConnection ( ConnectionThread con )
     {
-        String d = con.getEndDestination().getId();
+        conListener.update ( con );
 
+        String d = con.getEndDestination().getId();
         if ( d != null )
         {
             synchronized ( connections )
@@ -297,11 +298,9 @@ public class DestinationThread implements Runnable
         {
             ConnectionThread ct = new ConnectionThread ( this, session, index, c, sendData, callback, conListener, fileHandler, filemode );
             ct.enqueue ( identity );
-            conListener.update ( ct );
         }
 
     }
-
 
     @Override
     public void run()
