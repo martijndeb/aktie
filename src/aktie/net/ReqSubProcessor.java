@@ -61,8 +61,34 @@ public class ReqSubProcessor extends GenericProcessor
 
                 if ( ok )
                 {
-                    CObjList cl = index.getSubsUnsubs ( comid );
-                    connection.enqueue ( cl );
+
+                    //See if creator and first num set
+                    String memid = b.getString ( CObj.CREATOR );
+                    Long fnum = b.getNumber ( CObj.FIRSTNUM );
+
+                    if ( memid != null && fnum != null )
+                    {
+                        CObj sb = index.getSubscriptionUnsub ( comid, memid );
+
+                        if ( sb != null )
+                        {
+                            Long ln = sb.getNumber ( CObj.SEQNUM );
+
+                            if ( ln != null && ln >= fnum )
+                            {
+                                connection.enqueue ( sb );
+                            }
+
+                        }
+
+                    }
+
+                    else
+                    {
+                        CObjList cl = index.getSubsUnsubs ( comid );
+                        connection.enqueue ( cl );
+                    }
+
                 }
 
                 else

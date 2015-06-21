@@ -1226,6 +1226,39 @@ public class Index
         return r;
     }
 
+    public CObj getSubscriptionUnsub ( String comid, String memid )
+    {
+        BooleanQuery bq = new BooleanQuery();
+        Term typterm = new Term ( CObj.PARAM_TYPE, CObj.SUBSCRIPTION );
+        bq.add ( new TermQuery ( typterm ), BooleanClause.Occur.MUST );
+
+        Term cidterm = new Term ( CObj.docString ( CObj.COMMUNITYID ), comid );
+        bq.add ( new TermQuery ( cidterm ), BooleanClause.Occur.MUST );
+
+        Term midterm = new Term ( CObj.docString ( CObj.CREATOR ), memid );
+        bq.add ( new TermQuery ( midterm ), BooleanClause.Occur.MUST );
+
+        CObj r = null;
+        CObjList l = search ( bq, 1 );
+
+        if ( l.size() > 0 )
+        {
+            try
+            {
+                r = l.get ( 0 );
+            }
+
+            catch ( Exception e )
+            {
+                e.printStackTrace();
+            }
+
+        }
+
+        l.close();
+        return r;
+    }
+
     public CObj getByDig ( String dig )
     {
         BooleanQuery bq = new BooleanQuery();

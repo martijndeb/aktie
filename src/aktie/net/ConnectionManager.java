@@ -1311,6 +1311,9 @@ public class ConnectionManager implements GetSendData, DestinationListener, Push
                 CObj cr = new CObj();
                 cr.setType ( CObj.CON_REQ_SUBS );
                 cr.pushString ( CObj.COMMUNITYID, cm.getCommunityId() );
+                cr.pushNumber ( CObj.FIRSTNUM, cm.getLastSubscriptionNumber() + 1L );
+                cr.pushString ( CObj.CREATOR, cm.getMemberId() );
+
                 r = cr;
             }
 
