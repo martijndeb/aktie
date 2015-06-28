@@ -118,19 +118,30 @@ public class ShareManager implements Runnable
     {
         String lf = hf.getPrivate ( CObj.LOCALFILE );
         String wd = hf.getString ( CObj.FILEDIGEST );
+        Long ut = hf.getNumber ( CObj.CREATEDON );
+        Long ln = hf.getNumber ( CObj.FILESIZE );
 
-        if ( lf != null && wd != null )
+        if ( lf != null && wd != null && ut != null && ln != null )
         {
             File f = new File ( lf );
             boolean remove = true;
 
             if ( f.exists() )
             {
-                String rdig = FUtils.digWholeFile ( lf );
-
-                if ( wd.equals ( rdig ) )
+                if ( f.lastModified() <= ut && f.length() == ln )
                 {
                     remove = false;
+                }
+
+                else
+                {
+                    String rdig = FUtils.digWholeFile ( lf );
+
+                    if ( wd.equals ( rdig ) )
+                    {
+                        remove = false;
+                    }
+
                 }
 
             }
