@@ -285,7 +285,7 @@ public class Wrapper
                 ln = is.read ( buf );
             }
 
-            System.out.println ( "EXITTING.." );
+            System.out.println ( "EXITING.." );
             return pc.exitValue();
         }
 

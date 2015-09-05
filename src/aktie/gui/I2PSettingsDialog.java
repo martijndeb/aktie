@@ -23,6 +23,8 @@ public class I2PSettingsDialog extends Dialog
     private Text outboundLen;
     private Text inboundQuant;
     private Text outboundQuant;
+    private Text hostTxt;
+    private Text portTxt;
     private Properties i2pProps;
     private File propFile;
     private SWTApp app;
@@ -77,6 +79,20 @@ public class I2PSettingsDialog extends Dialog
 
         outboundQuant = new Text ( container, SWT.BORDER );
         outboundQuant.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
+
+        Label lblHostTxt = new Label ( container, SWT.NONE );
+        lblHostTxt.setLayoutData ( new GridData ( SWT.RIGHT, SWT.CENTER, false, false, 1, 1 ) );
+        lblHostTxt.setText ( "I2P Router host" );
+
+        hostTxt = new Text ( container, SWT.BORDER );
+        hostTxt.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
+
+        Label lblPortTxt = new Label ( container, SWT.NONE );
+        lblPortTxt.setLayoutData ( new GridData ( SWT.RIGHT, SWT.CENTER, false, false, 1, 1 ) );
+        lblPortTxt.setText ( "I2P Router port" );
+
+        portTxt = new Text ( container, SWT.BORDER );
+        portTxt.setLayoutData ( new GridData ( SWT.FILL, SWT.CENTER, true, false, 1, 1 ) );
 
         setFromProps();
 
@@ -144,6 +160,20 @@ public class I2PSettingsDialog extends Dialog
                 outboundQuant.setText ( tmp );
             }
 
+            tmp = i2pProps.getProperty ( "i2cp.tcp.host" );
+
+            if ( tmp != null && hostTxt != null && !hostTxt.isDisposed() )
+            {
+                hostTxt.setText ( tmp );
+            }
+
+            tmp = i2pProps.getProperty ( "i2cp.tcp.port" );
+
+            if ( tmp != null && portTxt != null && !portTxt.isDisposed() )
+            {
+                portTxt.setText ( tmp );
+            }
+
         }
 
     }
@@ -196,6 +226,28 @@ public class I2PSettingsDialog extends Dialog
             {
             }
 
+            try
+            {
+                String num = String.valueOf ( hostTxt.getText() );
+                i2pProps.setProperty ( "i2cp.tcp.host", num );
+            }
+
+            catch ( Exception e )
+            {
+            }
+
+            try
+            {
+                String num = Integer.toString (
+                                 Integer.valueOf ( portTxt.getText() ) );
+                i2pProps.setProperty ( "i2cp.tcp.port", num );
+            }
+
+            catch ( Exception e )
+            {
+            }
+
+
             FileOutputStream fos = new FileOutputStream ( propFile );
             i2pProps.store ( fos, "Aktie I2P props" );
             fos.close();
@@ -245,6 +297,21 @@ public class I2PSettingsDialog extends Dialog
             i2pProps.setProperty ( "inbound.nickname", "AKTIE" );
         }
 
+        tmp = i2pProps.getProperty ( "i2cp.tcp.host" );
+
+        if ( tmp == null )
+        {
+            i2pProps.setProperty ( "i2cp.tcp.host", "127.0.0.1" );
+        }
+
+        tmp = i2pProps.getProperty ( "i2cp.tcp.port" );
+
+        if ( tmp == null )
+        {
+            i2pProps.setProperty ( "i2cp.tcp.port", "7654" );
+        }
+
+
     }
 
     @Override
@@ -292,6 +359,16 @@ public class I2PSettingsDialog extends Dialog
     public Text getOutboundQuant()
     {
         return outboundQuant;
+    }
+
+    public Text getHostTxt()
+    {
+        return hostTxt;
+    }
+
+    public Text getPortTxt()
+    {
+        return portTxt;
     }
 
 }

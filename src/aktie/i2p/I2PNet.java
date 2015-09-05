@@ -53,7 +53,7 @@ public class I2PNet  implements Net
         {
             if ( !testClient() )
             {
-                System.out.println ( "No i2p found.  Starting router." );
+                System.out.println ( "1No i2p found.  Starting router." );
                 startI2P ();
             }
 
@@ -120,6 +120,9 @@ public class I2PNet  implements Net
             p.setProperty ( "inbound.nickname", "aktie" );
             p.setProperty ( "inbound.length", "2" );
             p.setProperty ( "outbound.length", "2" );
+            p.setProperty ( "i2cp.tcp.host", "127.0.0.1" );
+            p.setProperty ( "i2cp.tcp.port", "7654" );
+
         }
 
         else
