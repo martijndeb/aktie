@@ -53,7 +53,7 @@ public class I2PNet  implements Net
         {
             if ( !testClient() )
             {
-                System.out.println ( "1No i2p found.  Starting router." );
+                System.out.println ( "No i2p found.  Starting router." );
                 startI2P ();
             }
 
